@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "Врати у гомилу након затварања уређивача";
 "  Click on preview:" = "  Клик на преглед:";
 "  When opened in Editor:" = "  При отварању у уређивачу:";
+"Press Esc again to close" = "Притисните Esc поново да затворите";

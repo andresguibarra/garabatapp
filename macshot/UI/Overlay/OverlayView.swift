@@ -322,6 +322,7 @@ class OverlayView: NSView {
         didSet {
             hasChosenCaptureTool = true
             if currentTool != .measure { isAwaitingMeasureReference = false }
+            if currentTool != .select { hideEscapeHint() }
             // Persist drawing tool choices; skip transient/mode tools
             if OverlayView.shouldRememberLastTool && currentTool != .select && currentTool != .loupe {
                 OverlayView.lastUsedTool = currentTool
@@ -781,6 +782,10 @@ class OverlayView: NSView {
 
     // Instant tooltip for hovered toolbar button
     private var hoveredTooltip: String?
+    /// "Press Esc again to close" hint shown beside the bottom toolbar after
+    /// Escape puts a drawing tool down. Lives outside the image, next to the bar.
+    private var escapeHintView: TooltipBackgroundView?
+    private var escapeHintTimer: Timer?
     private var hoveredTooltipButtonView: ToolbarButtonView?
     private var isToolbarMoveDragActive = false
     private var isKeyboardMoveSelectionActive = false
@@ -5697,6 +5702,7 @@ class OverlayView: NSView {
     /// Reposition toolbar strips based on current selection/bounds. Cheap — safe to call from draw().
     private func repositionToolbars() {
         guard let bottomStrip = bottomStripView, let rightStrip = rightStripView else { return }
+        defer { positionEscapeHint() }
 
         // In editor mode, let toolbar gap clicks pass through to the image beneath
         bottomStrip.passesThrough = isEditorMode
@@ -5709,6 +5715,7 @@ class OverlayView: NSView {
         rightStrip.isHidden = !visible || !rightHasButtons
         toolOptionsRowView?.isHidden = !visible || !toolHasOptionsRow || !bottomHasButtons
         guard visible else {
+            hideEscapeHint()
             // Toolbars hidden (deselected / scroll capture): dismiss the
             // resolution box and clear the chrome rects so isPointOnChrome
             // doesn't see stale areas.
@@ -9926,6 +9933,8 @@ class OverlayView: NSView {
             } else if !selectedAnnotations.isEmpty {
                 selectedAnnotations = []
                 needsDisplay = true
+            } else if releaseArmedToolOnEscape() {
+                // First Escape only puts the drawing tool down; the next one closes.
             } else {
                 overlayDelegate?.overlayViewDidCancel()
             }
@@ -10124,6 +10133,65 @@ class OverlayView: NSView {
         selectToolForNewAnnotationsInMoveMode()
         cachedCompositedImage = nil
         needsDisplay = true
+    }
+
+    /// Escape with a drawing tool armed puts the tool down (switches to Select)
+    /// instead of closing the capture, so a stray Escape never throws away the
+    /// screenshot. Returns false when there is no tool to release, and the
+    /// caller closes as before. The remembered tool is untouched: Select is
+    /// never persisted as the last used tool.
+    private func releaseArmedToolOnEscape() -> Bool {
+        guard state == .selected || isEditorMode else { return false }
+        guard !startsInSelectionMoveMode, currentTool != .select else { return false }
+        currentTool = .select
+        rebuildToolbarLayout()
+        needsDisplay = true
+        showEscapeAgainHint()
+        return true
+    }
+
+    private func showEscapeAgainHint() {
+        guard let strip = bottomStripView, !strip.isHidden else { return }
+        let parent = chromeParentView ?? self
+        let hint = escapeHintView ?? TooltipBackgroundView(frame: .zero)
+        if hint.superview !== parent {
+            hint.removeFromSuperview()
+            parent.addSubview(hint)
+        }
+        hint.text = L("Press Esc again to close")
+        escapeHintView = hint
+        positionEscapeHint()
+        hint.needsDisplay = true
+        escapeHintTimer?.invalidate()
+        escapeHintTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: false) { [weak self] _ in
+            self?.hideEscapeHint()
+        }
+    }
+
+    /// Beside the bottom bar, vertically centred on it: right side when it
+    /// fits, left side otherwise. Never over the captured image.
+    private func positionEscapeHint() {
+        guard let hint = escapeHintView, let strip = bottomStripView,
+              let parent = hint.superview else { return }
+        let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11, weight: .medium)]
+        let textSize = (hint.text as NSString).size(withAttributes: attrs)
+        let pad: CGFloat = 6
+        let size = NSSize(width: ceil(textSize.width) + pad * 2, height: ceil(textSize.height) + pad)
+        let gap: CGFloat = 6
+        let y = strip.frame.midY - size.height / 2
+        var x = strip.frame.maxX + gap
+        if x + size.width > parent.bounds.maxX - 2 {
+            x = strip.frame.minX - gap - size.width
+        }
+        x = max(parent.bounds.minX + 2, x)
+        hint.frame = NSRect(origin: NSPoint(x: x, y: y), size: size)
+    }
+
+    private func hideEscapeHint() {
+        escapeHintTimer?.invalidate()
+        escapeHintTimer = nil
+        escapeHintView?.removeFromSuperview()
+        escapeHintView = nil
     }
 
     /// A capture still in move mode has no tool, so pasted or duplicated
@@ -10885,6 +10953,7 @@ class OverlayView: NSView {
         PopoverHelper.dismiss()
         editorTooltipView?.removeFromSuperview()
         editorTooltipView = nil
+        hideEscapeHint()
         captureSourceImage = nil
         isTranslating = false
         translateEnabled = false

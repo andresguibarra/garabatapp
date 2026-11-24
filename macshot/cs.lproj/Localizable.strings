@@ -927,3 +927,4 @@
 "Return to stack when editor closes" = "Vrátit do zásobníku po zavření editoru";
 "  Click on preview:" = "  Kliknutí na náhled:";
 "  When opened in Editor:" = "  Při otevření v editoru:";
+"Press Esc again to close" = "Stiskněte znovu Esc pro zavření";

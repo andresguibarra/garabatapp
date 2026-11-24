@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "Düzenleyici kapanınca yığına geri dön";
 "  Click on preview:" = "  Önizlemeye tıklama:";
 "  When opened in Editor:" = "  Düzenleyicide açıldığında:";
+"Press Esc again to close" = "Kapatmak için Esc tuşuna tekrar basın";

@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "إعادة إلى المكدس عند إغلاق المحرر";
 "  Click on preview:" = "  النقر على المعاينة:";
 "  When opened in Editor:" = "  عند الفتح في المحرر:";
+"Press Esc again to close" = "اضغط Esc مرة أخرى للإغلاق";
