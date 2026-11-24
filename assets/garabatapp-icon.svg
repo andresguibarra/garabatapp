@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="sq"><rect width="180" height="180" rx="40"/></clipPath>
+  </defs>
+  <g transform="translate(100 100) scale(4.5778)">
+    <g clip-path="url(#sq)">
+      <rect width="180" height="180" fill="#4B4A8C"/>
+      <rect y="120" width="180" height="60" fill="#3E3D78"/>
+    </g>
+    <rect x="34" y="42" width="112" height="86" rx="10" fill="#6E6CC0"/>
+    <rect x="34" y="42" width="112" height="22" rx="10" fill="#8180D0"/>
+    <rect x="34" y="56" width="112" height="8" fill="#8180D0"/>
+    <circle cx="46" cy="53" r="3" fill="#D8D4FF"/>
+    <circle cx="56" cy="53" r="3" fill="#D8D4FF"/>
+    <path d="M28 132 C 50 98, 72 128, 90 112 C 104 98, 128 100, 120 118 C 112 134, 90 118, 104 100 C 118 82, 140 80, 152 90" fill="none" stroke="#F3EEFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="46 2.5 20 2.5 64 2.5 30 2.5"/>
+    <path d="M31 128 C 52 97, 72 124, 89 109" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <g transform="rotate(-36 160 86)">
+      <rect x="146" y="80" width="30" height="12" rx="4" fill="#D8D4FF"/>
+      <rect x="146" y="80" width="9" height="12" rx="3" fill="#F3EEFF"/>
+    </g>
+  </g>
+</svg>
