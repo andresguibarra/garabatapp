@@ -474,6 +474,9 @@ class OverlayView: NSView {
     // Toolbars (drawn inline)
     var bottomButtons: [ToolbarButton] = []
     var rightButtons: [ToolbarButton] = []
+    /// Garabatapp: items hidden in Settings, shown in each strip's ⋯ menu.
+    var bottomOverflowButtons: [ToolbarButton] = []
+    var rightOverflowButtons: [ToolbarButton] = []
     var bottomBarRect: NSRect = .zero
     var rightBarRect: NSRect = .zero
     var showToolbars: Bool = false {
@@ -5744,6 +5747,15 @@ class OverlayView: NSView {
                 }
             }
         }
+        bottomOverflowButtons = bottomButtons.filter { $0.isOverflow }
+        bottomButtons.removeAll { $0.isOverflow }
+        rightOverflowButtons = rightButtons.filter { $0.isOverflow }
+        rightButtons.removeAll { $0.isOverflow }
+        for i in bottomButtons.indices {
+            if case .moreBottom = bottomButtons[i].action {
+                bottomButtons[i].isSelected = bottomOverflowButtons.contains { $0.isSelected }
+            }
+        }
 
         // Create strip views if needed — add to chrome parent (window content) when in scroll view
         let parent = chromeParentView ?? self
@@ -8580,6 +8592,54 @@ class OverlayView: NSView {
         }
     }
 
+    // MARK: - Garabatapp overflow (⋯) menu
+
+    private func showOverflowMenu(_ items: [ToolbarButton], anchor: NSView?, isBottom: Bool) {
+        guard let anchor, !items.isEmpty else { return }
+        let menu = NSMenu()
+        for (i, button) in items.enumerated() {
+            let item = NSMenuItem(title: button.tooltip, action: #selector(overflowMenuPicked(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = OverflowAction(button.action)
+            item.state = button.isSelected ? .on : .off
+            item.tag = i
+            let symbol: String? = {
+                switch button.sfSymbol {
+                case "_custom.text": return "textformat"
+                case "_custom.checkerboard": return "checkerboard.rectangle"
+                default: return button.sfSymbol
+                }
+            }()
+            if let symbol, let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+                item.image = image
+            }
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let edit = NSMenuItem(title: L("Customize Toolbar…"), action: #selector(overflowMenuOpenSettings), keyEquivalent: "")
+        edit.target = self
+        menu.addItem(edit)
+        if isBottom {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: anchor.bounds.height + 4), in: anchor)
+        } else {
+            menu.popUp(positioning: nil, at: NSPoint(x: anchor.bounds.width + 4, y: anchor.bounds.height), in: anchor)
+        }
+    }
+
+    private final class OverflowAction {
+        let action: ToolbarButtonAction
+        init(_ action: ToolbarButtonAction) { self.action = action }
+    }
+
+    @objc private func overflowMenuPicked(_ sender: NSMenuItem) {
+        guard let wrapped = sender.representedObject as? OverflowAction else { return }
+        handleToolbarAction(wrapped.action)
+    }
+
+    @objc private func overflowMenuOpenSettings() {
+        (NSApp.delegate as? AppDelegate)?.openSettings(tab: "tools")
+    }
+
     private func showKeystrokeModeMenu(anchorView: NSView) {
         let menu = NSMenu()
         let allKeys = UserDefaults.standard.bool(forKey: "keystrokeShowAll")
@@ -8996,6 +9056,7 @@ class OverlayView: NSView {
         case .share:
             // Show share picker anchored to the share button, then dismiss on selection
             let shareBtn = rightStripView?.buttonViews.first { if case .share = $0.action { return true }; return false }
+                ?? rightStripView?.buttonViews.first { if case .moreRight = $0.action { return true }; return false }
             overlayDelegate?.overlayViewDidRequestShare(anchorView: shareBtn)
         case .pin:
             overlayDelegate?.overlayViewDidRequestPin()
@@ -9011,6 +9072,7 @@ class OverlayView: NSView {
             invertImageColors()
         case .effects:
             let btn = bottomStripView?.buttonViews.first { if case .effects = $0.action { return true }; return false }
+                ?? bottomStripView?.buttonViews.first { if case .moreBottom = $0.action { return true }; return false }
             showEffectsPopover(anchorView: btn)
         case .beautify:
             commitTextFieldIfNeeded()
@@ -9071,6 +9133,14 @@ class OverlayView: NSView {
         case .recordSettings:
             let gearBtn = rightStripView?.buttonViews.first { if case .recordSettings = $0.action { return true }; return false }
             showRecordingSettingsPopover(anchorView: gearBtn)
+        case .moreBottom:
+            showOverflowMenu(bottomOverflowButtons, anchor: bottomStripView?.buttonViews.first {
+                if case .moreBottom = $0.action { return true }; return false }, isBottom: true)
+            return
+        case .moreRight:
+            showOverflowMenu(rightOverflowButtons, anchor: rightStripView?.buttonViews.first {
+                if case .moreRight = $0.action { return true }; return false }, isBottom: false)
+            return
         }
 
         // Rebuild toolbars to reflect new state (selected tool, color, etc.)

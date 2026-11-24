@@ -281,6 +281,12 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         showTab(id: "general")
     }
 
+    /// Garabatapp: lets the toolbar ⋯ menu open the Tools tab.
+    func selectTab(id: String) {
+        window?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(id)
+        showTab(id: id)
+    }
+
     private func showTab(id: String) {
         guard let container = tabContentContainer, let view = tabContentViews[id] else { return }
         // Remove existing content
@@ -1751,7 +1757,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.addArrangedSubview(sectionHeader(L("Annotation Tools")))
         stack.setCustomSpacing(4, after: stack.arrangedSubviews.last!)
 
-        let noteA = NSTextField(labelWithString: L("Hidden tools are removed from the bottom toolbar."))
+        let noteA = NSTextField(labelWithString: L("Unchecked tools move to the ⋯ menu at the end of the bottom toolbar."))
         noteA.font = NSFont.systemFont(ofSize: 11)
         noteA.textColor = .secondaryLabelColor
         stack.addArrangedSubview(noteA)
@@ -1777,7 +1783,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.addArrangedSubview(sectionHeader(L("Bottom Toolbar Actions")))
         stack.setCustomSpacing(4, after: stack.arrangedSubviews.last!)
 
-        let noteB = NSTextField(labelWithString: L("Hidden actions are removed from the bottom toolbar."))
+        let noteB = NSTextField(labelWithString: L("Unchecked actions move to the ⋯ menu at the end of the bottom toolbar."))
         noteB.font = NSFont.systemFont(ofSize: 11)
         noteB.textColor = .secondaryLabelColor
         stack.addArrangedSubview(noteB)
@@ -1797,7 +1803,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.addArrangedSubview(sectionHeader(L("Right Toolbar Actions")))
         stack.setCustomSpacing(4, after: stack.arrangedSubviews.last!)
 
-        let noteC = NSTextField(labelWithString: L("Hidden actions are removed from the right toolbar."))
+        let noteC = NSTextField(labelWithString: L("Unchecked actions move to the ⋯ menu at the end of the right toolbar."))
         noteC.font = NSFont.systemFont(ofSize: 11)
         noteC.textColor = .secondaryLabelColor
         stack.addArrangedSubview(noteC)

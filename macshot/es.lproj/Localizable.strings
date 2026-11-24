@@ -936,3 +936,8 @@
 "Search" = "Buscar";
 "Close editor when done" = "Cerrar el editor al terminar";
 "What Enter, ⌘C and ⌘S do in the editor, and what Quick Capture does. ⌘C always copies and ⌘S always saves; this adds the rest." = "Lo que hacen Enter, ⌘C y ⌘S en el editor, y la Captura rápida. ⌘C siempre copia y ⌘S siempre guarda; esto agrega lo demás.";
+"Unchecked tools move to the ⋯ menu at the end of the bottom toolbar." = "Las herramientas sin marcar pasan al menú ⋯ al final de la barra de abajo.";
+"Unchecked actions move to the ⋯ menu at the end of the bottom toolbar." = "Las acciones sin marcar pasan al menú ⋯ al final de la barra de abajo.";
+"Unchecked actions move to the ⋯ menu at the end of the right toolbar." = "Las acciones sin marcar pasan al menú ⋯ al final de la barra de la derecha.";
+"More" = "Más";
+"Customize Toolbar…" = "Personalizar barra…";
