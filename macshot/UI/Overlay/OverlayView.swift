@@ -11824,23 +11824,71 @@ extension OverlayView {
         let size = "\(Int((area.width * s).rounded())) × \(Int((area.height * s).rounded()))"
         drawAreaPill(size, centerX: area.midX, edgeY: area.maxY, above: true, k: k, emphasized: true)
         if areaDrag == .none {
-            drawAreaPill(areaHintText(), centerX: area.midX, edgeY: area.minY, above: false, k: k, emphasized: false)
+            drawAreaHint(centerX: area.midX, edgeY: area.minY, k: k)
         }
     }
 
-    fileprivate func areaHintText() -> String {
+    fileprivate func areaHintParts() -> [(key: String, label: String)] {
         func key(_ a: ToolShortcutManager.Action) -> String? {
             let k = ToolShortcutManager.key(for: a)
             return k.isEmpty ? nil : k.uppercased()
         }
-        var parts = ["↩ \(L("Crop"))"]
-        if let h = key(.highlight) { parts.append("\(h) \(L("Spotlight"))") }
-        if let r = key(.rectangle) { parts.append("\(r) \(L("Rectangle"))") }
-        if let o = key(.ellipse) { parts.append("\(o) \(L("Ellipse"))") }
-        if let b = key(.censor) { parts.append("\(b) \(L("Censor"))") }
-        if let a = key(.adjustSelection) { parts.append("\(a) \(L("Fit to content"))") }
-        parts.append("⌘C \(L("Copy"))")
-        return parts.joined(separator: "  ·  ")
+        var parts: [(key: String, label: String)] = [("Enter", L("Crop"))]
+        if let h = key(.highlight) { parts.append((h, L("Spotlight"))) }
+        if let r = key(.rectangle) { parts.append((r, L("Rectangle"))) }
+        if let o = key(.ellipse) { parts.append((o, L("Ellipse"))) }
+        if let b = key(.censor) { parts.append((b, L("Censor"))) }
+        if let a = key(.adjustSelection) { parts.append((a, L("Fit to content"))) }
+        parts.append(("⌘C", L("Copy")))
+        return parts
+    }
+
+    /// Hint row: each key as a small keycap, then its action.
+    fileprivate func drawAreaHint(centerX: CGFloat, edgeY: CGFloat, k: CGFloat) {
+        let keyFont = NSFont.systemFont(ofSize: 10.5 * k, weight: .semibold)
+        let labelFont = NSFont.systemFont(ofSize: 11 * k, weight: .medium)
+        let keyAttrs: [NSAttributedString.Key: Any] = [.font: keyFont, .foregroundColor: NSColor.white]
+        let labelAttrs: [NSAttributedString.Key: Any] = [.font: labelFont,
+                                                          .foregroundColor: NSColor.white.withAlphaComponent(0.85)]
+        let capPadX = 5 * k, capGap = 5 * k, itemGap = 12 * k
+        let padX = 8 * k, padY = 4 * k, gap = 6 * k
+        let parts = areaHintParts()
+        let measured = parts.map { p -> (CGSize, CGSize) in
+            ((p.key as NSString).size(withAttributes: keyAttrs), (p.label as NSString).size(withAttributes: labelAttrs))
+        }
+        let lineH = max(measured.map { max($0.0.height, $0.1.height) }.max() ?? 14 * k, 14 * k)
+        let capH = lineH + 2 * k
+        var contentW: CGFloat = 0
+        for (i, m) in measured.enumerated() {
+            contentW += m.0.width + capPadX * 2 + capGap + m.1.width
+            if i < measured.count - 1 { contentW += itemGap }
+        }
+        let w = contentW + padX * 2, h = capH + padY * 2
+        let vis = visibleRect
+        var y = edgeY - gap - h
+        if y < vis.minY { y = edgeY + gap }
+        let x = max(vis.minX + 4 * k, min(centerX - w / 2, vis.maxX - w - 4 * k))
+        let bg = NSRect(x: x, y: y, width: w, height: h)
+        NSColor.black.withAlphaComponent(0.7).setFill()
+        NSBezierPath(roundedRect: bg, xRadius: h / 2, yRadius: h / 2).fill()
+
+        var cx = bg.minX + padX
+        let capY = bg.minY + padY
+        for (i, p) in parts.enumerated() {
+            let (ks, ls) = measured[i]
+            let cap = NSRect(x: cx, y: capY, width: ks.width + capPadX * 2, height: capH)
+            NSColor.white.withAlphaComponent(0.18).setFill()
+            NSBezierPath(roundedRect: cap, xRadius: 4 * k, yRadius: 4 * k).fill()
+            NSColor.white.withAlphaComponent(0.35).setStroke()
+            let border = NSBezierPath(roundedRect: cap.insetBy(dx: 0.5 * k, dy: 0.5 * k), xRadius: 4 * k, yRadius: 4 * k)
+            border.lineWidth = k
+            border.stroke()
+            (p.key as NSString).draw(at: NSPoint(x: cap.minX + capPadX, y: cap.midY - ks.height / 2),
+                                     withAttributes: keyAttrs)
+            cx = cap.maxX + capGap
+            (p.label as NSString).draw(at: NSPoint(x: cx, y: cap.midY - ls.height / 2), withAttributes: labelAttrs)
+            cx += ls.width + itemGap
+        }
     }
 
     fileprivate func drawAreaPill(_ text: String, centerX: CGFloat, edgeY: CGFloat, above: Bool, k: CGFloat, emphasized: Bool) {
