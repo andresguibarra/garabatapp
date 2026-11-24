@@ -753,6 +753,17 @@ class OverlayView: NSView {
     private var cachedAnnotationLayer: NSImage? = nil
     /// During drag/resize, this holds a cache of all annotations EXCEPT the ones being manipulated.
     private var cachedAnnotationLayerExcludingSelected: NSImage? = nil
+
+    // Arrow connectors (see ArrowConnectors)
+    /// Shape the pointer is on the border of while the Arrow tool is active: shows the "+" dot.
+    private var connectorHover: (shape: Annotation, point: NSPoint)?
+    /// Shape an arrow end will attach to if released now (drawn with a dashed outline).
+    var connectorDropTarget: Annotation? {
+        didSet { if connectorDropTarget !== oldValue { needsDisplay = true } }
+    }
+    /// The arrow whose endpoint is being dragged was attached before the drag,
+    /// so releasing that end on a shape attaches it again.
+    private var connectorResizeCanAttach = false
     private var cachedOpaqueRect: NSRect?  // cached opaque content bounds of screenshotImage
 
     var isTranslating: Bool = false
@@ -1359,6 +1370,8 @@ class OverlayView: NSView {
                 oldCanvas: oldPt, newCanvas: oldPt, radius: max(40, currentStampSize / 2))
         }
 
+        updateConnectorHover(at: point)
+
         // Update cursor on every mouse move
         updateCursorForPoint(point)
 
@@ -1499,6 +1512,10 @@ class OverlayView: NSView {
         // Arrow cursor when mouse is over an open popover
         if PopoverHelper.isMouseInsidePopover {
             NSCursor.arrow.set()
+            return
+        }
+        if connectorHover != nil {
+            NSCursor.crosshair.set()
             return
         }
 
@@ -1961,6 +1978,7 @@ class OverlayView: NSView {
     // MARK: - Drawing
 
     override func draw(_ dirtyRect: NSRect) {
+        resolveArrowConnectors()
         timingMark?("OverlayView.draw begin state=\(state) screenshot=\(screenshotImage != nil) dirty=\(Int(dirtyRect.width))x\(Int(dirtyRect.height)) opaque=\(isOpaque)")
         defer {
             timingMark?("OverlayView.draw end")
@@ -2088,6 +2106,9 @@ class OverlayView: NSView {
                         for annotation in selectedAnnotations {
                             annotation.draw(in: context)
                         }
+                        for arrow in arrowsConnected(toAny: selectedAnnotations) where !isSelected(arrow) {
+                            arrow.draw(in: context)
+                        }
                     } else if drawingHighlightPreview {
                         // Drawing a NEW highlight: draw only pre-dim effects here.
                         // The live union dim and all annotation borders are drawn
@@ -2163,6 +2184,7 @@ class OverlayView: NSView {
             currentAnnotation?.draw(in: context)
             autoMeasurePreview?.draw(in: context)
             context.restoreGraphicsState()
+            drawArrowConnectorOverlays()
 
             // Crop selection rectangle preview
             if isCropDragging && cropDragRect.width > 1 && cropDragRect.height > 1 {
@@ -6931,6 +6953,9 @@ class OverlayView: NSView {
                     let newPt = NSPoint(
                         x: annotationResizeOrigControlPoint.x + dx,
                         y: annotationResizeOrigControlPoint.y + dy)
+                    if annotation.tool == .arrow {
+                        updateConnectorEndpointDrag(annotation, at: canvasPoint)
+                    }
                     switch annotationResizeHandle {
                     case .bottomLeft:
                         var newStart = NSPoint(x: origStart.x + dx, y: origStart.y + dy)
@@ -7229,6 +7254,7 @@ class OverlayView: NSView {
                 // makes "move existing shape" register as an edit).
                 if !didMoveAnnotation {
                     preMoveSnapshots = selectedAnnotations.map { ($0, $0.clone()) }
+                    detachArrowsMovedWithoutTheirShapes()
                 }
                 let rawDx = canvasPoint.x - annotationDragStart.x
                 let rawDy = canvasPoint.y - annotationDragStart.y
@@ -7399,6 +7425,7 @@ class OverlayView: NSView {
         }
         if isResizingAnnotation {
             isResizingAnnotation = false
+            finishConnectorEndpointDrag()
             commitAnnotationManipulationUndo()
             cachedAnnotationLayerExcludingSelected = nil
             cachedAnnotationLayer = nil
@@ -9452,6 +9479,24 @@ class OverlayView: NSView {
             }
         }
 
+        // Arrow tool on a shape's border: start an arrow attached to that shape.
+        if currentTool == .arrow && !drawThrough,
+           let hover = ArrowConnectors.hoverTarget(in: annotations, at: point, threshold: connectorHoverThreshold,
+                                                  excluding: selectedAnnotation),
+           let handler = toolHandlers[.arrow], let annotation = handler.start(at: point, canvas: self) {
+            if !selectedAnnotations.isEmpty { selectedAnnotations = [] }
+            annotation.connectedStartID = hover.shape.connectorID
+            annotation.startPoint = ArrowConnectors.borderPoint(of: hover.shape, toward: point) ?? hover.point
+            annotation.endPoint = point
+            if UserDefaults.standard.bool(forKey: "annotationOutlineEnabled") {
+                annotation.outlineColor = ToolOptionsRowView.savedOutlineColor
+            }
+            connectorHover = nil
+            currentAnnotation = annotation
+            needsDisplay = true
+            return
+        }
+
         // Click-to-select body: Ctrl+click adds/removes from multi-selection
         // (consistent with Ctrl+drag for lasso). Shift is reserved for angle/shape
         // constraining during drawing.
@@ -9504,7 +9549,7 @@ class OverlayView: NSView {
                         preMoveSnapshots = [(clicked, clicked.clone())]
                         loupeSourceDragStart = point
                         loupeSourceDragOrig = src
-                        cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+                        cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
                         NSCursor.closedHand.set()
                         needsDisplay = true
                         return
@@ -9515,7 +9560,7 @@ class OverlayView: NSView {
                 didMoveAnnotation = false
                 annotationDragStart = point
                 // Build cache of non-selected annotations for fast drag rendering
-                cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+                cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
                 NSCursor.closedHand.set()
                 needsDisplay = true
                 return
@@ -9565,7 +9610,7 @@ class OverlayView: NSView {
                         self.didMoveAnnotation = false
                         self.annotationDragStart = point
                         // Build cache of non-selected annotations for fast drag rendering
-                        self.cachedAnnotationLayerExcludingSelected = self.buildAnnotationLayer(excluding: Set(self.selectedAnnotations.map { ObjectIdentifier($0) }))
+                        self.cachedAnnotationLayerExcludingSelected = self.buildAnnotationLayer(excluding: self.dragLayerExclusions())
                         // Cancel any in-progress pencil stroke
                         self.currentAnnotation = nil
                         NSCursor.closedHand.set()
@@ -9692,7 +9737,7 @@ class OverlayView: NSView {
             preMoveSnapshots = [(selected, selected.clone())]
             loupeSourceDragStart = point
             loupeSourceDragOrig = selected.loupeSourceRect ?? .zero
-            cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+            cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
             NSCursor.closedHand.set()
             needsDisplay = true
             return true
@@ -9705,8 +9750,9 @@ class OverlayView: NSView {
                 // Snapshot for undo + change detection (resize records an edit).
                 preMoveSnapshots = [(selected, selected.clone())]
                 // Build cache of non-selected annotations for fast resize rendering
-                cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+                cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
                 annotationResizeHandle = handle
+                connectorResizeCanAttach = selected.tool == .arrow && selected.hasConnector
                 annotationResizeOrigStart = selected.startPoint
                 annotationResizeOrigEnd = selected.endPoint
                 annotationResizeOrigTextOrigin = selected.textDrawRect.origin
@@ -9740,7 +9786,7 @@ class OverlayView: NSView {
             isRotatingAnnotation = true
             // Snapshot for undo + change detection (rotate records an edit).
             preMoveSnapshots = [(selected, selected.clone())]
-            cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+            cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
             let center = NSPoint(x: selected.boundingRect.midX, y: selected.boundingRect.midY)
             rotationStartAngle = atan2(point.x - center.x, point.y - center.y)
             rotationOriginal = selected.rotation
@@ -9750,6 +9796,7 @@ class OverlayView: NSView {
         }
         // Check edit button (text annotations only)
         if selected.tool == .text && annotationEditButtonRect != .zero && annotationEditButtonRect.contains(point) {
+            textEditor.editingAnnotation = selected
             textEditor.restoreState(from: selected)
             if let idx = annotations.firstIndex(where: { $0 === selected }) {
                 annotations.remove(at: idx)
@@ -9801,7 +9848,7 @@ class OverlayView: NSView {
                 didMoveAnnotation = false
                 loupeSourceDragStart = point
                 loupeSourceDragOrig = src
-                cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+                cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
                 NSCursor.closedHand.set()
                 needsDisplay = true
                 return true
@@ -9812,7 +9859,7 @@ class OverlayView: NSView {
             isDraggingAnnotation = true
             didMoveAnnotation = false
             annotationDragStart = point
-            cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: Set(selectedAnnotations.map { ObjectIdentifier($0) }))
+            cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
             NSCursor.closedHand.set()
             needsDisplay = true
             return true
@@ -10501,8 +10548,9 @@ class OverlayView: NSView {
               let pasted = AnnotationSerializer.decode(data) else { return }
         selectedAnnotations = []
         var newAnnotations: [Annotation] = []
-        for ann in pasted {
-            let copy = ann.clone()
+        let copies = pasted.map { $0.clone() }
+        ArrowConnectors.reassignIdentities(copies)
+        for copy in copies {
             copy.move(dx: 15, dy: -15)
             annotations.append(copy)
             undoStack.append(.added(copy))
@@ -10596,8 +10644,9 @@ class OverlayView: NSView {
         // with unrelated entries, e.g. auto-redact groups).
         let groupID = toDuplicate.count > 1 ? UUID() : nil
         var newAnnotations: [Annotation] = []
-        for ann in toDuplicate {
-            let copy = ann.clone()
+        let copies = toDuplicate.map { $0.clone() }
+        ArrowConnectors.reassignIdentities(copies)
+        for copy in copies {
             copy.groupID = groupID
             copy.move(dx: 15, dy: -15)
             annotations.append(copy)
@@ -10656,6 +10705,7 @@ class OverlayView: NSView {
         if (a.anchorPoints ?? []) != (b.anchorPoints ?? []) { return true }
         if a.textDrawRect != b.textDrawRect { return true }
         if a.loupeSourceRect != b.loupeSourceRect { return true }
+        if a.connectedStartID != b.connectedStartID || a.connectedEndID != b.connectedEndID { return true }
         if abs(a.loupeMagnification - b.loupeMagnification) > 0.0001 { return true }
         return false
     }
@@ -10931,6 +10981,7 @@ class OverlayView: NSView {
     /// Render screenshot + all existing annotations into a full-size image.
     /// Used as source for pixelate/blur so they operate on the composited result.
     func compositedImage() -> NSImage? {
+        resolveArrowConnectors()
         if let cached = cachedCompositedImage { return cached }
         guard let screenshot = captureSourceImage ?? screenshotImage else { return nil }
         if annotations.isEmpty { return screenshot }
@@ -11010,6 +11061,7 @@ class OverlayView: NSView {
     }
 
     private func renderSelectedRegion(includeAnnotations: Bool) -> NSImage? {
+        resolveArrowConnectors()
         guard selectionRect.width > 0, selectionRect.height > 0 else { return nil }
 
         let scale = captureRenderScale
@@ -11505,6 +11557,160 @@ extension OverlayView {
         let processed = ImageEffects.apply(to: screenshot, config: config)
         cachedEffectsScreenshot = processed
         return processed
+    }
+}
+
+// MARK: - Arrow connectors
+
+extension OverlayView {
+    /// How close (canvas points) the pointer must be to a shape's border to show the "+".
+    var connectorHoverThreshold: CGFloat { 10 / max(zoomLevel, 0.1) }
+
+    /// Snap every attached arrow end to its shape's current geometry.
+    func resolveArrowConnectors() {
+        var all = annotations
+        if let current = currentAnnotation, current.tool == .arrow { all.append(current) }
+        guard ArrowConnectors.resolve(all) else { return }
+        // A shape moved under its arrows: drop the caches that still show the old ends.
+        cachedCompositedImage = nil
+    }
+
+    /// Arrows with an end attached to any of `shapes`.
+    func arrowsConnected(toAny shapes: [Annotation]) -> [Annotation] {
+        let ids = Set(shapes.map(\.connectorID))
+        guard !ids.isEmpty else { return [] }
+        return annotations.filter { a in
+            a.tool == .arrow
+                && (a.connectedStartID.map(ids.contains) == true || a.connectedEndID.map(ids.contains) == true)
+        }
+    }
+
+    /// Annotations drawn live (not from the cached layer) while the selection is
+    /// dragged or resized: the selection plus the arrows attached to it.
+    func dragLayerExclusions() -> Set<ObjectIdentifier> {
+        var ids = Set(selectedAnnotations.map { ObjectIdentifier($0) })
+        for arrow in arrowsConnected(toAny: selectedAnnotations) { ids.insert(ObjectIdentifier(arrow)) }
+        return ids
+    }
+
+    /// Show the "+" on a shape's border while the Arrow tool is active.
+    func updateConnectorHover(at viewPoint: NSPoint) {
+        var next: (shape: Annotation, point: NSPoint)?
+        if state == .selected && currentTool == .arrow && !isRecording && currentAnnotation == nil
+            && !startsInSelectionMoveMode && !NSEvent.modifierFlags.contains(.option) {
+            let canvasPoint = viewToCanvas(viewPoint)
+            // A selected shape keeps its own handles and drag; the "+" is for the others.
+            next = ArrowConnectors.hoverTarget(in: annotations, at: canvasPoint, threshold: connectorHoverThreshold,
+                                               excluding: selectedAnnotation)
+        }
+        let old = connectorHover?.point
+        guard old != next?.point || connectorHover?.shape !== next?.shape else { return }
+        connectorHover = next
+        invalidateConnectorDot(old)
+        invalidateConnectorDot(next?.point)
+    }
+
+    private func invalidateConnectorDot(_ canvasPoint: NSPoint?) {
+        guard let p = canvasPoint else { return }
+        let v = canvasToView(p)
+        let r = (connectorDotRadius + 4) * zoomLevel
+        setNeedsDisplay(NSRect(x: v.x - r, y: v.y - r, width: r * 2, height: r * 2))
+    }
+
+    private var connectorDotRadius: CGFloat { 9 / max(zoomLevel, 0.1) }
+
+    /// The "+" dot and the dashed outline of the shape an arrow end will attach to.
+    func drawArrowConnectorOverlays() {
+        guard let context = NSGraphicsContext.current else { return }
+        let showDot = connectorHover != nil && currentTool == .arrow && currentAnnotation == nil
+        let showTarget = connectorDropTarget != nil && (currentAnnotation != nil || isResizingAnnotation)
+        guard showDot || showTarget else { return }
+        // Called inside draw() while the canvas transform is still applied.
+        context.saveGraphicsState()
+        let accent = ToolbarLayout.accentColor
+        let z = max(zoomLevel, 0.1)
+        if showTarget, let target = connectorDropTarget, let outline = ArrowConnectors.outline(of: target) {
+            let pad = 5 / z
+            let path: NSBezierPath
+            switch outline {
+            case .circle(let c, let radius):
+                let rr = radius + pad
+                path = NSBezierPath(ovalIn: NSRect(x: c.x - rr, y: c.y - rr, width: rr * 2, height: rr * 2))
+            case .rect(let rect, let rotation), .ellipse(let rect, let rotation):
+                let grown = rect.insetBy(dx: -pad, dy: -pad)
+                if case .ellipse = outline {
+                    path = NSBezierPath(ovalIn: grown)
+                } else {
+                    path = NSBezierPath(roundedRect: grown, xRadius: 6 / z, yRadius: 6 / z)
+                }
+                if rotation != 0 {
+                    var t = AffineTransform(translationByX: rect.midX, byY: rect.midY)
+                    t.rotate(byRadians: rotation)
+                    t.translate(x: -rect.midX, y: -rect.midY)
+                    path.transform(using: t)
+                }
+            }
+            path.lineWidth = 2 / z
+            path.setLineDash([5 / z, 4 / z], count: 2, phase: 0)
+            accent.setStroke()
+            path.stroke()
+        }
+        if showDot, let hover = connectorHover {
+            let p = hover.point
+            let r = connectorDotRadius
+            accent.setFill()
+            NSBezierPath(ovalIn: NSRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)).fill()
+            let plus = NSBezierPath()
+            let arm = r * 0.45
+            plus.move(to: NSPoint(x: p.x - arm, y: p.y)); plus.line(to: NSPoint(x: p.x + arm, y: p.y))
+            plus.move(to: NSPoint(x: p.x, y: p.y - arm)); plus.line(to: NSPoint(x: p.x, y: p.y + arm))
+            plus.lineWidth = 2.2 / z
+            plus.lineCapStyle = .round
+            NSColor.white.setStroke()
+            plus.stroke()
+        }
+        context.restoreGraphicsState()
+    }
+
+    /// Dragging one end of an arrow frees that end; over a shape it shows where it would attach.
+    func updateConnectorEndpointDrag(_ arrow: Annotation, at canvasPoint: NSPoint) {
+        let isStart: Bool
+        switch annotationResizeHandle {
+        case .bottomLeft: isStart = true
+        case .topRight: isStart = false
+        default: return
+        }
+        if isStart { arrow.connectedStartID = nil } else { arrow.connectedEndID = nil }
+        guard connectorResizeCanAttach else { return }
+        let other = isStart ? arrow.connectedEndID : arrow.connectedStartID
+        connectorDropTarget = ArrowConnectors.dropTarget(
+            in: annotations, at: canvasPoint, margin: 6 / max(zoomLevel, 0.1),
+            excluding: Set([other].compactMap { $0 }))
+    }
+
+    /// Releasing a dragged arrow end over a shape attaches it there.
+    func finishConnectorEndpointDrag() {
+        defer {
+            connectorDropTarget = nil
+            connectorResizeCanAttach = false
+        }
+        guard let arrow = selectedAnnotation, arrow.tool == .arrow, let target = connectorDropTarget else { return }
+        switch annotationResizeHandle {
+        case .bottomLeft: arrow.connectedStartID = target.connectorID
+        case .topRight: arrow.connectedEndID = target.connectorID
+        default: return
+        }
+        resolveArrowConnectors()
+    }
+
+    /// An arrow dragged on its own leaves the shapes it was attached to (otherwise
+    /// it would snap straight back). Ends whose shape moves with it stay attached.
+    func detachArrowsMovedWithoutTheirShapes() {
+        let moving = Set(selectedAnnotations.map(\.connectorID))
+        for arrow in selectedAnnotations where arrow.tool == .arrow && arrow.hasConnector {
+            if let id = arrow.connectedStartID, !moving.contains(id) { arrow.connectedStartID = nil }
+            if let id = arrow.connectedEndID, !moving.contains(id) { arrow.connectedEndID = nil }
+        }
     }
 }
 

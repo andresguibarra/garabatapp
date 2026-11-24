@@ -414,6 +414,8 @@ class TextEditingController {
             annotation.textAlignment = alignment
             annotation.textImage = img
             annotation.textDrawRect = canvasFrame
+            // Re-edited text keeps its identity so attached arrows stay attached.
+            if let original = editingAnnotation { annotation.connectorID = original.connectorID }
             canvas.annotations.append(annotation)
             canvas.undoStack.append(.added(annotation))
             canvas.redoStack.removeAll()

@@ -54,6 +54,9 @@ protocol AnnotationCanvas: AnyObject {
     /// The annotation currently being drawn (nil when idle).
     var activeAnnotation: Annotation? { get set }
 
+    /// Shape an arrow end will attach to if released now (nil = free end).
+    var connectorDropTarget: Annotation? { get set }
+
     // Canvas geometry
     var selectionRect: NSRect { get }
     var captureDrawRect: NSRect { get }
