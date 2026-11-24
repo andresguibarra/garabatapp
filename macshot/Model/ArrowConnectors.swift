@@ -15,8 +15,9 @@ import Cocoa
 /// Pure geometry: no view state, so it is unit tested directly.
 enum ArrowConnectors {
 
-    /// Visible space between an attached arrow end and the shape's drawn edge.
-    static let gap: CGFloat = 3
+    /// Extra space between an attached arrow end and the shape's drawn edge.
+    /// 0: the arrow's cap or tip just touches the outside of the stroke.
+    static let gap: CGFloat = 0
 
     /// How far a shape's paint reaches outside its geometric outline: half its
     /// stroke (strokes are centered on the outline), its outline ring, the text
