@@ -2234,7 +2234,7 @@ extension ToolOptionsRowView {
 
     /// -1 for [, +1 for ], nil otherwise. Uses the character the layout actually
     /// typed, so layouts that need ⌥ or ⇧ for brackets (Spanish, German, …) work,
-    /// plus the physical US bracket keys with no modifiers as a fallback.
+    /// and the bracket keys with or without ⌥.
     private static func bracketDirection(for event: NSEvent) -> Double? {
         let mods = KeyboardShortcutMatcher.modifiers(in: event)
         guard mods.subtracting([.option, .shift]).isEmpty else { return nil }
@@ -2243,9 +2243,18 @@ extension ToolOptionsRowView {
         case "]": return 1
         default: break
         }
-        guard mods.isEmpty else { return nil }
-        if KeyboardShortcutMatcher.matches(event, character: "[", modifiers: []) { return -1 }
-        if KeyboardShortcutMatcher.matches(event, character: "]", modifiers: []) { return 1 }
+        // The bracket keys themselves, with or without ⌥ (so they still work while
+        // the ⌥ badges are showing; on US ⌥ turns them into “ and ‘).
+        guard mods.subtracting(.option).isEmpty else { return nil }
+        switch KeyboardShortcutMatcher.semanticCharacter(for: event) {
+        case "[": return -1
+        case "]": return 1
+        default: break
+        }
+        // ⌥ can turn the bracket keys into other characters: fall back to the
+        // physical keys, but only with ⌥ held so a plain letter key (ü on German)
+        // never moves a slider.
+        guard mods == [.option] else { return nil }
         switch event.keyCode {
         case 33: return -1
         case 30: return 1
