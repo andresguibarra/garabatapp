@@ -1315,12 +1315,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     private var pendingActiveWindow: (id: CGWindowID, rect: NSRect)?
 
     @objc private func captureActiveWindowFromHotkey() {
-        // Read the target before the overlay takes focus. No suitable window
-        // (our own app in front, desktop only): fall back to a normal capture.
-        let target = Self.frontmostWindowTarget()
         guard prepareToStartCapture() else { return }
-        pendingActiveWindow = target
-        startCapture(fromMenu: false)
+        // No suitable window (desktop only): fall back to a normal capture.
+        guard let target = Self.frontmostWindowTarget() else {
+            startCapture(fromMenu: false)
+            return
+        }
+        // No overlay: grab the window on its own and open it in the editor.
+        let center = NSPoint(x: target.rect.midX, y: target.rect.midY)
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(center) }) ?? NSScreen.main
+        else { return }
+        isCapturing = true
+        Task { @MainActor [weak self] in
+            let cgImage = await ScreenCaptureManager.captureWindow(windowID: target.id, screen: screen)
+            self?.isCapturing = false
+            guard let cgImage else { NSSound.beep(); return }
+            let scale = screen.backingScaleFactor
+            let image = NSImage(cgImage: cgImage,
+                                size: NSSize(width: CGFloat(cgImage.width) / scale,
+                                             height: CGFloat(cgImage.height) / scale))
+            DetachedEditorWindowController.open(image: image, fromCapture: true)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     /// Frontmost normal window of the frontmost app, this app included
