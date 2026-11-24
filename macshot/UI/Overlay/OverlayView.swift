@@ -10747,32 +10747,30 @@ class OverlayView: NSView {
 
     /// Garabatapp: select a whole window as if it had been snapped and clicked,
     /// so it is captured on its own (transparent corners, nothing on top).
+    /// The window image is grabbed first, then the capture opens straight in
+    /// the editor, ready to annotate.
     func applyWindowSnapSelection(windowID: CGWindowID, screenRect: NSRect) {
         guard let win = window else { return }
         let viewRect = NSRect(x: screenRect.minX - win.frame.minX, y: screenRect.minY - win.frame.minY,
                               width: screenRect.width, height: screenRect.height).intersection(bounds)
         guard !viewRect.isEmpty else { return }
-        let opensEditor = UserDefaults.standard.bool(forKey: "openEditorAfterSelection")
-            && !autoEnterRecordingMode && !autoOCRMode && !autoTranslateOverlayMode
-            && !autoQuickSaveMode && !autoScrollCaptureMode && !autoConfirmMode
         selectionRect = viewRect
         selectionStart = viewRect.origin
         selectionIsWindowSnap = true
         snappedWindowID = windowID
-        if let screen = win.screen {
-            Task {
-                if let cgImage = await ScreenCaptureManager.captureWindow(windowID: windowID, screen: screen) {
-                    self.snappedWindowImage = NSImage(cgImage: cgImage,
-                        size: NSSize(width: CGFloat(cgImage.width) / screen.backingScaleFactor,
-                                     height: CGFloat(cgImage.height) / screen.backingScaleFactor))
-                    self.needsDisplay = true
-                }
-            }
-        }
         state = .selected
-        if !hasPendingSelectionAction && !opensEditor { showToolbars = true }
         overlayDelegate?.overlayViewDidFinishSelection(selectionRect)
         needsDisplay = true
+        let screen = win.screen
+        Task {
+            if let screen, let cgImage = await ScreenCaptureManager.captureWindow(windowID: windowID, screen: screen) {
+                self.snappedWindowImage = NSImage(cgImage: cgImage,
+                    size: NSSize(width: CGFloat(cgImage.width) / screen.backingScaleFactor,
+                                 height: CGFloat(cgImage.height) / screen.backingScaleFactor))
+            }
+            guard self.state == .selected, self.snappedWindowID == windowID else { return }
+            self.overlayDelegate?.overlayViewDidRequestDetach()
+        }
     }
 
     func applyFullScreenSelection() {

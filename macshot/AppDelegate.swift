@@ -1323,16 +1323,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         startCapture(fromMenu: false)
     }
 
-    /// Frontmost normal window of the frontmost app that is not this app.
+    /// Frontmost normal window of the frontmost app. When this app is in front
+    /// (e.g. Settings is open), the topmost window of any other app instead.
     private static func frontmostWindowTarget() -> (id: CGWindowID, rect: NSRect)? {
-        guard let app = NSWorkspace.shared.frontmostApplication,
-              app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
-              let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
+        guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
                                                     kCGNullWindowID) as? [[String: Any]]
         else { return nil }
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        let frontPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        let wantedPID: pid_t? = (frontPID == ownPID) ? nil : frontPID
         let screenH = NSScreen.screens.first?.frame.height ?? 0
         for info in list {
-            guard (info[kCGWindowOwnerPID as String] as? pid_t) == app.processIdentifier,
+            guard let owner = info[kCGWindowOwnerPID as String] as? pid_t, owner != ownPID,
+                  wantedPID == nil || owner == wantedPID,
                   (info[kCGWindowLayer as String] as? Int) == 0,
                   ((info[kCGWindowAlpha as String] as? Double) ?? 1) > 0,
                   let number = info[kCGWindowNumber as String] as? Int,
