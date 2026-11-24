@@ -27,6 +27,11 @@ sleep 1
 echo "▶ Instalando en ${DEST}…"
 rm -rf "${DEST}"
 ditto "${APP}" "${DEST}"
+
+# Refrescar caché de íconos (Dock / Finder)
+touch "${DEST}"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "${DEST}" || true
+killall Dock 2>/dev/null || true
 echo "✓ Copiada a ${DEST}"
 
 echo "▶ Abriendo ${APP_NAME}…"
