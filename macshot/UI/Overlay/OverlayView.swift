@@ -768,6 +768,11 @@ class OverlayView: NSView {
 
     // Crop tool state
     private var isCropDragging: Bool = false
+    /// Garabatapp: while a gesture runs past the image, the canvas area shown
+    /// (and filled) before the growth is committed on mouse-up. Canvas coords.
+    var liveCanvasExtent: NSRect?
+    private var cachedFillColorImage: ObjectIdentifier?
+    private var cachedFillColor: NSColor?
     /// Garabatapp: Shottr-style area (editor, Select and Crop tools), canvas coords.
     var areaRect: NSRect? { didSet { if areaRect != oldValue { needsDisplay = true } } }
     fileprivate var areaDrag: AreaDrag = .none
@@ -1837,6 +1842,10 @@ class OverlayView: NSView {
     /// plus image stamps (the canvas grows to fit those when a drag ends).
     private func clipToEditorCanvasContent() {
         guard isEditorMode else { return }
+        if let live = liveCanvasExtent {
+            NSBezierPath(rect: live).addClip()
+            return
+        }
         let imageStamps = annotations.filter { $0.tool == .stamp && $0.stampImage != nil }
         // With an image stamp the canvas grows to fit everything once a drag
         // ends, so whatever is being dragged must not look cut off meanwhile.
@@ -4072,6 +4081,13 @@ class OverlayView: NSView {
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
         ) else { return }
 
+        // Garabatapp: the new area takes the capture's border color (Shottr-like).
+        if !hasImageStamps, let fill = canvasFillColor() {
+            ctx.setFillColor(fill.cgColor)
+            ctx.fill(CGRect(x: 0, y: 0, width: newPxW, height: newPxH))
+        }
+        liveCanvasExtent = nil
+
         // Draw old image offset so that targetRect.origin maps to (0,0)
         let drawX = -targetRect.origin.x * scale
         let drawY = -targetRect.origin.y * scale
@@ -4151,7 +4167,102 @@ class OverlayView: NSView {
             base = ann.boundingRect.insetBy(dx: -pad, dy: -pad)
         }
         guard base.width > 0 || base.height > 0 else { return nil }
-        return rotatedBounds(base, by: ann)
+        var r = rotatedBounds(base, by: ann)
+        // Shottr-like breathing room on the sides that leave the image.
+        let pad: CGFloat = 20
+        if r.minX < image.minX { r.origin.x -= pad; r.size.width += pad }
+        if r.maxX > image.maxX { r.size.width += pad }
+        if r.minY < image.minY { r.origin.y -= pad; r.size.height += pad }
+        if r.maxY > image.maxY { r.size.height += pad }
+        return r
+    }
+
+    /// Dominant color of the capture's four borders (similar colors grouped),
+    /// or nil when its corner is transparent (window shadow): then the new
+    /// area stays transparent.
+    func canvasFillColor() -> NSColor? {
+        guard let img = screenshotImage,
+              let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let id = ObjectIdentifier(img)
+        if cachedFillColorImage == id { return cachedFillColor }
+        let w = cg.width, h = cg.height
+        var result: NSColor? = nil
+        if w > 1, h > 1,
+           let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                               space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
+            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+            if let raw = ctx.data {
+                let d = raw.bindMemory(to: UInt8.self, capacity: w * h * 4)
+                if d[3] >= 250 {
+                    var buckets: [Int: (n: Int, r: Int, g: Int, b: Int)] = [:]
+                    func add(_ x: Int, _ y: Int) {
+                        let i = (y * w + x) * 4
+                        let r = Int(d[i]), g = Int(d[i + 1]), b = Int(d[i + 2])
+                        let key = (r >> 4) << 8 | (g >> 4) << 4 | (b >> 4)
+                        let cur = buckets[key] ?? (0, 0, 0, 0)
+                        buckets[key] = (cur.n + 1, cur.r + r, cur.g + g, cur.b + b)
+                    }
+                    for x in 0..<w { add(x, 0); add(x, h - 1) }
+                    for y in 0..<h { add(0, y); add(w - 1, y) }
+                    if let best = buckets.values.max(by: { $0.n < $1.n }), best.n > 0 {
+                        result = NSColor(srgbRed: CGFloat(best.r) / CGFloat(best.n) / 255,
+                                         green: CGFloat(best.g) / CGFloat(best.n) / 255,
+                                         blue: CGFloat(best.b) / CGFloat(best.n) / 255, alpha: 1)
+                    }
+                }
+            }
+        }
+        cachedFillColorImage = id
+        cachedFillColor = result
+        return result
+    }
+
+    /// Show the canvas growing while a gesture runs past the image.
+    func updateLiveCanvasExtent() {
+        guard isEditorMode, isInsideScrollView, !beautifyEnabled else { return }
+        guard currentAnnotation != nil || isDraggingAnnotation || isResizingAnnotation || isRotatingAnnotation else { return }
+        if annotations.contains(where: { $0.tool == .stamp && $0.stampImage != nil }) { return }
+        var target = selectionRect
+        var all = annotations
+        if let cur = currentAnnotation { all.append(cur) }
+        for ann in all {
+            if let g = canvasGrowthRect(of: ann, image: selectionRect) { target = target.union(g) }
+        }
+        target = NSRect(x: floor(target.minX), y: floor(target.minY),
+                        width: ceil(target.maxX) - floor(target.minX), height: ceil(target.maxY) - floor(target.minY))
+        let current = liveCanvasExtent ?? selectionRect
+        guard target != current else { return }
+        applyDocumentExtent(target)
+        liveCanvasExtent = target == selectionRect ? nil : target
+        needsDisplay = true
+    }
+
+    /// On mouse-up: commit the growth, or put the document back if nothing grew.
+    func finishLiveCanvasExtent() {
+        guard liveCanvasExtent != nil else { return }
+        expandCanvasToFitAnnotations()  // clears liveCanvasExtent when it grows
+        if liveCanvasExtent != nil {
+            liveCanvasExtent = nil
+            applyDocumentExtent(selectionRect)
+        }
+        needsDisplay = true
+    }
+
+    /// Size the document to `extent` (+ margin) keeping everything where it is
+    /// on screen: when the origin moves, scroll by the same amount.
+    private func applyDocumentExtent(_ extent: NSRect) {
+        guard let sv = enclosingScrollView else { return }
+        let m = Self.editorDocumentMargin
+        let oldOrigin = bounds.origin
+        setFrameSize(NSSize(width: extent.width + 2 * m, height: extent.height + 2 * m))
+        setBoundsOrigin(NSPoint(x: extent.minX - m, y: extent.minY - m))
+        let dx = oldOrigin.x - bounds.origin.x, dy = oldOrigin.y - bounds.origin.y
+        if dx != 0 || dy != 0 {
+            let clip = sv.contentView
+            clip.scroll(to: NSPoint(x: clip.bounds.origin.x + dx, y: clip.bounds.origin.y + dy))
+            sv.reflectScrolledClipView(clip)
+        }
     }
 
     private func rotatedBounds(_ base: NSRect, by ann: Annotation) -> NSRect {
@@ -9333,12 +9444,16 @@ class OverlayView: NSView {
         let outsideCanvas = currentTool != .colorSampler && !selectionRect.contains(point)
             && !toolCanStartOutsideImage(currentTool)
         let pencilHasMultiSelection = isPencilOrMarker && selectedAnnotations.count > 1
+        // Garabatapp: the Text tool still picks up a text to edit it; other
+        // drawing tools draw over annotations (Ctrl+click selects instead).
         let textHitsAnnotation = currentTool == .text
-            && annotations.reversed().contains(where: { $0.isMovable && $0.hitTest(point: point) })
+            && annotations.reversed().contains(where: { $0.tool == .text && $0.isMovable && $0.hitTest(point: point) })
+        let drawingToolDrawsOver = currentTool != .select && currentTool != .text && !isPencilOrMarker
         let useInstantSelect = !drawThrough
             && currentTool != .colorSampler
             && (currentTool != .text || ctrlHeld || textHitsAnnotation || outsideCanvas)
             && (!isPencilOrMarker || ctrlHeld || pencilHasMultiSelection || outsideCanvas)
+            && (!drawingToolDrawsOver || ctrlHeld || outsideCanvas)
         if useInstantSelect {
             if let clicked = annotations.reversed().first(where: { $0.isMovable && $0.hitTest(point: point) }) {
                 shiftClickPendingDeselect = nil
@@ -11474,7 +11589,10 @@ extension OverlayView {
             if currentTool == .select && pointHitsAnnotationInteraction(p) { return nil }
             return .openHand
         default:
-            if currentTool == .select && pointHitsAnnotationInteraction(p) { return nil }
+            if currentTool == .select {
+                if areaDrag == .create { return .crosshair }
+                return pointHitsAnnotationInteraction(p) ? nil : .arrow
+            }
             return selectionRect.contains(p) ? .crosshair : nil
         }
     }
@@ -11503,6 +11621,7 @@ extension OverlayView {
         areaDrag = .create
         areaDragStart = p
         areaRect = nil
+        NSCursor.crosshair.set()  // held while the button is down
         return true
     }
 
@@ -11524,6 +11643,7 @@ extension OverlayView {
     }
 
     func updateAreaDrag(viewPoint: NSPoint, shiftHeld: Bool) {
+        if areaDrag == .create { NSCursor.crosshair.set() }
         let raw = viewToCanvas(viewPoint)
         let b = selectionRect
         let p = NSPoint(x: max(b.minX, min(raw.x, b.maxX)), y: max(b.minY, min(raw.y, b.maxY)))
@@ -11557,6 +11677,7 @@ extension OverlayView {
     func endAreaDrag() {
         let wasCreate = areaDrag == .create
         areaDrag = .none
+        if wasCreate && currentTool == .select { NSCursor.arrow.set() }
         if let a = areaRect, a.width < 3 || a.height < 3 {
             areaRect = nil
         } else if wasCreate && areaRect == nil {
