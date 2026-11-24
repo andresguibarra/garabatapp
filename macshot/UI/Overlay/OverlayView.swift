@@ -1711,7 +1711,22 @@ class OverlayView: NSView {
     }
 
     /// Returns true if the point is over any chrome element (toolbars, options row, popovers, labels).
+    /// Garabatapp: in the editor the toolbars, options row and top bar live in
+    /// the window's content view, over this view; the pointer over them must get
+    /// a plain arrow, not the active tool's cursor.
+    func pointIsUnderEditorChrome(_ point: NSPoint) -> Bool {
+        guard isEditorMode, let parent = chromeParentView, window != nil else { return false }
+        let windowPoint = convert(point, to: nil)
+        let superPoint = parent.superview?.convert(windowPoint, from: nil) ?? windowPoint
+        guard let hit = parent.hitTest(superPoint) else { return false }
+        if hit === parent { return false }
+        if hit === self || hit.isDescendant(of: self) { return false }
+        if let scroll = enclosingScrollView, hit === scroll || hit.isDescendant(of: scroll) { return false }
+        return true
+    }
+
     private func isPointOnChrome(_ point: NSPoint) -> Bool {
+        if pointIsUnderEditorChrome(point) { return true }
         // In editor mode, strips are in chromeParentView — different coordinate space.
         // Don't check them here; they handle their own hit testing as container subviews.
         if showToolbars && !isEditorMode {
