@@ -201,21 +201,21 @@ class EditorTopBarView: NSView {
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: zoomButton.bounds.height + 2), in: zoomButton)
     }
 
-    @objc private func zoomInAction() {
+    @objc func zoomInAction() {
         guard let sv = overlayView?.enclosingScrollView, let doc = sv.documentView else { return }
         let newMag = min(sv.maxMagnification, sv.magnification * 1.25)
         sv.setMagnification(newMag, centeredAt: NSPoint(x: doc.bounds.midX, y: doc.bounds.midY))
         updateZoom(newMag)
     }
 
-    @objc private func zoomOutAction() {
+    @objc func zoomOutAction() {
         guard let sv = overlayView?.enclosingScrollView, let doc = sv.documentView else { return }
         let newMag = max(sv.minMagnification, sv.magnification / 1.25)
         sv.setMagnification(newMag, centeredAt: NSPoint(x: doc.bounds.midX, y: doc.bounds.midY))
         updateZoom(newMag)
     }
 
-    @objc private func fitCanvasAction() {
+    @objc func fitCanvasAction() {
         guard let sv = overlayView?.enclosingScrollView, let doc = sv.documentView else { return }
         let docUnscaledW = doc.frame.width / sv.magnification
         let docUnscaledH = doc.frame.height / sv.magnification
@@ -225,6 +225,13 @@ class EditorTopBarView: NSView {
         let clamped = max(sv.minMagnification, min(sv.maxMagnification, fitMag))
         sv.magnification = clamped
         updateZoom(clamped)
+    }
+
+    /// Garabatapp: View › Actual Size.
+    func zoomToActualSize() {
+        guard let sv = overlayView?.enclosingScrollView else { return }
+        sv.magnification = 1
+        updateZoom(1)
     }
 
     @objc private func zoomPresetAction(_ sender: NSMenuItem) {
