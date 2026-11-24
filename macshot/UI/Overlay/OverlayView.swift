@@ -11631,6 +11631,8 @@ extension OverlayView {
             cachedCompositedImage = nil
             cachedAnnotationLayer = nil
             rebuildToolbarLayout()
+            // Keep the Dim slider in the options row in step.
+            toolOptionsRowView?.rebuild(forAnnotation: sel)
             needsDisplay = true
             return true
         }
