@@ -319,6 +319,10 @@ class OverlayWindowController {
         overlayView?.applySelection(rect)
     }
 
+    func applyWindowSnapSelection(windowID: CGWindowID, screenRect: NSRect) {
+        overlayView?.applyWindowSnapSelection(windowID: windowID, screenRect: screenRect)
+    }
+
     func clearSelection() {
         overlayView?.clearSelection()
     }
