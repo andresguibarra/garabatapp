@@ -9446,6 +9446,8 @@ class OverlayView: NSView {
                 if outlineTools.contains(currentTool) && UserDefaults.standard.bool(forKey: "annotationOutlineEnabled") {
                     annotation.outlineColor = ToolOptionsRowView.savedOutlineColor
                 }
+                // Garabatapp: the previous one (auto-selected) lets go while drawing the next.
+                if !selectedAnnotations.isEmpty { selectedAnnotations = [] }
                 currentAnnotation = annotation
                 needsDisplay = true
             }
@@ -9514,6 +9516,13 @@ class OverlayView: NSView {
     private func finishAnnotation(_ annotation: Annotation) {
         if let handler = toolHandlers[annotation.tool] {
             handler.finish(canvas: self)
+        }
+        // Garabatapp: what you just drew stays selected, so the options row
+        // edits it right away. Drawing again starts a new one as usual.
+        if annotations.last === annotation, annotation.isMovable,
+           annotation.tool != .text, annotation.tool != .colorSampler {
+            selectedAnnotation = annotation
+            needsDisplay = true
         }
     }
 
