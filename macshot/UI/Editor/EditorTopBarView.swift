@@ -281,8 +281,14 @@ class EditorTopBarView: NSView {
         ov.needsDisplay = true
     }
 
-    @objc private func flipHClicked() { overlayView?.flipImageHorizontally() }
-    @objc private func flipVClicked() { overlayView?.flipImageVertically() }
+    @objc private func flipHClicked() {
+        guard let ov = overlayView else { return }
+        EditorFlipAnimator.flip(ov, axis: .horizontal) { ov.flipImageHorizontally() }
+    }
+    @objc private func flipVClicked() {
+        guard let ov = overlayView else { return }
+        EditorFlipAnimator.flip(ov, axis: .vertical) { ov.flipImageVertically() }
+    }
     @objc private func saveProjectClicked() {
         overlayView?.commitTextFieldIfNeeded()
         onSaveProject?()
