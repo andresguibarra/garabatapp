@@ -8638,6 +8638,7 @@ class OverlayView: NSView {
     /// an open NSMenu holds back the app's global capture hotkeys. Arrow keys,
     /// Enter, Esc and each item's own shortcut work like in a menu.
     private func showOverflowMenu(_ items: [ToolbarButton], anchor: NSView?, isBottom: Bool) {
+        if OverflowMenuPanel.closeIfOpen() { return }
         if PopoverHelper.toggleClosedIfOpen() { return }
         guard let anchor, !items.isEmpty else { return }
         var rows: [OverflowMenuItemView] = []
@@ -8656,7 +8657,7 @@ class OverlayView: NSView {
                 title: button.tooltip,
                 icon: symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) },
                 key: key?.uppercased(), checked: button.isSelected) { [weak self] in
-                    PopoverHelper.dismiss()
+                    OverflowMenuPanel.closeIfOpen()
                     self?.handleToolbarAction(action)
                 })
             keys.append(key.map { $0.lowercased() })
@@ -8665,17 +8666,12 @@ class OverlayView: NSView {
             title: L("Customize Toolbar…"),
             icon: NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: nil),
             key: nil, checked: false) { [weak self] in
-                PopoverHelper.dismiss()
+                OverflowMenuPanel.closeIfOpen()
                 self?.overflowMenuOpenSettings()
             })
         keys.append(nil)
         let panel = OverflowPanelView(rows: rows, keys: keys, separatorBeforeLast: true)
-        PopoverHelper.show(panel, size: panel.frame.size, relativeTo: anchor.bounds, of: anchor,
-                           preferredEdge: isBottom ? .maxY : .minX)
-        DispatchQueue.main.async {
-            panel.window?.makeKey()
-            panel.window?.makeFirstResponder(panel)
-        }
+        OverflowMenuPanel.show(panel, anchor: anchor, above: isBottom)
     }
 
     @objc private func overflowMenuOpenSettings() {
@@ -11981,7 +11977,15 @@ final class OverflowPanelView: NSView {
     init(rows: [OverflowMenuItemView], keys: [String?], separatorBeforeLast: Bool) {
         self.rows = rows
         self.keys = keys
-        let pad: CGFloat = 5, sepH: CGFloat = separatorBeforeLast ? 9 : 0
+        let pad: CGFloat = 5
+        defer {
+            setAccessibilityElement(true)
+            setAccessibilityRole(.menu)
+            for r in rows {
+                r.setAccessibilityElement(true)
+                r.setAccessibilityRole(.menuItem)
+            }
+        }, sepH: CGFloat = separatorBeforeLast ? 9 : 0
         let width = rows.map { $0.fittingWidth }.max() ?? 200
         let h = CGFloat(rows.count) * OverflowMenuItemView.rowHeight + pad * 2 + sepH
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: h))
@@ -12013,7 +12017,7 @@ final class OverflowPanelView: NSView {
         case 36, 76, 49:  // Return, Enter, Space
             if let i = selected { rows[i].pick() }
         case 53:  // Esc
-            PopoverHelper.dismiss()
+            OverflowMenuPanel.closeIfOpen()
         default:
             if KeyboardShortcutMatcher.modifiers(in: event).isEmpty,
                let ch = KeyboardShortcutMatcher.semanticCharacter(for: event)?.lowercased(),
@@ -12023,5 +12027,101 @@ final class OverflowPanelView: NSView {
                 super.keyDown(with: event)
             }
         }
+    }
+}
+
+
+/// Borderless window that looks and behaves like a macOS menu (menu material,
+/// rounded corners, shadow; closes on Esc, outside click or switching apps)
+/// but doesn't put the app into menu tracking, so global hotkeys keep working.
+final class OverflowMenuPanel: NSPanel {
+    private static var current: OverflowMenuPanel?
+    private weak var returnFocusTo: NSWindow?
+    private var monitors: [Any] = []
+    private var observers: [NSObjectProtocol] = []
+
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+
+    @discardableResult
+    static func closeIfOpen() -> Bool {
+        guard let panel = current else { return false }
+        let back = panel.returnFocusTo
+        panel.dismiss()
+        back?.makeKey()
+        return true
+    }
+
+    static func show(_ content: OverflowPanelView, anchor: NSView, above: Bool) {
+        current?.dismiss()
+        guard let anchorWindow = anchor.window else { return }
+        let size = content.frame.size
+        let anchorRect = anchorWindow.convertToScreen(anchor.convert(anchor.bounds, to: nil))
+        var origin: NSPoint
+        if above {
+            origin = NSPoint(x: anchorRect.minX, y: anchorRect.maxY + 6)
+        } else {
+            origin = NSPoint(x: anchorRect.minX - size.width - 6, y: anchorRect.maxY - size.height)
+        }
+        if let screen = anchorWindow.screen?.visibleFrame {
+            origin.x = max(screen.minX + 4, min(origin.x, screen.maxX - size.width - 4))
+            origin.y = max(screen.minY + 4, min(origin.y, screen.maxY - size.height - 4))
+        }
+        let panel = OverflowMenuPanel(contentRect: NSRect(origin: origin, size: size),
+                                      styleMask: [.borderless, .nonactivatingPanel],
+                                      backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.level = .popUpMenu
+        panel.isReleasedWhenClosed = false
+        panel.appearance = ToolbarLayout.appearance
+
+        let effect = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
+        effect.material = .menu
+        effect.state = .active
+        effect.blendingMode = .behindWindow
+        effect.wantsLayer = true
+        effect.layer?.cornerRadius = 7
+        effect.layer?.masksToBounds = true
+        effect.layer?.borderWidth = 0.5
+        effect.layer?.borderColor = NSColor.white.withAlphaComponent(0.15).cgColor
+        content.frame = effect.bounds
+        effect.addSubview(content)
+        panel.contentView = effect
+
+        panel.returnFocusTo = anchorWindow
+        current = panel
+        panel.makeKeyAndOrderFront(nil)
+        panel.makeFirstResponder(content)
+        panel.installDismissTriggers()
+    }
+
+    private func installDismissTriggers() {
+        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { [weak self] event in
+            guard let self else { return event }
+            if event.window !== self { self.dismiss() }
+            return event
+        }) { monitors.append(local) }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { _ in
+            DispatchQueue.main.async { OverflowMenuPanel.current?.dismiss() }
+        }) { monitors.append(global) }
+        let nc = NotificationCenter.default
+        observers.append(nc.addObserver(forName: NSWindow.didResignKeyNotification, object: self, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.dismiss() }
+        })
+        observers.append(nc.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.dismiss() }
+        })
+    }
+
+    func dismiss() {
+        for m in monitors { NSEvent.removeMonitor(m) }
+        monitors.removeAll()
+        for o in observers { NotificationCenter.default.removeObserver(o) }
+        observers.removeAll()
+        if OverflowMenuPanel.current === self { OverflowMenuPanel.current = nil }
+        orderOut(nil)
     }
 }
