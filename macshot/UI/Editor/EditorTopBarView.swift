@@ -34,7 +34,9 @@ class EditorTopBarView: NSView {
         toolButtons = [cropBtn, flipHBtn, flipVBtn, addCaptureBtn, saveProjectBtn]
 
         // Zoom dropdown button
-        zoomButton = NSButton()
+        let zoom = TopBarHoverButton()
+        zoom.quickTooltip = L("Zoom")
+        zoomButton = zoom
         zoomButton.bezelStyle = .recessed
         zoomButton.isBordered = false
         zoomButton.title = "100% ▾"
@@ -42,7 +44,6 @@ class EditorTopBarView: NSView {
         zoomButton.contentTintColor = ToolbarLayout.iconColor.withAlphaComponent(0.45)
         zoomButton.target = self
         zoomButton.action = #selector(zoomButtonClicked)
-        zoomButton.toolTip = L("Zoom")
 
         // Bottom border
         let border = bottomBorder
@@ -131,13 +132,14 @@ class EditorTopBarView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func makeButton(_ symbol: String, tooltip: String, action: Selector) -> NSButton {
-        let btn = NSButton()
+        let btn = TopBarHoverButton()
         btn.bezelStyle = .recessed
         btn.isBordered = false
         btn.image = NSImage(systemSymbolName: symbol, accessibilityDescription: tooltip)?
             .withSymbolConfiguration(.init(pointSize: 13, weight: .medium))
         btn.contentTintColor = ToolbarLayout.iconColor.withAlphaComponent(0.85)
-        btn.toolTip = tooltip
+        btn.quickTooltip = tooltip
+        btn.setAccessibilityHelp(tooltip)
         btn.target = self
         btn.action = action
         return btn
@@ -290,5 +292,124 @@ class EditorTopBarView: NSView {
 
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .arrow)
+    }
+}
+
+/// Top bar icon button with the same hover highlight as the tool strips and a
+/// custom tooltip that appears almost immediately (the system one waits ~1 s).
+final class TopBarHoverButton: NSButton {
+    var quickTooltip: String?
+    private var trackingArea: NSTrackingArea?
+    private var isHovered = false { didSet { if isHovered != oldValue { needsDisplay = true } } }
+    private var showWork: DispatchWorkItem?
+    private static let showDelay: TimeInterval = 0.1
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(rect: .zero,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+            owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        scheduleTooltip()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        hideTooltip()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        hideTooltip()
+        super.mouseDown(with: event)
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil {
+            hideTooltip()
+            isHovered = false
+        }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        if isHovered {
+            ToolbarLayout.iconColor.withAlphaComponent(0.12).setFill()
+            NSBezierPath(roundedRect: bounds, xRadius: 5, yRadius: 5).fill()
+        }
+        super.draw(dirtyRect)
+    }
+
+    private func scheduleTooltip() {
+        showWork?.cancel()
+        guard let text = quickTooltip, !text.isEmpty else { return }
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.isHovered else { return }
+            TopBarTooltipView.show(text, below: self)
+        }
+        showWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.showDelay, execute: work)
+    }
+
+    private func hideTooltip() {
+        showWork?.cancel()
+        showWork = nil
+        TopBarTooltipView.hide(owner: self)
+    }
+}
+
+/// Small floating label drawn in the window's content view, under the hovered button.
+final class TopBarTooltipView: NSView {
+    private static weak var current: TopBarTooltipView?
+    private weak var owner: NSView?
+    private var text = ""
+    private static let font = NSFont.systemFont(ofSize: 11, weight: .medium)
+    private static let pad: CGFloat = 6
+
+    static func show(_ text: String, below button: NSView) {
+        guard let content = button.window?.contentView else { return }
+        current?.removeFromSuperview()
+        let attrs: [NSAttributedString.Key: Any] = [.font: font]
+        let size = (text as NSString).size(withAttributes: attrs)
+        let w = ceil(size.width) + pad * 2
+        let h = ceil(size.height) + pad
+        let btnRect = button.convert(button.bounds, to: content)
+        var x = btnRect.midX - w / 2
+        x = max(content.bounds.minX + 4, min(x, content.bounds.maxX - w - 4))
+        // Below the button (AppKit is bottom-left origin).
+        var y = btnRect.minY - h - 6
+        if content.isFlipped { y = btnRect.maxY + 6 }
+        let tip = TopBarTooltipView(frame: NSRect(x: x, y: y, width: w, height: h))
+        tip.text = text
+        tip.owner = button
+        content.addSubview(tip, positioned: .above, relativeTo: nil)
+        current = tip
+    }
+
+    static func hide(owner: NSView) {
+        guard let tip = current, tip.owner === owner else { return }
+        tip.removeFromSuperview()
+        current = nil
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        ToolbarLayout.bgColor.setFill()
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
+        path.fill()
+        ToolbarLayout.iconColor.withAlphaComponent(0.18).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: Self.font,
+            .foregroundColor: ToolbarLayout.iconColor,
+        ]
+        (text as NSString).draw(at: NSPoint(x: Self.pad, y: Self.pad / 2), withAttributes: attrs)
     }
 }
