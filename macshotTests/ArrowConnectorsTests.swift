@@ -105,9 +105,26 @@ final class ArrowConnectorsTests: XCTestCase {
 
         b.move(dx: 0, dy: 200)
         XCTAssertTrue(ArrowConnectors.resolve([a, b, link]))
-        // From a's center (50,50) toward b's center (350,250): exits through a's right edge.
-        XCTAssertEqual(link.startPoint.x, 100 + startGap, accuracy: 0.01, "the gap is measured across the edge")
+        // Diagonal neighbours: the connector runs corner to corner, each end
+        // touching its shape's paint (1 pt stroke) with its own reach.
         XCTAssertGreaterThan(link.endPoint.y, link.startPoint.y)
+        XCTAssertFalse(ArrowConnectors.contains(a, point: link.startPoint, margin: 0.99))
+        XCTAssertTrue(ArrowConnectors.contains(a, point: link.startPoint, margin: 1.01))
+        XCTAssertTrue(ArrowConnectors.contains(b, point: link.endPoint, margin: 0.01))
+    }
+
+    func testFacingShapesGetAStraightConnector() {
+        // Boxes side by side, one a bit higher: the arrow runs straight across
+        // their shared height instead of slanting between the centers.
+        let a = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
+        let b = rect(NSRect(x: 300, y: 40, width: 100, height: 100))
+        let link = arrow(.zero, .zero)
+        link.connectedStartID = a.connectorID
+        link.connectedEndID = b.connectorID
+        ArrowConnectors.resolve([a, b, link])
+        XCTAssertEqual(link.startPoint.y, link.endPoint.y, accuracy: 0.05)
+        XCTAssertEqual(link.startPoint.x, 102, accuracy: 0.01)
+        XCTAssertEqual(link.endPoint.x, 299, accuracy: 0.01)
     }
 
     func testOneEndedArrowAimsAtItsFreeEnd() {

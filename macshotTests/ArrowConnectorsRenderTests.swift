@@ -64,9 +64,14 @@ final class ArrowConnectorsRenderTests: XCTestCase {
             ("wide-rect", { rect(260, 30, sw: 3) }),
             ("ellipse", { rect(140, 70, sw: 5, tool: .ellipse) }),
             ("ellipse-outline", { rect(140, 70, sw: 3, tool: .ellipse) { $0.outlineColor = .black } }),
-            ("number", { Annotation(tool: .number, startPoint: self.center, endPoint: self.center, color: .red, strokeWidth: 3) }),
+            ("number", {
+                let n = Annotation(tool: .number, startPoint: self.center, endPoint: self.center, color: .red, strokeWidth: 3)
+                n.number = 1  // drawNumber draws nothing without one
+                return n
+            }),
             ("number-outline", {
                 let n = Annotation(tool: .number, startPoint: self.center, endPoint: self.center, color: .red, strokeWidth: 3)
+                n.number = 1
                 n.outlineColor = .black
                 return n
             }),
@@ -105,13 +110,18 @@ final class ArrowConnectorsRenderTests: XCTestCase {
                     let link = Annotation(tool: .arrow, startPoint: attachStart ? center : free,
                                           endPoint: attachStart ? free : center, color: .blue, strokeWidth: 2)
                     style(link)
+                    link.randomSeed = 0x5EED_0001 &+ UInt32(i)  // sketchy wobble: same every run
                     if attachStart { link.connectedStartID = shape.connectorID } else { link.connectedEndID = shape.connectorID }
                     ArrowConnectors.resolve([shape, link])
 
                     let s = render(shape), a = render(link)
                     let size = Int(canvas * scale)
                     let attached = attachStart ? link.startPoint : link.endPoint
-                    let result = measure(shape: s, arrow: a, size: size, near: attached)
+                    // The gap is measured from the paint at the tip itself (cap, tip, tail), so
+                    // a wing touching while the tip floats doesn't count as touching.
+                    let tipReach = ArrowConnectors.endPaint(of: link, atStart: attachStart, length: 165)
+                        .filter { $0.side == 0 }.map { $0.radius - $0.back }.max() ?? 0
+                    let result = measure(shape: s, arrow: a, size: size, near: attached, within: tipReach + 1.5)
                     let label = "\(shapeName) / \(arrowName) / \(Int(degrees))° / \(attachStart ? "start" : "end")"
                     if let outDir {
                         writePNG(shape: s, arrow: a, size: size,
@@ -132,16 +142,18 @@ final class ArrowConnectorsRenderTests: XCTestCase {
     /// Pixels both paints cover (each more than 5/8, which two shapes that only
     /// touch can't both reach), and the smallest distance (pt, up to `reach`)
     /// from the arrow's paint to the shape's paint near the attached end.
-    private func measure(shape: [UInt8], arrow: [UInt8], size: Int, near p: NSPoint) -> (overlap: Int, gap: CGFloat) {
+    private func measure(shape: [UInt8], arrow: [UInt8], size: Int, near p: NSPoint,
+                         within tipRadius: CGFloat) -> (overlap: Int, gap: CGFloat) {
         var overlap = 0
         for i in 0..<shape.count where shape[i] > 160 && arrow[i] > 160 { overlap += 1 }
         let solid: UInt8 = 128
         let reach = Int(3 * scale)  // look 3 pt around each arrow pixel
-        let window = Int(45 * scale)
+        let window = Int(ceil(tipRadius * scale))
         let cx = Int(p.x * scale), cy = size - Int(p.y * scale)  // bitmap rows go top-down
         var best = Int.max
         scan: for y in max(0, cy - window)..<min(size, cy + window) {
-            for x in max(0, cx - window)..<min(size, cx + window) where arrow[y * size + x] >= solid {
+            for x in max(0, cx - window)..<min(size, cx + window)
+            where arrow[y * size + x] >= solid && (x - cx) * (x - cx) + (y - cy) * (y - cy) <= window * window {
                 if best <= 1 { break scan }  // already touching
                 for ny in max(0, y - reach)...min(size - 1, y + reach) {
                     for nx in max(0, x - reach)...min(size - 1, x + reach) where shape[ny * size + nx] >= solid {

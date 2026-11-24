@@ -80,9 +80,8 @@ enum ArrowConnectors {
         }
     }
 
-    /// Where an arrow end attached to `shape` goes: on the ray from the shape's
-    /// center toward `aim` (what the arrow points at), as close as it can be
-    /// while none of the arrow's paint there touches the shape's paint.
+    /// Where an arrow end attached to `shape` goes, given `aim`, the point the
+    /// arrow comes from (the other end, its bend, or the other shape's tip).
     static func attachPoint(of arrow: Annotation, atStart: Bool, on shape: Annotation,
                             toward aim: NSPoint) -> NSPoint? {
         guard let silhouette = silhouette(of: shape) else { return nil }
@@ -91,6 +90,16 @@ enum ArrowConnectors {
         let distance = hypot(ux, uy)
         if distance < 0.0001 { ux = 1; uy = 0 } else { ux /= distance; uy /= distance }
         let dabs = endPaint(of: arrow, atStart: atStart, length: max(distance, 1))
+        // Usually: the tip goes on the spot of the shape's paint closest to what
+        // the arrow points at, pushed out by how far the paint reaches past the
+        // tip. The tip then touches the shape and, the shape being convex, the
+        // head's wings and the shaft never do, at any angle.
+        let tipReach = dabs.filter { $0.side == 0 }.map { $0.radius - $0.back }.max() ?? 0
+        if let p = silhouette.nearestPoint(to: aim, clearance: tipReach + gap) {
+            return p
+        }
+        // The aim is on or inside the shape (a bend dragged over it): walk out
+        // from the center instead until none of the arrow's paint touches.
         // The arrow runs from its tip out toward the aim: `back` is +u, `side` is the normal.
         var regions: [CGFloat: (CGPoint) -> Bool] = [:]
         for d in dabs where regions[d.radius + gap] == nil {
@@ -138,6 +147,76 @@ enum ArrowConnectors {
         let stroke: CGFloat
         let center: NSPoint
         var join: CGLineJoin = .miter
+
+        /// The same painted area described exactly, for nearest-point queries:
+        /// a convex base shape (unrotated) plus `offset` of paint around it.
+        enum Base { case roundedRect(CGRect, CGFloat), ellipse(CGRect) }
+        var base: Base = .roundedRect(.zero, 0)
+        var offset: CGFloat = 0
+        var rotation: CGFloat = 0
+        var pivot: NSPoint = .zero
+
+        private func toLocal(_ p: NSPoint) -> NSPoint {
+            guard rotation != 0 else { return p }
+            let dx = p.x - pivot.x, dy = p.y - pivot.y
+            let c = cos(-rotation), s = sin(-rotation)
+            return NSPoint(x: pivot.x + dx * c - dy * s, y: pivot.y + dx * s + dy * c)
+        }
+
+        private func toWorld(_ p: NSPoint) -> NSPoint {
+            guard rotation != 0 else { return p }
+            let dx = p.x - pivot.x, dy = p.y - pivot.y
+            let c = cos(rotation), s = sin(rotation)
+            return NSPoint(x: pivot.x + dx * c - dy * s, y: pivot.y + dx * s + dy * c)
+        }
+
+        /// The point of the base shape closest to `q` (local coordinates), or nil
+        /// when `q` is inside it.
+        private func nearestOnBase(_ q: NSPoint) -> NSPoint? {
+            switch base {
+            case .roundedRect(let rect, let radius):
+                let r = max(0, min(radius, rect.width / 2, rect.height / 2))
+                let inner = rect.insetBy(dx: r, dy: r)
+                let k = NSPoint(x: min(max(q.x, inner.minX), inner.maxX),
+                                y: min(max(q.y, inner.minY), inner.maxY))
+                let d = hypot(q.x - k.x, q.y - k.y)
+                guard d > r + 1e-9 else { return nil }
+                return NSPoint(x: k.x + (q.x - k.x) / d * r, y: k.y + (q.y - k.y) / d * r)
+            case .ellipse(let rect):
+                let a = rect.width / 2, b = rect.height / 2
+                guard a > 0, b > 0 else { return NSPoint(x: rect.midX, y: rect.midY) }
+                let x = abs(q.x - rect.midX), y = abs(q.y - rect.midY)
+                guard (x / a) * (x / a) + (y / b) * (y / b) > 1 else { return nil }
+                // Distance to an outside point is unimodal over a quadrant of the ellipse.
+                func f(_ t: CGFloat) -> CGFloat {
+                    let ex = a * cos(t) - x, ey = b * sin(t) - y
+                    return ex * ex + ey * ey
+                }
+                var lo: CGFloat = 0, hi: CGFloat = .pi / 2
+                let g: CGFloat = (sqrt(5) - 1) / 2
+                for _ in 0..<60 {
+                    let m1 = hi - (hi - lo) * g, m2 = lo + (hi - lo) * g
+                    if f(m1) < f(m2) { hi = m2 } else { lo = m1 }
+                }
+                let t = (lo + hi) / 2
+                let px = a * cos(t) * (q.x < rect.midX ? -1 : 1)
+                let py = b * sin(t) * (q.y < rect.midY ? -1 : 1)
+                return NSPoint(x: rect.midX + px, y: rect.midY + py)
+            }
+        }
+
+        /// The point of the painted area grown by `clearance` that is closest to
+        /// `q`, or nil when `q` is inside that area. An arrow tip placed there and
+        /// pointing from `q` touches the paint, and because the area is convex the
+        /// rest of the arrow (head wings, shaft) stays on the far side of it.
+        func nearestPoint(to q: NSPoint, clearance: CGFloat) -> NSPoint? {
+            let local = toLocal(q)
+            guard let p = nearestOnBase(local) else { return nil }
+            let d = hypot(local.x - p.x, local.y - p.y)
+            let reach = offset + clearance
+            guard d > reach + 0.01 else { return nil }
+            return toWorld(NSPoint(x: p.x + (local.x - p.x) / d * reach, y: p.y + (local.y - p.y) / d * reach))
+        }
 
         /// The painted area's own boundary: the stroke's outer contour (with the
         /// shape's real join, so sharp miter corners count), or the filled path.
@@ -193,6 +272,8 @@ enum ArrowConnectors {
         var stroke: CGFloat
         var center: NSPoint
         var join: CGLineJoin = .miter
+        var base: Silhouette.Base
+        var offset: CGFloat
         switch a.tool {
         case .number:
             let radius = 8 + a.strokeWidth * 3 + (a.outlineColor != nil ? 3 : 0)
@@ -200,17 +281,23 @@ enum ArrowConnectors {
             path = CGPath(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius,
                                             width: radius * 2, height: radius * 2), transform: nil)
             stroke = 0
+            base = .ellipse(CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+            offset = 0
         case .text:
             let boxed = a.textBgColor != nil || a.textOutlineColor != nil
             let rect = boxed ? a.textDrawRect.insetBy(dx: -4, dy: -4) : a.textDrawRect
             path = roundedRect(rect, radius: boxed ? 4 : 0)
             stroke = a.textOutlineColor != nil ? 2 : 0
             center = NSPoint(x: rect.midX, y: rect.midY)
+            base = .roundedRect(rect, boxed ? 4 : 0)
+            offset = stroke / 2
         case .ellipse:
             let rect = a.boundingRect
             path = CGPath(ellipseIn: rect, transform: nil)
             stroke = a.rectFillStyle == .fill ? (ring > 0 ? a.strokeWidth + ring : 0) : a.strokeWidth + ring
             center = NSPoint(x: rect.midX, y: rect.midY)
+            base = .ellipse(rect)
+            offset = stroke / 2
         default:  // rectangle, filledRectangle
             let rect = a.boundingRect
             let radius = a.rectCornerRadius > 0 ? a.rectCornerRadius
@@ -220,6 +307,14 @@ enum ArrowConnectors {
             let filledOnly = a.tool == .filledRectangle || a.rectFillStyle == .fill
             stroke = filledOnly ? (ring > 0 ? a.strokeWidth + ring : 0) : a.strokeWidth + ring
             center = NSPoint(x: rect.midX, y: rect.midY)
+            if radius > 0 {
+                base = .roundedRect(rect, radius)  // round join: the paint is the shape grown evenly
+                offset = stroke / 2
+            } else {
+                // Miter join: the paint keeps sharp corners, half a stroke out.
+                base = .roundedRect(rect.insetBy(dx: -stroke / 2, dy: -stroke / 2), 0)
+                offset = 0
+            }
         }
         if a.rotation != 0 && a.supportsRotation {
             // Same pivot as Annotation.draw(in:).
@@ -230,7 +325,14 @@ enum ArrowConnectors {
             path = path.copy(using: &t) ?? path
             center = center.applying(t)
         }
-        return Silhouette(path: path, stroke: stroke, center: center, join: join)
+        var result = Silhouette(path: path, stroke: stroke, center: center, join: join)
+        result.base = base
+        result.offset = offset
+        if a.rotation != 0 && a.supportsRotation {
+            result.rotation = a.rotation
+            result.pivot = NSPoint(x: a.boundingRect.midX, y: a.boundingRect.midY)
+        }
+        return result
     }
 
     private static func roundedRect(_ rect: CGRect, radius: CGFloat) -> CGPath {
@@ -250,9 +352,12 @@ enum ArrowConnectors {
         silhouette(of: annotation)?.exitPoint(toward: target, clearance: gap)
     }
 
-    /// The painted edge in the pointer's direction and how far the pointer is from it.
+    /// The closest spot of the painted edge and how far the pointer is from it
+    /// (from inside the shape: the edge in the pointer's direction).
     static func nearestBorder(of annotation: Annotation, to point: NSPoint) -> (point: NSPoint, distance: CGFloat)? {
-        guard let p = borderPoint(of: annotation, toward: point, gap: 0) else { return nil }
+        guard let silhouette = silhouette(of: annotation) else { return nil }
+        let p = silhouette.nearestPoint(to: point, clearance: 0)
+            ?? silhouette.exitPoint(toward: point, clearance: 0)
         return (p, hypot(p.x - point.x, p.y - point.y))
     }
 
@@ -307,12 +412,22 @@ enum ArrowConnectors {
             ?? (multi ? anchors[1] : arrow.controlPoint ?? arrow.endPoint)
         let endAim = from.flatMap { center(of: $0) }
             ?? (multi ? anchors[anchors.count - 2] : arrow.controlPoint ?? arrow.startPoint)
-        let newStart = from.flatMap {
+        var newStart = from.flatMap {
             attachPoint(of: arrow, atStart: true, on: $0, toward: startAim)
         } ?? arrow.startPoint
-        let newEnd = to.flatMap {
+        var newEnd = to.flatMap {
             attachPoint(of: arrow, atStart: false, on: $0, toward: endAim)
         } ?? arrow.endPoint
+        if let from, let to, !multi, arrow.controlPoint == nil {
+            // Straight arrow between two shapes: each tip aims at the other tip, so
+            // the head points along the real line. A few rounds settle on the
+            // shortest connector between the two (straight across when they face).
+            for _ in 0..<4 {
+                newEnd = attachPoint(of: arrow, atStart: false, on: to, toward: newStart) ?? newEnd
+                newStart = attachPoint(of: arrow, atStart: true, on: from, toward: newEnd) ?? newStart
+            }
+            newEnd = attachPoint(of: arrow, atStart: false, on: to, toward: newStart) ?? newEnd
+        }
 
         func moved(_ a: NSPoint, _ b: NSPoint) -> Bool { abs(a.x - b.x) > 0.01 || abs(a.y - b.y) > 0.01 }
         guard moved(newStart, arrow.startPoint) || moved(newEnd, arrow.endPoint) else { return false }
