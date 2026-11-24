@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "एडिटर बंद होने पर स्टैक में लौटाएँ";
 "  Click on preview:" = "  पूर्वावलोकन पर क्लिक:";
 "  When opened in Editor:" = "  एडिटर में खोलने पर:";
+"Capture Active Window" = "सक्रिय विंडो कैप्चर करें";

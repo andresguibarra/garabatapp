@@ -23,6 +23,7 @@ class HotkeyManager {
         case pinFromClipboard = 11
         case clearHistory = 12
         case recordGIF = 13
+        case captureActiveWindow = 14
 
         var keyCodeKey: String {
             switch self {
@@ -39,6 +40,7 @@ class HotkeyManager {
             case .pinFromClipboard: return "hotkeyPinClipboardKeyCode"
             case .clearHistory: return "hotkeyClearHistoryKeyCode"
             case .recordGIF: return "hotkeyRecordGIFKeyCode"
+            case .captureActiveWindow: return "hotkeyActiveWindowKeyCode"
             }
         }
 
@@ -57,6 +59,7 @@ class HotkeyManager {
             case .pinFromClipboard: return "hotkeyPinClipboardModifiers"
             case .clearHistory: return "hotkeyClearHistoryModifiers"
             case .recordGIF: return "hotkeyRecordGIFModifiers"
+            case .captureActiveWindow: return "hotkeyActiveWindowModifiers"
             }
         }
 
@@ -79,6 +82,7 @@ class HotkeyManager {
             case .pinFromClipboard: return L("Pin from Clipboard")
             case .clearHistory: return L("Clear History")
             case .recordGIF: return "\(L("Record")) \(L("GIF"))"
+            case .captureActiveWindow: return L("Capture Active Window")
             }
         }
 
@@ -97,12 +101,13 @@ class HotkeyManager {
             case .pinFromClipboard: return 0    // no default hotkey
             case .clearHistory: return 0        // no default hotkey
             case .recordGIF: return 0           // no default hotkey
+            case .captureActiveWindow: return 0 // no default hotkey
             }
         }
 
         var defaultModifiers: UInt32 {
             switch self {
-            case .recordScreen, .scrollCapture, .openFromClipboard, .captureLastArea, .pinFromClipboard, .clearHistory, .recordGIF: return 0
+            case .recordScreen, .scrollCapture, .openFromClipboard, .captureLastArea, .pinFromClipboard, .clearHistory, .recordGIF, .captureActiveWindow: return 0
             default: return UInt32(cmdKey | shiftKey)
             }
         }

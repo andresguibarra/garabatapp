@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "এডিটর বন্ধ হলে স্ট্যাকে ফেরান";
 "  Click on preview:" = "  প্রিভিউতে ক্লিক:";
 "  When opened in Editor:" = "  এডিটরে খোলার সময়:";
+"Capture Active Window" = "সক্রিয় উইন্ডো ক্যাপচার";

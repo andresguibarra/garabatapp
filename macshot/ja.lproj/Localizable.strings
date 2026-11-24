@@ -925,3 +925,4 @@
 "Return to stack when editor closes" = "エディタを閉じたらスタックに戻す";
 "  Click on preview:" = "  プレビューをクリック:";
 "  When opened in Editor:" = "  エディタで開いたとき:";
+"Capture Active Window" = "アクティブウインドウをキャプチャ";

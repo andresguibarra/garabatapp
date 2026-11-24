@@ -923,3 +923,4 @@
 "Return to stack when editor closes" = "Tilbake i stabelen når redigeringsverktøyet lukkes";
 "  Click on preview:" = "  Klikk på forhåndsvisning:";
 "  When opened in Editor:" = "  Når den åpnes i redigering:";
+"Capture Active Window" = "Ta bilde av aktivt vindu";

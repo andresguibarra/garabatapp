@@ -923,3 +923,4 @@
 "Return to stack when editor closes" = "Palauta pinoon, kun editori suljetaan";
 "  Click on preview:" = "  Esikatselun napsautus:";
 "  When opened in Editor:" = "  Kun avataan editorissa:";
+"Capture Active Window" = "Kaappaa aktiivinen ikkuna";

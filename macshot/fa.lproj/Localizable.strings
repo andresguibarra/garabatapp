@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "بازگشت به پشته پس از بستن ویرایشگر";
 "  Click on preview:" = "  کلیک روی پیش‌نمایش:";
 "  When opened in Editor:" = "  هنگام باز شدن در ویرایشگر:";
+"Capture Active Window" = "گرفتن پنجره فعال";

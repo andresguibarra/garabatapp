@@ -1100,6 +1100,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
                 self?.perform(#selector(AppDelegate.recordGIFFromHotkey))
             }
         )
+        // Garabatapp: capture the frontmost window (not part of registerAll upstream).
+        HotkeyManager.shared.register(slot: .captureActiveWindow) { [weak self] in
+            stamp()
+            self?.perform(#selector(AppDelegate.captureActiveWindowFromHotkey))
+        }
     }
 
     private var pendingRecordMode: Bool = false
@@ -1303,6 +1308,52 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         startCapture(fromMenu: fromMenu)
     }
     private var pendingRestoreLastArea: Bool = false
+
+    // MARK: - Capture active window (Garabatapp)
+
+    /// The window to select once the overlays are up, in AppKit screen coordinates.
+    private var pendingActiveWindow: (id: CGWindowID, rect: NSRect)?
+
+    @objc private func captureActiveWindowFromHotkey() {
+        // Read the target before the overlay takes focus. No suitable window
+        // (our own app in front, desktop only): fall back to a normal capture.
+        let target = Self.frontmostWindowTarget()
+        guard prepareToStartCapture() else { return }
+        pendingActiveWindow = target
+        startCapture(fromMenu: false)
+    }
+
+    /// Frontmost normal window of the frontmost app that is not this app.
+    private static func frontmostWindowTarget() -> (id: CGWindowID, rect: NSRect)? {
+        guard let app = NSWorkspace.shared.frontmostApplication,
+              app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
+              let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
+                                                    kCGNullWindowID) as? [[String: Any]]
+        else { return nil }
+        let screenH = NSScreen.screens.first?.frame.height ?? 0
+        for info in list {
+            guard (info[kCGWindowOwnerPID as String] as? pid_t) == app.processIdentifier,
+                  (info[kCGWindowLayer as String] as? Int) == 0,
+                  ((info[kCGWindowAlpha as String] as? Double) ?? 1) > 0,
+                  let number = info[kCGWindowNumber as String] as? Int,
+                  let b = info[kCGWindowBounds as String] as? [String: CGFloat],
+                  let w = b["Width"], let h = b["Height"], w > 10, h > 10
+            else { continue }
+            let rect = NSRect(x: b["X"] ?? 0, y: screenH - (b["Y"] ?? 0) - h, width: w, height: h)
+            return (CGWindowID(number), rect)
+        }
+        return nil
+    }
+
+    private func applyPendingActiveWindowIfNeeded() {
+        guard let target = pendingActiveWindow else { return }
+        pendingActiveWindow = nil
+        let center = NSPoint(x: target.rect.midX, y: target.rect.midY)
+        guard let controller = overlayControllers.first(where: { $0.screen.frame.contains(center) })
+            ?? overlayControllers.first else { return }
+        controller.applyWindowSnapSelection(windowID: target.id, screenRect: target.rect)
+        controller.showOverlay()
+    }
 
     @objc private func recordArea() {
         beginRecordArea(fromMenu: true)
@@ -1531,6 +1582,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         pendingQuickCaptureMode = false
         pendingScrollCaptureMode = false
         pendingRestoreLastArea = false
+        pendingActiveWindow = nil
     }
 
     private func performCapture(fromMenu: Bool) {
@@ -1712,6 +1764,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             // strand into the next capture (e.g. pendingRestoreLastArea, which
             // performCapture doesn't clear). See issue #276.
             pendingRestoreLastArea = false
+            pendingActiveWindow = nil
             dismissOverlays(refocusPreviousApp: true)
             showOnboarding()
             return
@@ -1754,6 +1807,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             startRunloopBeacon()
         }
         applyPendingRestoredSelectionIfNeeded()
+        applyPendingActiveWindowIfNeeded()
     }
 
     private var runloopBeaconTimer: Timer?

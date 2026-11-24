@@ -925,3 +925,4 @@
 "Return to stack when editor closes" = "กลับเข้ากองเมื่อปิดตัวแก้ไข";
 "  Click on preview:" = "  คลิกที่ภาพตัวอย่าง:";
 "  When opened in Editor:" = "  เมื่อเปิดในตัวแก้ไข:";
+"Capture Active Window" = "จับภาพหน้าต่างที่ใช้งานอยู่";

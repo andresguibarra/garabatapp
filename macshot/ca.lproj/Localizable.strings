@@ -929,3 +929,4 @@
 "Return to stack when editor closes" = "Torna a la pila en tancar l’editor";
 "  Click on preview:" = "  Clic a la previsualització:";
 "  When opened in Editor:" = "  En obrir a l’editor:";
+"Capture Active Window" = "Captura la finestra activa";
