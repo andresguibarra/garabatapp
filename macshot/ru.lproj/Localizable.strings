@@ -36,7 +36,7 @@
 "Pin from Clipboard" = "Закрепить из буфера обмена";
 "Preferences..." = "Настройки...";
 "Check for Updates..." = "Проверить обновления...";
-"Quit macshot" = "Завершить macshot";
+"Quit macshot" = "Завершить Garabatapp";
 "No recent captures" = "Нет недавних снимков";
 "Clear History" = "Очистить историю";
 
@@ -163,7 +163,7 @@
 "Move up" = "Переместить вверх";
 "Move down" = "Переместить вниз";
 "Menu Bar Order" = "Порядок в строке меню";
-"Choose the order of capture actions in the macshot menu bar menu." = "Выберите порядок действий захвата в меню macshot в строке меню.";
+"Choose the order of capture actions in the macshot menu bar menu." = "Выберите порядок действий захвата в меню Garabatapp в строке меню.";
 
 /* Toolbar - Recording */
 "Start Recording" = "Начать запись";
@@ -238,7 +238,7 @@
 "Copy to clipboard" = "Копировать в буфер обмена";
 
 /* Preferences - General */
-"macshot Preferences" = "Настройки macshot";
+"macshot Preferences" = "Настройки Garabatapp";
 "General" = "Основные";
 "Tools" = "Инструменты";
 "Recording" = "Запись";
@@ -264,7 +264,7 @@
 "Hide capture instructions" = "Скрывать подсказки при захвате";
 "Use window title in saved filename" = "Использовать заголовок окна в имени файла";
 "Hide menu bar icon" = "Скрыть значок в строке меню";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "Горячие клавиши по-прежнему работают. Чтобы вернуть значок, перезапустите macshot.";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "Горячие клавиши по-прежнему работают. Чтобы вернуть значок, перезапустите Garabatapp.";
 "Check for updates automatically" = "Автоматически проверять обновления";
 "Check for beta updates" = "Проверять бета-обновления";
 "Thumbnail" = "Миниатюра";
@@ -398,7 +398,7 @@
 "Video upload requires Google Drive or S3" = "Загрузка видео требует Google Drive или S3";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "Версия %@ (%@)";
 "Made by" = "Разработал";
 "Licensed under the GPLv3" = "Лицензия GPLv3";
@@ -411,30 +411,30 @@
 "Copy an image or text to the clipboard first, then try again." = "Сначала скопируйте изображение или текст в буфер обмена, затем попробуйте снова.";
 "OK" = "ОК";
 "Accessibility Access Required" = "Требуется доступ к Универсальному доступу";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "macshot требуется разрешение Универсального доступа для авто-прокрутки других приложений. Предоставьте доступ в Системных настройках и попробуйте снова.";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "macshot требуется разрешение Универсального доступа для захвата с прокруткой. Предоставьте доступ в Системных настройках и повторите попытку.";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Garabatapp требуется разрешение Универсального доступа для авто-прокрутки других приложений. Предоставьте доступ в Системных настройках и попробуйте снова.";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Garabatapp требуется разрешение Универсального доступа для захвата с прокруткой. Предоставьте доступ в Системных настройках и повторите попытку.";
 "Open Settings" = "Открыть Настройки";
 "Cancel" = "Отменить";
 "Microphone Access Required" = "Требуется доступ к микрофону";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "macshot требуется разрешение на использование микрофона для записи голоса. Откройте Системные настройки для предоставления доступа.";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Garabatapp требуется разрешение на использование микрофона для записи голоса. Откройте Системные настройки для предоставления доступа.";
 "Upload to Google Drive?" = "Загрузить на Google Drive?";
 "Upload to S3?" = "Загрузить на S3?";
 "Upload to imgbb.com?" = "Загрузить на imgbb.com?";
 "Your screenshot will be uploaded." = "Ваш снимок экрана будет загружен.";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "Добро пожаловать в macshot";
-"Welcome back to macshot" = "С возвращением в macshot";
+"Welcome to macshot" = "Добро пожаловать в Garabatapp";
+"Welcome back to macshot" = "С возвращением в Garabatapp";
 "Turn Screen Recording back on" = "Снова включите запись экрана";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "После некоторых обновлений macOS просит снова разрешить доступ macshot. Ваши настройки и снимки на месте. Если macshot уже есть в списке, выберите его, нажмите кнопку «минус» (−), чтобы удалить, затем нажмите кнопку «плюс» (+) и добавьте macshot снова.";
-"macshot needs one permission" = "macshot требуется одно разрешение";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "После некоторых обновлений macOS просит снова разрешить доступ Garabatapp. Ваши настройки и снимки на месте. Если Garabatapp уже есть в списке, выберите его, нажмите кнопку «минус» (−), чтобы удалить, затем нажмите кнопку «плюс» (+) и добавьте Garabatapp снова.";
+"macshot needs one permission" = "Garabatapp требуется одно разрешение";
 "Screen Recording not yet granted" = "Разрешение на запись экрана не предоставлено";
 "Screen Recording granted!" = "Разрешение на запись экрана получено!";
-"Enable macshot, then try taking a screenshot" = "Включите macshot, затем попробуйте сделать снимок экрана";
+"Enable macshot, then try taking a screenshot" = "Включите Garabatapp, затем попробуйте сделать снимок экрана";
 "Open Screen Recording Settings" = "Открыть настройки записи экрана";
-"Still not working? Run this command in Terminal, then restart macshot." = "Всё ещё не работает? Выполните эту команду в Терминале, затем перезапустите macshot.";
+"Still not working? Run this command in Terminal, then restart macshot." = "Всё ещё не работает? Выполните эту команду в Терминале, затем перезапустите Garabatapp.";
 "Copy Command" = "Копировать команду";
-"Restart macshot" = "Перезапустить macshot";
+"Restart macshot" = "Перезапустить Garabatapp";
 "Continue" = "Продолжить";
 
 /* OCR Window */
@@ -464,7 +464,7 @@
 "Path copied!" = "Путь скопирован!";
 
 /* Video Editor */
-"macshot Video Editor" = "Видеоредактор macshot";
+"macshot Video Editor" = "Видеоредактор Garabatapp";
 "%@ selected" = "%@ выбрано";
 "Exporting..." = "Экспорт...";
 "Export failed" = "Ошибка экспорта";
@@ -486,12 +486,12 @@
 "Save Project" = "Сохранить проект";
 "Save Project As..." = "Сохранить проект как...";
 "Save as Editable Project (⇧⌘S)" = "Сохранить как редактируемый проект (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Сохраняет изображение, оставляя все аннотации редактируемыми. Откройте файл в macshot, чтобы продолжить редактирование.";
-"Choose an image or macshot project to open in the editor" = "Выберите изображение или проект macshot для открытия в редакторе";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Сохраняет изображение, оставляя все аннотации редактируемыми. Откройте файл в Garabatapp, чтобы продолжить редактирование.";
+"Choose an image or macshot project to open in the editor" = "Выберите изображение или проект Garabatapp для открытия в редакторе";
 "Could not open “%@”" = "Не удалось открыть «%@»";
 "Could not save the project: %@" = "Не удалось сохранить проект: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "Некоторые аннотации в этом проекте не удалось восстановить, поэтому он открыт как плоское изображение. Исходный файл не изменён.";
-"The file is not a macshot project or is damaged." = "Файл не является проектом macshot или повреждён.";
+"The file is not a macshot project or is damaged." = "Файл не является проектом Garabatapp или повреждён.";
 "The project could not be prepared for saving." = "Не удалось подготовить проект к сохранению.";
 "The image is too large to save as an editable project." = "Изображение слишком большое для сохранения в виде редактируемого проекта.";
 "The project file is too large to open." = "Файл проекта слишком велик для открытия.";
@@ -527,8 +527,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "Требуется мониторинг ввода";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "macshot требуется разрешение на мониторинг ввода для выделения щелчков мыши или отображения нажатий клавиш во время записи. Предоставьте доступ в Системных настройках и попробуйте снова.";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "macshot требуется разрешение Универсального доступа для привязки к отдельным элементам интерфейса. Предоставьте доступ в Системных настройках и повторите попытку.";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Garabatapp требуется разрешение на мониторинг ввода для выделения щелчков мыши или отображения нажатий клавиш во время записи. Предоставьте доступ в Системных настройках и попробуйте снова.";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Garabatapp требуется разрешение Универсального доступа для привязки к отдельным элементам интерфейса. Предоставьте доступ в Системных настройках и повторите попытку.";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "Показывать нажатия клавиш";
@@ -544,7 +544,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "Наложение веб-камеры";
 "Camera Access Required" = "Требуется доступ к камере";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "macshot требуется разрешение на использование камеры для наложения веб-камеры. Откройте Системные настройки для предоставления доступа.";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Garabatapp требуется разрешение на использование камеры для наложения веб-камеры. Откройте Системные настройки для предоставления доступа.";
 "Webcam" = "Веб-камера";
 "Bottom Right" = "Внизу справа";
 "Bottom Left" = "Внизу слева";
@@ -565,7 +565,7 @@
 /* New strings */
 "Settings..." = "Настройки...";
 "Settings" = "Настройки";
-"macshot Settings" = "Настройки macshot";
+"macshot Settings" = "Настройки Garabatapp";
 "Also open in Editor" = "Также открыть в редакторе";
 "Open in Editor right after selection" = "Открыть в редакторе сразу после выделения";
 "Close editor after copying" = "Закрывать редактор после копирования";
@@ -620,13 +620,13 @@
 "Clear History?" = "Очистить историю?";
 "This will permanently delete all screenshots from history." = "Это безвозвратно удалит все скриншоты из истории.";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "Нажмите \"Задать\" и введите комбинацию клавиш с хотя бы одним модификатором (⌘, ⌥, ⌃, ⇧), чтобы установить сочетание.";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Файлы загружаются в эту папку на вашем Google Drive. Оставьте поле пустым, чтобы использовать \"macshot\". macshot может использовать только созданные им самим папки, поэтому папка с таким же именем, созданная вами в Drive, не будет использована, вместо неё будет создана новая. Всё остаётся приватным, ничего не публикуется в открытый доступ.";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Файлы загружаются в эту папку на вашем Google Drive. Оставьте поле пустым, чтобы использовать \"Garabatapp\". Garabatapp может использовать только созданные им самим папки, поэтому папка с таким же именем, созданная вами в Drive, не будет использована, вместо неё будет создана новая. Всё остаётся приватным, ничего не публикуется в открытый доступ.";
 
 "Pressure" = "Нажим";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "Открыть видео...";
-"Choose a video to open in macshot editor" = "Выберите видео, чтобы открыть в редакторе macshot";
+"Choose a video to open in macshot editor" = "Выберите видео, чтобы открыть в редакторе Garabatapp";
 "Click to add effects" = "Нажмите, чтобы добавить эффекты";
 "Add Zoom" = "Добавить зум";
 "Add Censor" = "Добавить цензуру";
@@ -704,8 +704,8 @@
 "Stop the current recording" = "Остановить текущую запись";
 "Supported URL Scheme Commands" = "Поддерживаемые команды URL-схемы";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "Расширение файла добавляется автоматически. Слэши и двоеточия в {window} заменяются дефисами.";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Запускайте macshot из Raycast, Alfred, Shortcuts или любого инструмента, открывающего URL.";
-"Enable macshot:// URL scheme" = "Включить URL-схему macshot://";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Запускайте Garabatapp из Raycast, Alfred, Shortcuts или любого инструмента, открывающего URL.";
+"Enable macshot:// URL scheme" = "Включить URL-схему garabatapp://";
 "URL scheme info" = "Информация об URL-схеме";
 "sec (0 = never)" = "сек. (0 = никогда)";
 
@@ -714,7 +714,7 @@
 "Export Settings…" = "Экспортировать настройки…";
 "Import Settings…" = "Импортировать настройки…";
 "Reveal Settings File in Finder" = "Показать файл настроек в Finder";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Экспортируйте настройки в файл, чтобы перенести их на другой Mac или в чистую установку. Учётные данные для загрузки, папка сохранения и история скриншотов не включаются. Настройки хранятся в контейнере приложения macshot.";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Экспортируйте настройки в файл, чтобы перенести их на другой Mac или в чистую установку. Учётные данные для загрузки, папка сохранения и история скриншотов не включаются. Настройки хранятся в контейнере приложения Garabatapp.";
 "Export Settings" = "Экспортировать настройки";
 "Import Settings" = "Импортировать настройки";
 "Import failed" = "Не удалось импортировать";
@@ -725,12 +725,12 @@
 "Relaunch Now" = "Перезапустить сейчас";
 "Replace your current settings?" = "Заменить текущие настройки?";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "Импорт заменит ваши текущие настройки на те, что содержатся в этом файле. Папка сохранения, учётные данные для загрузки и история скриншотов будут сохранены. Это действие нельзя отменить.";
-"%d settings were applied. Relaunch macshot to apply all changes." = "Применено настроек: %d. Перезапустите macshot, чтобы применить все изменения.";
+"%d settings were applied. Relaunch macshot to apply all changes." = "Применено настроек: %d. Перезапустите Garabatapp, чтобы применить все изменения.";
 "A few large items were too big to include. Everything else was saved." = "Несколько крупных элементов оказались слишком большими для включения. Всё остальное было сохранено.";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "Ваше пользовательское фоновое изображение Beautify оказалось слишком большим для включения. Всё остальное было сохранено.";
-"This file is not a valid macshot settings file." = "Этот файл не является допустимым файлом настроек macshot.";
+"This file is not a valid macshot settings file." = "Этот файл не является допустимым файлом настроек Garabatapp.";
 "This settings file contains no settings." = "Этот файл настроек не содержит настроек.";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "Этот файл настроек создан более новой версией macshot. Сначала обновите macshot.";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "Этот файл настроек создан более новой версией Garabatapp. Сначала обновите Garabatapp.";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "Захват, перевод и наложение текста на изображение";
@@ -775,7 +775,7 @@
 "Apply Default Zoom to All" = "Применить масштаб по умолчанию ко всем";
 "Auto" = "Авто";
 "Auto Zoom" = "Автомасштаб";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Автомасштабу нужны данные об указателе, которые macshot записывает при каждой новой записи. Вы по-прежнему можете добавлять увеличения двойным щелчком по дорожке масштаба.";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Автомасштабу нужны данные об указателе, которые Garabatapp записывает при каждой новой записи. Вы по-прежнему можете добавлять увеличения двойным щелчком по дорожке масштаба.";
 "Background blur" = "Размытие фона";
 "Background color" = "Цвет фона";
 "Background, padding, rounded corners and shadow" = "Фон, отступы, скруглённые углы и тень";
@@ -876,7 +876,7 @@
 "Shrink during zooms" = "Уменьшать при увеличении";
 "Smoothing" = "Сглаживание";
 "Snappy" = "Быстрый";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Распознавание речи для macshot отключено в Системных настройках › Конфиденциальность и безопасность.";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Распознавание речи для Garabatapp отключено в Системных настройках › Конфиденциальность и безопасность.";
 "Speed" = "Скорость";
 "Spotlight" = "Прожектор";
 "Square" = "Квадрат";
@@ -886,12 +886,12 @@
 "The recording's audio could not be read." = "Не удалось прочитать звук записи.";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "В этой записи указатель уже является частью изображения, поэтому его нельзя изменить. Увеличения по-прежнему могут следовать за ним.";
 "This recording has no audio to transcribe." = "В этой записи нет звука для распознавания.";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "В этом видео нет записанных данных указателя. Записи macshot, открываемые в редакторе, позволяют менять стиль, сглаживать и изменять размер указателя после записи.";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "В этом видео нет записанных данных указателя. Записи Garabatapp, открываемые в редакторе, позволяют менять стиль, сглаживать и изменять размер указателя после записи.";
 "Title" = "Заголовок";
 "Transcribing…" = "Распознавание…";
 "Transition" = "Переход";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Включите «Показывать нажатия клавиш» перед записью. Тогда macshot запишет их отдельно, и здесь их можно будет оформить.";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Включите камеру перед записью. macshot запишет её отдельно, и здесь её можно будет перемещать, менять размер и стиль, скрывать, и уменьшать во время увеличений.";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Включите «Показывать нажатия клавиш» перед записью. Тогда Garabatapp запишет их отдельно, и здесь их можно будет оформить.";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Включите камеру перед записью. Garabatapp запишет её отдельно, и здесь её можно будет перемещать, менять размер и стиль, скрывать, и уменьшать во время увеличений.";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "Используйте «Заливка», чтобы скрыть конфиденциальные данные: размытие и пикселизацию иногда можно обратить.";
 "Visibility" = "Видимость";
 "Wallpaper" = "Обои";

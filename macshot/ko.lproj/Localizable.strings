@@ -35,7 +35,7 @@
 "Pin from Clipboard" = "클립보드에서 고정";
 "Preferences..." = "환경설정...";
 "Check for Updates..." = "업데이트 확인...";
-"Quit macshot" = "macshot 종료";
+"Quit macshot" = "Garabatapp 종료";
 "No recent captures" = "최근 캡처 없음";
 "Clear History" = "기록 지우기";
 
@@ -215,7 +215,7 @@
 "Copy to clipboard" = "클립보드에 복사";
 
 /* Preferences - General */
-"macshot Preferences" = "macshot 환경설정";
+"macshot Preferences" = "Garabatapp 환경설정";
 "General" = "일반";
 "Tools" = "도구";
 "Recording" = "녹화";
@@ -241,9 +241,9 @@
 "Hide capture instructions" = "캡처 안내 숨기기";
 "Use window title in saved filename" = "저장 파일명에 윈도우 제목 사용";
 "Hide menu bar icon" = "메뉴 막대 아이콘 숨기기";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "단축키는 계속 작동합니다. 아이콘을 다시 표시하려면 macshot을 재실행하세요.";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "단축키는 계속 작동합니다. 아이콘을 다시 표시하려면 Garabatapp을 재실행하세요.";
 "Menu Bar Order" = "메뉴 막대 순서";
-"Choose the order of capture actions in the macshot menu bar menu." = "macshot 메뉴 막대 메뉴에서 캡처 작업의 순서를 선택하세요.";
+"Choose the order of capture actions in the macshot menu bar menu." = "Garabatapp 메뉴 막대 메뉴에서 캡처 작업의 순서를 선택하세요.";
 "Move up" = "위로 이동";
 "Move down" = "아래로 이동";
 "Check for updates automatically" = "자동으로 업데이트 확인";
@@ -377,7 +377,7 @@
 "Video upload requires Google Drive or S3" = "동영상 업로드에는 Google Drive 또는 S3가 필요합니다";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "버전 %@ (%@)";
 "Made by" = "제작자";
 "Licensed under the GPLv3" = "GPLv3 라이선스";
@@ -390,30 +390,30 @@
 "Copy an image or text to the clipboard first, then try again." = "먼저 이미지 또는 텍스트를 클립보드에 복사한 후 다시 시도하세요.";
 "OK" = "확인";
 "Accessibility Access Required" = "손쉬운 사용 권한 필요";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "macshot이 다른 앱을 자동 스크롤하려면 손쉬운 사용 권한이 필요합니다. 시스템 설정에서 권한을 허용한 후 다시 시도하세요.";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "스크롤 캡처를 위해 macshot에 손쉬운 사용 권한이 필요합니다. 시스템 설정에서 접근 권한을 부여한 후 다시 시도해 주세요.";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Garabatapp이 다른 앱을 자동 스크롤하려면 손쉬운 사용 권한이 필요합니다. 시스템 설정에서 권한을 허용한 후 다시 시도하세요.";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "스크롤 캡처를 위해 Garabatapp에 손쉬운 사용 권한이 필요합니다. 시스템 설정에서 접근 권한을 부여한 후 다시 시도해 주세요.";
 "Open Settings" = "설정 열기";
 "Cancel" = "취소";
 "Microphone Access Required" = "마이크 접근 권한 필요";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "macshot이 음성을 녹음하려면 마이크 권한이 필요합니다. 시스템 설정을 열어 권한을 허용하세요.";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Garabatapp이 음성을 녹음하려면 마이크 권한이 필요합니다. 시스템 설정을 열어 권한을 허용하세요.";
 "Upload to Google Drive?" = "Google Drive에 업로드하시겠습니까?";
 "Upload to S3?" = "S3에 업로드하시겠습니까?";
 "Upload to imgbb.com?" = "imgbb.com에 업로드하시겠습니까?";
 "Your screenshot will be uploaded." = "스크린샷이 업로드됩니다.";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "macshot에 오신 것을 환영합니다";
-"Welcome back to macshot" = "macshot에 다시 오신 것을 환영합니다";
+"Welcome to macshot" = "Garabatapp에 오신 것을 환영합니다";
+"Welcome back to macshot" = "Garabatapp에 다시 오신 것을 환영합니다";
 "Turn Screen Recording back on" = "화면 기록을 다시 켜 주세요";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "일부 업데이트 후에는 macOS에서 macshot을 다시 허용하라고 요청합니다. 설정과 캡처는 안전하게 남아 있습니다. 목록에 macshot이 이미 있다면 선택한 뒤 빼기 버튼(−)을 눌러 제거하고, 더하기 버튼(+)을 눌러 macshot을 다시 추가하세요.";
-"macshot needs one permission" = "macshot에 권한 하나가 필요합니다";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "일부 업데이트 후에는 macOS에서 Garabatapp을 다시 허용하라고 요청합니다. 설정과 캡처는 안전하게 남아 있습니다. 목록에 Garabatapp이 이미 있다면 선택한 뒤 빼기 버튼(−)을 눌러 제거하고, 더하기 버튼(+)을 눌러 Garabatapp을 다시 추가하세요.";
+"macshot needs one permission" = "Garabatapp에 권한 하나가 필요합니다";
 "Screen Recording not yet granted" = "화면 기록 권한이 아직 허용되지 않았습니다";
 "Screen Recording granted!" = "화면 기록 권한이 허용되었습니다!";
-"Enable macshot, then try taking a screenshot" = "macshot을 활성화한 후 스크린샷을 찍어보세요";
+"Enable macshot, then try taking a screenshot" = "Garabatapp을 활성화한 후 스크린샷을 찍어보세요";
 "Open Screen Recording Settings" = "화면 기록 설정 열기";
-"Still not working? Run this command in Terminal, then restart macshot." = "그래도 안 되면 터미널에서 이 명령을 실행한 다음 macshot을 다시 실행하세요.";
+"Still not working? Run this command in Terminal, then restart macshot." = "그래도 안 되면 터미널에서 이 명령을 실행한 다음 Garabatapp을 다시 실행하세요.";
 "Copy Command" = "명령 복사";
-"Restart macshot" = "macshot 다시 실행";
+"Restart macshot" = "Garabatapp 다시 실행";
 "Continue" = "계속";
 
 /* OCR Window */
@@ -450,7 +450,7 @@
 "Path copied!" = "경로가 복사되었습니다!";
 
 /* Video Editor */
-"macshot Video Editor" = "macshot 비디오 편집기";
+"macshot Video Editor" = "Garabatapp 비디오 편집기";
 "%@ selected" = "%@ 선택됨";
 "Exporting..." = "내보내는 중...";
 "Export failed" = "내보내기 실패";
@@ -472,13 +472,13 @@
 "Save Project" = "프로젝트 저장";
 "Save Project As..." = "프로젝트를 다른 이름으로 저장...";
 "Save as Editable Project (⇧⌘S)" = "편집 가능한 프로젝트로 저장 (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "모든 주석을 편집 가능한 상태로 유지한 채 이미지를 저장합니다. macshot에서 파일을 열어 계속 편집할 수 있습니다.";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "모든 주석을 편집 가능한 상태로 유지한 채 이미지를 저장합니다. Garabatapp에서 파일을 열어 계속 편집할 수 있습니다.";
 "Open..." = "열기...";
-"Choose an image or macshot project to open in the editor" = "편집기에서 열 이미지 또는 macshot 프로젝트를 선택하세요";
+"Choose an image or macshot project to open in the editor" = "편집기에서 열 이미지 또는 Garabatapp 프로젝트를 선택하세요";
 "Could not open “%@”" = "“%@”을(를) 열 수 없습니다";
 "Could not save the project: %@" = "프로젝트를 저장할 수 없습니다: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "이 프로젝트의 일부 주석을 복원할 수 없어 병합된 이미지로 열었습니다. 원본 파일은 변경되지 않았습니다.";
-"The file is not a macshot project or is damaged." = "이 파일은 macshot 프로젝트가 아니거나 손상되었습니다.";
+"The file is not a macshot project or is damaged." = "이 파일은 Garabatapp 프로젝트가 아니거나 손상되었습니다.";
 "The project could not be prepared for saving." = "저장할 프로젝트를 준비할 수 없습니다.";
 "The image is too large to save as an editable project." = "이미지가 너무 커서 편집 가능한 프로젝트로 저장할 수 없습니다.";
 "The project file is too large to open." = "프로젝트 파일이 너무 커서 열 수 없습니다.";
@@ -514,8 +514,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "입력 모니터링 권한 필요";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "macshot이 녹화 중 마우스 클릭을 강조하거나 키 입력을 표시하려면 입력 모니터링 권한이 필요합니다. 시스템 설정에서 접근 권한을 부여한 후 다시 시도하세요.";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "개별 인터페이스 요소에 스냅하려면 macshot에 손쉬운 사용 권한이 필요합니다. 시스템 설정에서 접근 권한을 부여한 후 다시 시도해 주세요.";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Garabatapp이 녹화 중 마우스 클릭을 강조하거나 키 입력을 표시하려면 입력 모니터링 권한이 필요합니다. 시스템 설정에서 접근 권한을 부여한 후 다시 시도하세요.";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "개별 인터페이스 요소에 스냅하려면 Garabatapp에 손쉬운 사용 권한이 필요합니다. 시스템 설정에서 접근 권한을 부여한 후 다시 시도해 주세요.";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "키 입력 표시";
@@ -531,7 +531,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "웹캠 오버레이";
 "Camera Access Required" = "카메라 접근 권한 필요";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "macshot이 웹캠 오버레이를 사용하려면 카메라 권한이 필요합니다. 시스템 설정을 열어 권한을 허용하세요.";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Garabatapp이 웹캠 오버레이를 사용하려면 카메라 권한이 필요합니다. 시스템 설정을 열어 권한을 허용하세요.";
 "Webcam" = "웹캠";
 "Bottom Right" = "오른쪽 하단";
 "Bottom Left" = "왼쪽 하단";
@@ -553,7 +553,7 @@
 "Settings" = "설정";
 "Offline build: upload and cloud storage integrations are removed. Update checks may still connect to MacShot's update server. Screenshots and recordings stay local unless you share or save them yourself." = "오프라인 빌드: 업로드 및 클라우드 저장소 연동이 제거되었습니다. 업데이트 확인은 여전히 MacShot의 업데이트 서버에 연결할 수 있습니다. 스크린샷과 녹화는 직접 공유하거나 저장하지 않는 한 로컬에 유지됩니다.";
 "Settings..." = "설정...";
-"macshot Settings" = "macshot 설정";
+"macshot Settings" = "Garabatapp 설정";
 "Also open in Editor" = "편집기에서도 열기";
 "Open in Editor right after selection" = "선택 직후 편집기에서 열기";
 "Close editor after copying" = "복사 후 편집기 닫기";
@@ -609,13 +609,13 @@
 "Clear History?" = "기록을 지우시겠습니까?";
 "This will permanently delete all screenshots from history." = "기록에서 모든 스크린샷이 영구적으로 삭제됩니다.";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "\"설정\" 을 클릭하고 적어도 하나의 수정 키 (⌘, ⌥, ⌃, ⇧) 가 포함된 키 조합을 눌러 단축키를 설정하세요.";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "파일은 Google Drive의 이 폴더에 업로드됩니다. 비워 두면 \"macshot\" 폴더를 사용합니다. macshot은 직접 생성한 폴더만 사용할 수 있으므로, Drive에서 직접 만든 같은 이름의 폴더는 재사용되지 않고 새 폴더가 생성됩니다. 모든 것은 비공개로 유지되며 공개적으로 공유되지 않습니다.";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "파일은 Google Drive의 이 폴더에 업로드됩니다. 비워 두면 \"Garabatapp\" 폴더를 사용합니다. Garabatapp은 직접 생성한 폴더만 사용할 수 있으므로, Drive에서 직접 만든 같은 이름의 폴더는 재사용되지 않고 새 폴더가 생성됩니다. 모든 것은 비공개로 유지되며 공개적으로 공유되지 않습니다.";
 
 "Pressure" = "필압";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "비디오 열기...";
-"Choose a video to open in macshot editor" = "macshot 편집기에서 열 비디오 선택";
+"Choose a video to open in macshot editor" = "Garabatapp 편집기에서 열 비디오 선택";
 "Click to add effects" = "클릭하여 효과 추가";
 "Add Zoom" = "줌 추가";
 "Add Censor" = "검열 추가";
@@ -693,9 +693,9 @@
 "Stop the current recording" = "현재 녹화 중지";
 "Supported URL Scheme Commands" = "지원되는 URL 스킴 명령";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "파일 확장자는 자동으로 추가됩니다. {window}의 슬래시와 콜론은 대시로 변환됩니다.";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Raycast, Alfred, Shortcuts 또는 URL을 여는 모든 도구에서 macshot을 실행하세요.";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Raycast, Alfred, Shortcuts 또는 URL을 여는 모든 도구에서 Garabatapp을 실행하세요.";
 "URL scheme info" = "URL 스킴 정보";
-"Enable macshot:// URL scheme" = "macshot:// URL 스킴 사용";
+"Enable macshot:// URL scheme" = "garabatapp:// URL 스킴 사용";
 "sec (0 = never)" = "초 (0 = 사용 안 함)";
 
 /* Resolution / Aspect Ratio Presets */
@@ -714,7 +714,7 @@
 "Export Settings…" = "설정 내보내기…";
 "Import Settings…" = "설정 가져오기…";
 "Reveal Settings File in Finder" = "Finder에서 설정 파일 보기";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "환경설정을 파일로 내보내 다른 Mac이나 새로 설치한 환경으로 옮길 수 있습니다. 업로드 자격 증명, 저장 폴더, 스크린샷 기록은 포함되지 않습니다. 설정은 macshot의 앱 컨테이너 안에 저장됩니다.";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "환경설정을 파일로 내보내 다른 Mac이나 새로 설치한 환경으로 옮길 수 있습니다. 업로드 자격 증명, 저장 폴더, 스크린샷 기록은 포함되지 않습니다. 설정은 Garabatapp의 앱 컨테이너 안에 저장됩니다.";
 "Export Settings" = "설정 내보내기";
 "Import Settings" = "설정 가져오기";
 "Import failed" = "가져오기 실패";
@@ -725,12 +725,12 @@
 "Relaunch Now" = "지금 다시 실행";
 "Replace your current settings?" = "현재 설정을 대체하시겠습니까?";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "가져오면 현재 환경설정이 이 파일의 설정으로 대체됩니다. 저장 폴더, 업로드 자격 증명, 스크린샷 기록은 유지됩니다. 이 작업은 실행 취소할 수 없습니다.";
-"%d settings were applied. Relaunch macshot to apply all changes." = "%d개의 설정이 적용되었습니다. 모든 변경 사항을 적용하려면 macshot을 다시 실행하십시오.";
+"%d settings were applied. Relaunch macshot to apply all changes." = "%d개의 설정이 적용되었습니다. 모든 변경 사항을 적용하려면 Garabatapp을 다시 실행하십시오.";
 "A few large items were too big to include. Everything else was saved." = "일부 큰 항목은 크기가 너무 커서 포함되지 않았습니다. 나머지는 모두 저장되었습니다.";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "사용자 지정 Beautify 배경 이미지가 너무 커서 포함되지 않았습니다. 나머지는 모두 저장되었습니다.";
-"This file is not a valid macshot settings file." = "이 파일은 유효한 macshot 설정 파일이 아닙니다.";
+"This file is not a valid macshot settings file." = "이 파일은 유효한 Garabatapp 설정 파일이 아닙니다.";
 "This settings file contains no settings." = "이 설정 파일에는 설정이 없습니다.";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "이 설정 파일은 최신 버전의 macshot에서 만들어졌습니다. 먼저 macshot을 업데이트하십시오.";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "이 설정 파일은 최신 버전의 Garabatapp에서 만들어졌습니다. 먼저 Garabatapp을 업데이트하십시오.";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "텍스트를 캡처하고 번역하여 이미지 위에 오버레이합니다";
@@ -775,7 +775,7 @@
 "Apply Default Zoom to All" = "기본 줌을 모두에 적용";
 "Auto" = "자동";
 "Auto Zoom" = "자동 줌";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "자동 줌에는 포인터 데이터가 필요하며, macshot은 새로 녹화할 때마다 이 데이터를 기록합니다. 줌 레인을 이중 클릭하여 줌을 추가할 수도 있습니다.";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "자동 줌에는 포인터 데이터가 필요하며, Garabatapp은 새로 녹화할 때마다 이 데이터를 기록합니다. 줌 레인을 이중 클릭하여 줌을 추가할 수도 있습니다.";
 "Background blur" = "배경 흐림";
 "Background color" = "배경 색상";
 "Background, padding, rounded corners and shadow" = "배경, 여백, 둥근 모서리 및 그림자";
@@ -876,7 +876,7 @@
 "Shrink during zooms" = "줌 중에 축소";
 "Smoothing" = "스무딩";
 "Snappy" = "빠르게";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "시스템 설정 › 개인정보 보호 및 보안에서 macshot의 음성 인식이 꺼져 있습니다.";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "시스템 설정 › 개인정보 보호 및 보안에서 Garabatapp의 음성 인식이 꺼져 있습니다.";
 "Speed" = "속도";
 "Spotlight" = "스포트라이트";
 "Square" = "정사각형";
@@ -886,12 +886,12 @@
 "The recording's audio could not be read." = "녹화의 오디오를 읽을 수 없습니다.";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "이 녹화는 이미 픽셀에 포인터가 포함되어 있어 스타일을 변경할 수 없습니다. 줌은 계속 포인터를 따라갈 수 있습니다.";
 "This recording has no audio to transcribe." = "이 녹화에는 변환할 오디오가 없습니다.";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "이 비디오에는 기록된 포인터 데이터가 없습니다. macshot으로 녹화하고 편집기에서 여는 녹화는 녹화 후에 포인터의 스타일, 부드러움, 크기를 변경할 수 있습니다.";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "이 비디오에는 기록된 포인터 데이터가 없습니다. Garabatapp으로 녹화하고 편집기에서 여는 녹화는 녹화 후에 포인터의 스타일, 부드러움, 크기를 변경할 수 있습니다.";
 "Title" = "제목";
 "Transcribing…" = "변환 중…";
 "Transition" = "전환";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "녹화 전에 키 입력 표시를 켜세요. 그러면 macshot이 키 입력을 별도로 기록하여 여기에서 스타일을 지정할 수 있습니다.";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "녹화 전에 카메라를 켜세요. macshot이 카메라를 별도로 녹화하므로 여기에서 이동, 크기 조정, 스타일 변경 또는 숨기기를 할 수 있으며, 줌 중에 축소할 수도 있습니다.";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "녹화 전에 키 입력 표시를 켜세요. 그러면 Garabatapp이 키 입력을 별도로 기록하여 여기에서 스타일을 지정할 수 있습니다.";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "녹화 전에 카메라를 켜세요. Garabatapp이 카메라를 별도로 녹화하므로 여기에서 이동, 크기 조정, 스타일 변경 또는 숨기기를 할 수 있으며, 줌 중에 축소할 수도 있습니다.";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "민감한 정보를 숨기려면 단색을 사용하세요. 흐리게와 모자이크는 복원될 수 있습니다.";
 "Visibility" = "표시 여부";
 "Wallpaper" = "배경화면";

@@ -35,7 +35,7 @@
 "Pin from Clipboard" = "Sematkan dari Papan Klip";
 "Preferences..." = "Preferensi...";
 "Check for Updates..." = "Periksa Pembaruan...";
-"Quit macshot" = "Keluar macshot";
+"Quit macshot" = "Keluar Garabatapp";
 "No recent captures" = "Tidak ada tangkapan terbaru";
 "Clear History" = "Hapus Riwayat";
 
@@ -233,7 +233,7 @@
 "Copy to clipboard" = "Salin ke papan klip";
 
 /* Preferences - General */
-"macshot Preferences" = "Preferensi macshot";
+"macshot Preferences" = "Preferensi Garabatapp";
 "General" = "Umum";
 "Tools" = "Alat";
 "Recording" = "Rekaman";
@@ -261,9 +261,9 @@
 "Show shortcuts in tooltips" = "Tampilkan pintasan di tooltip";
 "Use window title in saved filename" = "Gunakan judul jendela di nama file tersimpan";
 "Hide menu bar icon" = "Sembunyikan ikon bilah menu";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "Tombol pintas tetap berfungsi. Untuk menampilkan ikon kembali, jalankan ulang macshot.";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "Tombol pintas tetap berfungsi. Untuk menampilkan ikon kembali, jalankan ulang Garabatapp.";
 "Menu Bar Order" = "Urutan Bilah Menu";
-"Choose the order of capture actions in the macshot menu bar menu." = "Pilih urutan tindakan tangkapan di menu bilah menu macshot.";
+"Choose the order of capture actions in the macshot menu bar menu." = "Pilih urutan tindakan tangkapan di menu bilah menu Garabatapp.";
 "Move up" = "Pindah ke atas";
 "Move down" = "Pindah ke bawah";
 "Check for updates automatically" = "Periksa pembaruan secara otomatis";
@@ -395,7 +395,7 @@
 "Video upload requires Google Drive or S3" = "Unggahan video memerlukan Google Drive atau S3";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "Versi %@ (%@)";
 "Made by" = "Dibuat oleh";
 "Licensed under the GPLv3" = "Dilisensikan di bawah GPLv3";
@@ -408,30 +408,30 @@
 "Copy an image or text to the clipboard first, then try again." = "Salin gambar atau teks ke papan klip terlebih dahulu, lalu coba lagi.";
 "OK" = "OK";
 "Accessibility Access Required" = "Akses Aksesibilitas Diperlukan";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "macshot memerlukan izin Aksesibilitas untuk menggulir otomatis aplikasi lain. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "macshot memerlukan izin Aksesibilitas untuk tangkapan gulir. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Garabatapp memerlukan izin Aksesibilitas untuk menggulir otomatis aplikasi lain. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Garabatapp memerlukan izin Aksesibilitas untuk tangkapan gulir. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
 "Open Settings" = "Buka Pengaturan";
 "Cancel" = "Batal";
 "Microphone Access Required" = "Akses Mikrofon Diperlukan";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "macshot memerlukan izin mikrofon untuk merekam audio suara. Buka Pengaturan Sistem untuk memberikan akses.";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Garabatapp memerlukan izin mikrofon untuk merekam audio suara. Buka Pengaturan Sistem untuk memberikan akses.";
 "Upload to Google Drive?" = "Unggah ke Google Drive?";
 "Upload to S3?" = "Unggah ke S3?";
 "Upload to imgbb.com?" = "Unggah ke imgbb.com?";
 "Your screenshot will be uploaded." = "Tangkapan layar Anda akan diunggah.";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "Selamat datang di macshot";
-"Welcome back to macshot" = "Selamat datang kembali di macshot";
+"Welcome to macshot" = "Selamat datang di Garabatapp";
+"Welcome back to macshot" = "Selamat datang kembali di Garabatapp";
 "Turn Screen Recording back on" = "Nyalakan lagi Perekaman Layar";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Setelah beberapa pembaruan, macOS meminta Anda mengizinkan macshot lagi. Pengaturan dan tangkapan Anda aman. Jika macshot sudah ada di daftar, pilih, klik tombol minus (−) untuk menghapusnya, lalu klik tombol plus (+) dan tambahkan macshot lagi.";
-"macshot needs one permission" = "macshot memerlukan satu izin";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Setelah beberapa pembaruan, macOS meminta Anda mengizinkan Garabatapp lagi. Pengaturan dan tangkapan Anda aman. Jika Garabatapp sudah ada di daftar, pilih, klik tombol minus (−) untuk menghapusnya, lalu klik tombol plus (+) dan tambahkan Garabatapp lagi.";
+"macshot needs one permission" = "Garabatapp memerlukan satu izin";
 "Screen Recording not yet granted" = "Perekaman Layar belum diberikan";
 "Screen Recording granted!" = "Perekaman Layar diberikan!";
-"Enable macshot, then try taking a screenshot" = "Aktifkan macshot, lalu coba ambil tangkapan layar";
+"Enable macshot, then try taking a screenshot" = "Aktifkan Garabatapp, lalu coba ambil tangkapan layar";
 "Open Screen Recording Settings" = "Buka Pengaturan Perekaman Layar";
-"Still not working? Run this command in Terminal, then restart macshot." = "Masih belum berfungsi? Jalankan perintah ini di Terminal, lalu luncurkan ulang macshot.";
+"Still not working? Run this command in Terminal, then restart macshot." = "Masih belum berfungsi? Jalankan perintah ini di Terminal, lalu luncurkan ulang Garabatapp.";
 "Copy Command" = "Salin Perintah";
-"Restart macshot" = "Luncurkan Ulang macshot";
+"Restart macshot" = "Luncurkan Ulang Garabatapp";
 "Continue" = "Lanjutkan";
 
 /* OCR Window */
@@ -461,7 +461,7 @@
 "Path copied!" = "Path disalin!";
 
 /* Video Editor */
-"macshot Video Editor" = "Editor Video macshot";
+"macshot Video Editor" = "Editor Video Garabatapp";
 "%@ selected" = "%@ dipilih";
 "Exporting..." = "Mengekspor...";
 "Export failed" = "Ekspor gagal";
@@ -483,13 +483,13 @@
 "Save Project" = "Simpan Proyek";
 "Save Project As..." = "Simpan Proyek Sebagai...";
 "Save as Editable Project (⇧⌘S)" = "Simpan sebagai Proyek yang Dapat Diedit (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Menyimpan gambar dengan semua anotasi tetap dapat diedit. Buka file di macshot untuk melanjutkan pengeditan.";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Menyimpan gambar dengan semua anotasi tetap dapat diedit. Buka file di Garabatapp untuk melanjutkan pengeditan.";
 "Open..." = "Buka...";
-"Choose an image or macshot project to open in the editor" = "Pilih gambar atau proyek macshot untuk dibuka di editor";
+"Choose an image or macshot project to open in the editor" = "Pilih gambar atau proyek Garabatapp untuk dibuka di editor";
 "Could not open “%@”" = "Tidak dapat membuka “%@”";
 "Could not save the project: %@" = "Tidak dapat menyimpan proyek: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "Beberapa anotasi dalam proyek ini tidak dapat dipulihkan, sehingga proyek dibuka sebagai gambar yang diratakan. File asli tidak diubah.";
-"The file is not a macshot project or is damaged." = "File ini bukan proyek macshot atau rusak.";
+"The file is not a macshot project or is damaged." = "File ini bukan proyek Garabatapp atau rusak.";
 "The project could not be prepared for saving." = "Proyek tidak dapat disiapkan untuk disimpan.";
 "The image is too large to save as an editable project." = "Gambar terlalu besar untuk disimpan sebagai proyek yang dapat diedit.";
 "The project file is too large to open." = "File proyek terlalu besar untuk dibuka.";
@@ -525,8 +525,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "Pemantauan Input Diperlukan";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "macshot memerlukan izin Pemantauan Input untuk menyorot klik mouse atau menampilkan penekanan tombol selama perekaman. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "macshot memerlukan izin Aksesibilitas untuk menempel ke elemen antarmuka individual. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Garabatapp memerlukan izin Pemantauan Input untuk menyorot klik mouse atau menampilkan penekanan tombol selama perekaman. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Garabatapp memerlukan izin Aksesibilitas untuk menempel ke elemen antarmuka individual. Berikan akses di Pengaturan Sistem, lalu coba lagi.";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "Tampilkan Ketukan Tombol";
@@ -542,7 +542,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "Hamparan Webcam";
 "Camera Access Required" = "Akses Kamera Diperlukan";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "macshot memerlukan izin kamera untuk hamparan webcam. Buka Pengaturan Sistem untuk memberikan akses.";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Garabatapp memerlukan izin kamera untuk hamparan webcam. Buka Pengaturan Sistem untuk memberikan akses.";
 "Webcam" = "Webcam";
 "Bottom Right" = "Kanan Bawah";
 "Bottom Left" = "Kiri Bawah";
@@ -564,7 +564,7 @@
 "Settings" = "Pengaturan";
 "Offline build: upload and cloud storage integrations are removed. Update checks may still connect to MacShot's update server. Screenshots and recordings stay local unless you share or save them yourself." = "Versi offline: integrasi unggah dan penyimpanan cloud dihapus. Pemeriksaan pembaruan mungkin masih terhubung ke server pembaruan MacShot. Tangkapan layar dan rekaman tetap lokal kecuali Anda membagikan atau menyimpannya sendiri.";
 "Settings..." = "Pengaturan...";
-"macshot Settings" = "Pengaturan macshot";
+"macshot Settings" = "Pengaturan Garabatapp";
 "Also open in Editor" = "Buka juga di Editor";
 "Open in Editor right after selection" = "Buka di Editor langsung setelah memilih";
 "Close editor after copying" = "Tutup editor setelah menyalin";
@@ -618,13 +618,13 @@
 "Clear History?" = "Hapus Riwayat?";
 "This will permanently delete all screenshots from history." = "Ini akan menghapus semua tangkapan layar dari riwayat secara permanen.";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "Klik \"Atur\" dan tekan kombinasi tombol dengan setidaknya satu modifier (⌘, ⌥, ⌃, ⇧) untuk menetapkan pintasan.";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "File diunggah ke folder ini di Google Drive Anda. Biarkan kosong untuk menggunakan \"macshot\". macshot hanya dapat menggunakan folder yang dibuatnya sendiri, jadi folder dengan nama yang sama yang Anda buat di Drive tidak akan digunakan, folder baru akan dibuat sebagai gantinya. Semuanya tetap privat, tidak ada yang dibagikan secara publik.";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "File diunggah ke folder ini di Google Drive Anda. Biarkan kosong untuk menggunakan \"Garabatapp\". Garabatapp hanya dapat menggunakan folder yang dibuatnya sendiri, jadi folder dengan nama yang sama yang Anda buat di Drive tidak akan digunakan, folder baru akan dibuat sebagai gantinya. Semuanya tetap privat, tidak ada yang dibagikan secara publik.";
 
 "Pressure" = "Tekanan";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "Buka Video...";
-"Choose a video to open in macshot editor" = "Pilih video untuk dibuka di editor macshot";
+"Choose a video to open in macshot editor" = "Pilih video untuk dibuka di editor Garabatapp";
 "Click to add effects" = "Klik untuk menambahkan efek";
 "Add Zoom" = "Tambah Zoom";
 "Add Censor" = "Tambah Sensor";
@@ -702,9 +702,9 @@
 "Stop the current recording" = "Hentikan rekaman saat ini";
 "Supported URL Scheme Commands" = "Perintah Skema URL yang Didukung";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "Ekstensi file ditambahkan secara otomatis. Garis miring dan titik dua di {window} menjadi tanda hubung.";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Picu macshot dari Raycast, Alfred, Shortcuts, atau alat apa pun yang membuka URL.";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Picu Garabatapp dari Raycast, Alfred, Shortcuts, atau alat apa pun yang membuka URL.";
 "URL scheme info" = "Info skema URL";
-"Enable macshot:// URL scheme" = "Aktifkan skema URL macshot://";
+"Enable macshot:// URL scheme" = "Aktifkan skema URL garabatapp://";
 "sec (0 = never)" = "detik (0 = tidak pernah)";
 
 /* Settings import/export (issues #265, #280) */
@@ -712,7 +712,7 @@
 "Export Settings…" = "Ekspor Pengaturan…";
 "Import Settings…" = "Impor Pengaturan…";
 "Reveal Settings File in Finder" = "Tampilkan Berkas Pengaturan di Finder";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Ekspor preferensi Anda ke sebuah berkas untuk memindahkannya ke Mac lain atau instalasi baru. Kredensial unggah, folder penyimpanan, dan riwayat tangkapan layar tidak disertakan. Pengaturan disimpan di dalam wadah aplikasi macshot.";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Ekspor preferensi Anda ke sebuah berkas untuk memindahkannya ke Mac lain atau instalasi baru. Kredensial unggah, folder penyimpanan, dan riwayat tangkapan layar tidak disertakan. Pengaturan disimpan di dalam wadah aplikasi Garabatapp.";
 "Export Settings" = "Ekspor Pengaturan";
 "Import Settings" = "Impor Pengaturan";
 "Import failed" = "Impor gagal";
@@ -723,12 +723,12 @@
 "Relaunch Now" = "Luncurkan Ulang Sekarang";
 "Replace your current settings?" = "Ganti pengaturan Anda saat ini?";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "Mengimpor akan mengganti preferensi Anda saat ini dengan yang ada di berkas ini. Folder penyimpanan, kredensial unggah, dan riwayat tangkapan layar Anda tetap dipertahankan. Tindakan ini tidak dapat dibatalkan.";
-"%d settings were applied. Relaunch macshot to apply all changes." = "%d pengaturan telah diterapkan. Luncurkan ulang macshot untuk menerapkan semua perubahan.";
+"%d settings were applied. Relaunch macshot to apply all changes." = "%d pengaturan telah diterapkan. Luncurkan ulang Garabatapp untuk menerapkan semua perubahan.";
 "A few large items were too big to include. Everything else was saved." = "Beberapa item besar terlalu besar untuk disertakan. Selebihnya telah disimpan.";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "Gambar latar Beautify khusus Anda terlalu besar untuk disertakan. Selebihnya telah disimpan.";
-"This file is not a valid macshot settings file." = "Berkas ini bukan berkas pengaturan macshot yang valid.";
+"This file is not a valid macshot settings file." = "Berkas ini bukan berkas pengaturan Garabatapp yang valid.";
 "This settings file contains no settings." = "Berkas pengaturan ini tidak berisi pengaturan apa pun.";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "Berkas pengaturan ini dibuat oleh versi macshot yang lebih baru. Harap perbarui macshot terlebih dahulu.";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "Berkas pengaturan ini dibuat oleh versi Garabatapp yang lebih baru. Harap perbarui Garabatapp terlebih dahulu.";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "Tangkap, terjemahkan, dan tampilkan teks di atas gambar";
@@ -773,7 +773,7 @@
 "Apply Default Zoom to All" = "Terapkan Zoom Default ke Semua";
 "Auto" = "Otomatis";
 "Auto Zoom" = "Zoom Otomatis";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Zoom Otomatis memerlukan data penunjuk, yang direkam macshot di setiap rekaman baru. Anda tetap dapat menambahkan zoom dengan mengeklik dua kali jalur zoom.";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Zoom Otomatis memerlukan data penunjuk, yang direkam Garabatapp di setiap rekaman baru. Anda tetap dapat menambahkan zoom dengan mengeklik dua kali jalur zoom.";
 "Background blur" = "Blur latar belakang";
 "Background color" = "Warna latar belakang";
 "Background, padding, rounded corners and shadow" = "Latar belakang, padding, sudut membulat, dan bayangan";
@@ -874,7 +874,7 @@
 "Shrink during zooms" = "Perkecil saat zoom";
 "Smoothing" = "Penghalusan";
 "Snappy" = "Cepat";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Pengenalan ucapan dimatikan untuk macshot di Pengaturan Sistem › Privasi & Keamanan.";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Pengenalan ucapan dimatikan untuk Garabatapp di Pengaturan Sistem › Privasi & Keamanan.";
 "Speed" = "Kecepatan";
 "Spotlight" = "Sorotan";
 "Square" = "Persegi";
@@ -884,12 +884,12 @@
 "The recording's audio could not be read." = "Audio rekaman tidak dapat dibaca.";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "Rekaman ini sudah menampilkan penunjuk di pikselnya, jadi gayanya tidak dapat diubah. Zoom tetap dapat mengikutinya.";
 "This recording has no audio to transcribe." = "Rekaman ini tidak memiliki audio untuk ditranskripsi.";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Video ini tidak memiliki data penunjuk yang terekam. Rekaman yang dibuat dengan macshot dan dibuka di editor memungkinkan Anda mengubah gaya, menghaluskan, dan mengubah ukuran penunjuk setelah merekam.";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Video ini tidak memiliki data penunjuk yang terekam. Rekaman yang dibuat dengan Garabatapp dan dibuka di editor memungkinkan Anda mengubah gaya, menghaluskan, dan mengubah ukuran penunjuk setelah merekam.";
 "Title" = "Judul";
 "Transcribing…" = "Mentranskripsi…";
 "Transition" = "Transisi";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Aktifkan Tampilkan Ketukan Tombol sebelum merekam. macshot kemudian merekamnya secara terpisah agar Anda dapat mengatur gayanya di sini.";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Aktifkan kamera sebelum merekam. macshot merekamnya secara terpisah agar Anda dapat memindahkan, mengubah ukuran, mengubah gaya, atau menyembunyikannya di sini, dan memperkecilnya saat zoom.";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Aktifkan Tampilkan Ketukan Tombol sebelum merekam. Garabatapp kemudian merekamnya secara terpisah agar Anda dapat mengatur gayanya di sini.";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Aktifkan kamera sebelum merekam. Garabatapp merekamnya secara terpisah agar Anda dapat memindahkan, mengubah ukuran, mengubah gaya, atau menyembunyikannya di sini, dan memperkecilnya saat zoom.";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "Gunakan Solid untuk menyembunyikan informasi sensitif: blur dan pikselasi terkadang dapat dikembalikan.";
 "Visibility" = "Visibilitas";
 "Wallpaper" = "Wallpaper";

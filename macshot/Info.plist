@@ -14,10 +14,10 @@
 		</dict>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>macshot Actions</string>
+			<string>Garabatapp Actions</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>macshot</string>
+				<string>garabatapp</string>
 			</array>
 		</dict>
 	</array>
@@ -27,7 +27,7 @@
 			<key>UTTypeIdentifier</key>
 			<string>com.sw33tlie.macshot.project</string>
 			<key>UTTypeDescription</key>
-			<string>macshot Project</string>
+			<string>Garabatapp Project</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
@@ -46,7 +46,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>macshot Project</string>
+			<string>Garabatapp Project</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -91,15 +91,15 @@
 		</dict>
 	</array>
 	<key>Privacy - Screen Capture Usage Description</key>
-	<string>macshot needs screen recording permission to capture screenshots.</string>
+	<string>Garabatapp needs screen recording permission to capture screenshots.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>macshot can record microphone audio during screen recordings.</string>
+	<string>Garabatapp can record microphone audio during screen recordings.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>macshot can show a webcam overlay during screen recordings.</string>
+	<string>Garabatapp can show a webcam overlay during screen recordings.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>macshot transcribes your recordings on this Mac to create captions. Audio is not uploaded.</string>
+	<string>Garabatapp transcribes your recordings on this Mac to create captions. Audio is not uploaded.</string>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/sw33tLie/macshot/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/andresguibarra/garabatapp/personal/appcast-garabatapp.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>+5RTT9lGyoeOYAYuNfCdPhxugmruYvRDyFXgk6VPY1c=</string>
 	<key>SUScheduledCheckInterval</key>

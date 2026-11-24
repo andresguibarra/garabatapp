@@ -42,7 +42,7 @@ final class GoogleDriveUploader: NSObject, ASWebAuthenticationPresentationContex
     var userEmail: String? { defaults.string(forKey: "gdriveUserEmail") }
     private var folderName: String {
         let name = defaults.string(forKey: "gdriveFolderName")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return name.isEmpty ? "macshot" : name
+        return name.isEmpty ? "Garabatapp" : name
     }
 
     /// Start the OAuth2 sign-in flow using ASWebAuthenticationSession.

@@ -35,7 +35,7 @@
 "Pin from Clipboard" = "ปักหมุดจากคลิปบอร์ด";
 "Preferences..." = "การตั้งค่า...";
 "Check for Updates..." = "ตรวจสอบอัปเดต...";
-"Quit macshot" = "ออกจาก macshot";
+"Quit macshot" = "ออกจาก Garabatapp";
 "No recent captures" = "ไม่มีภาพที่จับล่าสุด";
 "Clear History" = "ล้างประวัติ";
 
@@ -232,7 +232,7 @@
 "Copy to clipboard" = "คัดลอกไปยังคลิปบอร์ด";
 
 /* Preferences - General */
-"macshot Preferences" = "การตั้งค่า macshot";
+"macshot Preferences" = "การตั้งค่า Garabatapp";
 "General" = "ทั่วไป";
 "Tools" = "เครื่องมือ";
 "Recording" = "การบันทึก";
@@ -260,13 +260,13 @@
 "Show shortcuts in tooltips" = "แสดงปุ่มลัดในคำแนะนำเครื่องมือ";
 "Use window title in saved filename" = "ใช้ชื่อหน้าต่างในชื่อไฟล์ที่บันทึก";
 "Hide menu bar icon" = "ซ่อนไอคอนแถบเมนู";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "ปุ่มลัดยังใช้งานได้ เปิด macshot ใหม่เพื่อแสดงไอคอนอีกครั้ง";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "ปุ่มลัดยังใช้งานได้ เปิด Garabatapp ใหม่เพื่อแสดงไอคอนอีกครั้ง";
 "Menu bar icon:" = "ไอคอนแถบเมนู:";
 "Default" = "ค่าเริ่มต้น";
 "Custom symbol" = "สัญลักษณ์กำหนดเอง";
 "Enter any SF Symbol name (e.g. camera.fill) or pick a preset. Browse names in Apple's SF Symbols app. Invalid names fall back to the default icon." = "ป้อนชื่อ SF Symbol ใดก็ได้ (เช่น camera.fill) หรือเลือกค่าที่ตั้งไว้ ดูชื่อได้ในแอป SF Symbols ของ Apple ชื่อที่ไม่ถูกต้องจะกลับไปใช้ไอคอนเริ่มต้น";
 "Menu Bar Order" = "ลำดับแถบเมนู";
-"Choose the order of capture actions in the macshot menu bar menu." = "เลือกลำดับของการดำเนินการจับภาพในเมนูแถบเมนูของ macshot";
+"Choose the order of capture actions in the macshot menu bar menu." = "เลือกลำดับของการดำเนินการจับภาพในเมนูแถบเมนูของ Garabatapp";
 "Move up" = "เลื่อนขึ้น";
 "Move down" = "เลื่อนลง";
 "Check for updates automatically" = "ตรวจสอบอัปเดตอัตโนมัติ";
@@ -394,7 +394,7 @@
 "Video upload requires Google Drive or S3" = "การอัปโหลดวิดีโอต้องใช้ Google Drive หรือ S3";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "เวอร์ชัน %@ (%@)";
 "Made by" = "สร้างโดย";
 "Licensed under the GPLv3" = "อนุญาตภายใต้ GPLv3";
@@ -407,30 +407,30 @@
 "Copy an image or text to the clipboard first, then try again." = "คัดลอกรูปภาพหรือข้อความไปยังคลิปบอร์ดก่อน แล้วลองอีกครั้ง";
 "OK" = "ตกลง";
 "Accessibility Access Required" = "ต้องการสิทธิ์การเข้าถึง";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "macshot ต้องการสิทธิ์การเข้าถึงเพื่อเลื่อนแอปอื่นอัตโนมัติ กรุณาอนุญาตในการตั้งค่าระบบ แล้วลองอีกครั้ง";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "macshot ต้องการสิทธิ์การช่วยการเข้าถึงสำหรับการจับภาพแบบเลื่อน กรุณาให้สิทธิ์ในการตั้งค่าระบบ แล้วลองอีกครั้ง";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Garabatapp ต้องการสิทธิ์การเข้าถึงเพื่อเลื่อนแอปอื่นอัตโนมัติ กรุณาอนุญาตในการตั้งค่าระบบ แล้วลองอีกครั้ง";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Garabatapp ต้องการสิทธิ์การช่วยการเข้าถึงสำหรับการจับภาพแบบเลื่อน กรุณาให้สิทธิ์ในการตั้งค่าระบบ แล้วลองอีกครั้ง";
 "Open Settings" = "เปิดการตั้งค่า";
 "Cancel" = "ยกเลิก";
 "Microphone Access Required" = "ต้องการสิทธิ์ไมโครโฟน";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "macshot ต้องการสิทธิ์ไมโครโฟนเพื่อบันทึกเสียง เปิดการตั้งค่าระบบเพื่ออนุญาต";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Garabatapp ต้องการสิทธิ์ไมโครโฟนเพื่อบันทึกเสียง เปิดการตั้งค่าระบบเพื่ออนุญาต";
 "Upload to Google Drive?" = "อัปโหลดไปยัง Google Drive?";
 "Upload to S3?" = "อัปโหลดไปยัง S3?";
 "Upload to imgbb.com?" = "อัปโหลดไปยัง imgbb.com?";
 "Your screenshot will be uploaded." = "ภาพหน้าจอของคุณจะถูกอัปโหลด";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "ยินดีต้อนรับสู่ macshot";
-"Welcome back to macshot" = "ยินดีต้อนรับกลับสู่ macshot";
+"Welcome to macshot" = "ยินดีต้อนรับสู่ Garabatapp";
+"Welcome back to macshot" = "ยินดีต้อนรับกลับสู่ Garabatapp";
 "Turn Screen Recording back on" = "เปิดการบันทึกหน้าจออีกครั้ง";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "หลังการอัปเดตบางครั้ง macOS จะขอให้คุณอนุญาต macshot อีกครั้ง การตั้งค่าและภาพที่จับไว้ของคุณยังอยู่ครบ หาก macshot อยู่ในรายการแล้ว ให้เลือก คลิกปุ่มลบ (−) เพื่อนำออก จากนั้นคลิกปุ่มเพิ่ม (+) แล้วเพิ่ม macshot อีกครั้ง";
-"macshot needs one permission" = "macshot ต้องการสิทธิ์หนึ่งอย่าง";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "หลังการอัปเดตบางครั้ง macOS จะขอให้คุณอนุญาต Garabatapp อีกครั้ง การตั้งค่าและภาพที่จับไว้ของคุณยังอยู่ครบ หาก Garabatapp อยู่ในรายการแล้ว ให้เลือก คลิกปุ่มลบ (−) เพื่อนำออก จากนั้นคลิกปุ่มเพิ่ม (+) แล้วเพิ่ม Garabatapp อีกครั้ง";
+"macshot needs one permission" = "Garabatapp ต้องการสิทธิ์หนึ่งอย่าง";
 "Screen Recording not yet granted" = "ยังไม่ได้อนุญาตการบันทึกหน้าจอ";
 "Screen Recording granted!" = "อนุญาตการบันทึกหน้าจอแล้ว!";
-"Enable macshot, then try taking a screenshot" = "เปิดใช้งาน macshot แล้วลองจับภาพหน้าจอ";
+"Enable macshot, then try taking a screenshot" = "เปิดใช้งาน Garabatapp แล้วลองจับภาพหน้าจอ";
 "Open Screen Recording Settings" = "เปิดการตั้งค่าการบันทึกหน้าจอ";
-"Still not working? Run this command in Terminal, then restart macshot." = "ยังใช้งานไม่ได้ใช่ไหม เรียกใช้คำสั่งนี้ในเทอร์มินัล แล้วเปิด macshot ใหม่";
+"Still not working? Run this command in Terminal, then restart macshot." = "ยังใช้งานไม่ได้ใช่ไหม เรียกใช้คำสั่งนี้ในเทอร์มินัล แล้วเปิด Garabatapp ใหม่";
 "Copy Command" = "คัดลอกคำสั่ง";
-"Restart macshot" = "เปิด macshot ใหม่";
+"Restart macshot" = "เปิด Garabatapp ใหม่";
 "Continue" = "ดำเนินการต่อ";
 
 /* OCR Window */
@@ -461,7 +461,7 @@
 "Path copied!" = "คัดลอกเส้นทางแล้ว!";
 
 /* Video Editor */
-"macshot Video Editor" = "ตัวแก้ไขวิดีโอ macshot";
+"macshot Video Editor" = "ตัวแก้ไขวิดีโอ Garabatapp";
 "%@ selected" = "เลือก %@ แล้ว";
 "Exporting..." = "กำลังส่งออก...";
 "Export failed" = "ส่งออกล้มเหลว";
@@ -483,13 +483,13 @@
 "Save Project" = "บันทึกโปรเจกต์";
 "Save Project As..." = "บันทึกโปรเจกต์เป็น...";
 "Save as Editable Project (⇧⌘S)" = "บันทึกเป็นโปรเจกต์ที่แก้ไขได้ (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "บันทึกรูปภาพโดยที่คำอธิบายประกอบทั้งหมดยังแก้ไขได้ เปิดไฟล์ใน macshot เพื่อแก้ไขต่อ";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "บันทึกรูปภาพโดยที่คำอธิบายประกอบทั้งหมดยังแก้ไขได้ เปิดไฟล์ใน Garabatapp เพื่อแก้ไขต่อ";
 "Open..." = "เปิด...";
-"Choose an image or macshot project to open in the editor" = "เลือกรูปภาพหรือโปรเจกต์ macshot เพื่อเปิดในตัวแก้ไข";
+"Choose an image or macshot project to open in the editor" = "เลือกรูปภาพหรือโปรเจกต์ Garabatapp เพื่อเปิดในตัวแก้ไข";
 "Could not open “%@”" = "ไม่สามารถเปิด “%@” ได้";
 "Could not save the project: %@" = "ไม่สามารถบันทึกโปรเจกต์ได้: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "ไม่สามารถกู้คืนคำอธิบายประกอบบางรายการในโปรเจกต์นี้ได้ จึงเปิดเป็นภาพแบบรวมเลเยอร์ ไฟล์ต้นฉบับไม่มีการเปลี่ยนแปลง";
-"The file is not a macshot project or is damaged." = "ไฟล์นี้ไม่ใช่โปรเจกต์ macshot หรือไฟล์เสียหาย";
+"The file is not a macshot project or is damaged." = "ไฟล์นี้ไม่ใช่โปรเจกต์ Garabatapp หรือไฟล์เสียหาย";
 "The project could not be prepared for saving." = "ไม่สามารถเตรียมโปรเจกต์สำหรับการบันทึกได้";
 "The image is too large to save as an editable project." = "ภาพมีขนาดใหญ่เกินกว่าจะบันทึกเป็นโปรเจกต์ที่แก้ไขได้";
 "The project file is too large to open." = "ไฟล์โปรเจกต์มีขนาดใหญ่เกินกว่าจะเปิดได้";
@@ -525,8 +525,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "ต้องการสิทธิ์การตรวจสอบอินพุต";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "macshot ต้องการสิทธิ์การตรวจสอบอินพุตเพื่อไฮไลต์การคลิกเมาส์หรือแสดงการกดปุ่มขณะบันทึก โปรดอนุญาตการเข้าถึงในการตั้งค่าระบบ แล้วลองอีกครั้ง";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "macshot ต้องการสิทธิ์การช่วยการเข้าถึงเพื่อสแนปไปยังองค์ประกอบอินเทอร์เฟซแต่ละรายการ กรุณาให้สิทธิ์ในการตั้งค่าระบบ แล้วลองอีกครั้ง";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Garabatapp ต้องการสิทธิ์การตรวจสอบอินพุตเพื่อไฮไลต์การคลิกเมาส์หรือแสดงการกดปุ่มขณะบันทึก โปรดอนุญาตการเข้าถึงในการตั้งค่าระบบ แล้วลองอีกครั้ง";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Garabatapp ต้องการสิทธิ์การช่วยการเข้าถึงเพื่อสแนปไปยังองค์ประกอบอินเทอร์เฟซแต่ละรายการ กรุณาให้สิทธิ์ในการตั้งค่าระบบ แล้วลองอีกครั้ง";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "แสดงการกดปุ่ม";
@@ -542,7 +542,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "ซ้อนทับเว็บแคม";
 "Camera Access Required" = "ต้องการสิทธิ์กล้อง";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "macshot ต้องการสิทธิ์กล้องสำหรับการซ้อนทับเว็บแคม เปิดการตั้งค่าระบบเพื่ออนุญาต";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Garabatapp ต้องการสิทธิ์กล้องสำหรับการซ้อนทับเว็บแคม เปิดการตั้งค่าระบบเพื่ออนุญาต";
 "Webcam" = "เว็บแคม";
 "Bottom Right" = "ล่างขวา";
 "Bottom Left" = "ล่างซ้าย";
@@ -563,7 +563,7 @@
 /* New Strings */
 "Settings" = "การตั้งค่า";
 "Settings..." = "การตั้งค่า...";
-"macshot Settings" = "การตั้งค่า macshot";
+"macshot Settings" = "การตั้งค่า Garabatapp";
 "Also open in Editor" = "เปิดในตัวแก้ไขด้วย";
 "Open in Editor right after selection" = "เปิดในตัวแก้ไขทันทีหลังเลือก";
 "Close editor after copying" = "ปิดตัวแก้ไขหลังคัดลอก";
@@ -618,13 +618,13 @@
 "Clear History?" = "ล้างประวัติ?";
 "This will permanently delete all screenshots from history." = "การดำเนินการนี้จะลบภาพหน้าจอทั้งหมดออกจากประวัติอย่างถาวร";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "คลิก \"ตั้งค่า\" แล้วกดคีย์ผสมที่มีปุ่มตัวแก้ไขอย่างน้อยหนึ่งปุ่ม (⌘, ⌥, ⌃, ⇧) เพื่อตั้งค่าทางลัด";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "ไฟล์จะถูกอัปโหลดไปยังโฟลเดอร์นี้ใน Google Drive ของคุณ เว้นว่างไว้เพื่อใช้ \"macshot\" macshot สามารถใช้ได้เฉพาะโฟลเดอร์ที่ตัวเองสร้างขึ้นเท่านั้น ดังนั้นโฟลเดอร์ชื่อเดียวกันที่คุณสร้างเองใน Drive จะไม่ถูกนำมาใช้ซ้ำ, แต่จะสร้างโฟลเดอร์ใหม่แทน ทุกอย่างเป็นส่วนตัว, ไม่มีการแชร์สาธารณะ";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "ไฟล์จะถูกอัปโหลดไปยังโฟลเดอร์นี้ใน Google Drive ของคุณ เว้นว่างไว้เพื่อใช้ \"Garabatapp\" Garabatapp สามารถใช้ได้เฉพาะโฟลเดอร์ที่ตัวเองสร้างขึ้นเท่านั้น ดังนั้นโฟลเดอร์ชื่อเดียวกันที่คุณสร้างเองใน Drive จะไม่ถูกนำมาใช้ซ้ำ, แต่จะสร้างโฟลเดอร์ใหม่แทน ทุกอย่างเป็นส่วนตัว, ไม่มีการแชร์สาธารณะ";
 
 "Pressure" = "แรงกด";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "เปิดวิดีโอ...";
-"Choose a video to open in macshot editor" = "เลือกวิดีโอเพื่อเปิดในตัวแก้ไข macshot";
+"Choose a video to open in macshot editor" = "เลือกวิดีโอเพื่อเปิดในตัวแก้ไข Garabatapp";
 "Click to add effects" = "คลิกเพื่อเพิ่มเอฟเฟกต์";
 "Add Zoom" = "เพิ่มการซูม";
 "Add Censor" = "เพิ่มการปิดบัง";
@@ -702,9 +702,9 @@
 "Stop the current recording" = "หยุดการบันทึกปัจจุบัน";
 "Supported URL Scheme Commands" = "คำสั่ง URL Scheme ที่รองรับ";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "นามสกุลไฟล์จะถูกเพิ่มโดยอัตโนมัติ เครื่องหมายทับและโคลอนใน {window} จะกลายเป็นเครื่องหมายขีด";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "เรียกใช้ macshot จาก Raycast, Alfred, Shortcuts หรือเครื่องมือใดก็ตามที่เปิด URL";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "เรียกใช้ Garabatapp จาก Raycast, Alfred, Shortcuts หรือเครื่องมือใดก็ตามที่เปิด URL";
 "URL scheme info" = "ข้อมูล URL scheme";
-"Enable macshot:// URL scheme" = "เปิดใช้งาน URL scheme macshot://";
+"Enable macshot:// URL scheme" = "เปิดใช้งาน URL scheme garabatapp://";
 "sec (0 = never)" = "วินาที (0 = ไม่เลย)";
 
 /* Settings import/export (issues #265, #280) */
@@ -712,7 +712,7 @@
 "Export Settings…" = "ส่งออกการตั้งค่า…";
 "Import Settings…" = "นำเข้าการตั้งค่า…";
 "Reveal Settings File in Finder" = "แสดงไฟล์การตั้งค่าใน Finder";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "ส่งออกการกำหนดค่าของคุณไปยังไฟล์เพื่อย้ายไปยัง Mac เครื่องอื่นหรือการติดตั้งใหม่ ข้อมูลรับรองการอัปโหลด โฟลเดอร์บันทึก และประวัติภาพหน้าจอจะไม่รวมอยู่ด้วย การตั้งค่าจะถูกจัดเก็บไว้ภายในคอนเทนเนอร์แอปของ macshot";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "ส่งออกการกำหนดค่าของคุณไปยังไฟล์เพื่อย้ายไปยัง Mac เครื่องอื่นหรือการติดตั้งใหม่ ข้อมูลรับรองการอัปโหลด โฟลเดอร์บันทึก และประวัติภาพหน้าจอจะไม่รวมอยู่ด้วย การตั้งค่าจะถูกจัดเก็บไว้ภายในคอนเทนเนอร์แอปของ Garabatapp";
 "Export Settings" = "ส่งออกการตั้งค่า";
 "Import Settings" = "นำเข้าการตั้งค่า";
 "Import failed" = "นำเข้าไม่สำเร็จ";
@@ -723,12 +723,12 @@
 "Relaunch Now" = "เปิดใหม่ตอนนี้";
 "Replace your current settings?" = "แทนที่การตั้งค่าปัจจุบันของคุณหรือไม่?";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "การนำเข้าจะแทนที่การกำหนดค่าปัจจุบันของคุณด้วยค่าในไฟล์นี้ โฟลเดอร์บันทึก ข้อมูลรับรองการอัปโหลด และประวัติภาพหน้าจอของคุณจะยังคงอยู่ การดำเนินการนี้ไม่สามารถเลิกทำได้";
-"%d settings were applied. Relaunch macshot to apply all changes." = "นำการตั้งค่า %d รายการไปใช้แล้ว เปิด macshot ใหม่เพื่อนำการเปลี่ยนแปลงทั้งหมดไปใช้";
+"%d settings were applied. Relaunch macshot to apply all changes." = "นำการตั้งค่า %d รายการไปใช้แล้ว เปิด Garabatapp ใหม่เพื่อนำการเปลี่ยนแปลงทั้งหมดไปใช้";
 "A few large items were too big to include. Everything else was saved." = "รายการขนาดใหญ่บางรายการมีขนาดเกินกว่าที่จะรวมได้ ส่วนอื่นทั้งหมดถูกบันทึกแล้ว";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "ภาพพื้นหลัง Beautify ที่คุณกำหนดเองมีขนาดใหญ่เกินกว่าที่จะรวมได้ ส่วนอื่นทั้งหมดถูกบันทึกแล้ว";
-"This file is not a valid macshot settings file." = "ไฟล์นี้ไม่ใช่ไฟล์การตั้งค่า macshot ที่ถูกต้อง";
+"This file is not a valid macshot settings file." = "ไฟล์นี้ไม่ใช่ไฟล์การตั้งค่า Garabatapp ที่ถูกต้อง";
 "This settings file contains no settings." = "ไฟล์การตั้งค่านี้ไม่มีการตั้งค่าใดๆ";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "ไฟล์การตั้งค่านี้สร้างขึ้นโดย macshot เวอร์ชันที่ใหม่กว่า โปรดอัปเดต macshot ก่อน";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "ไฟล์การตั้งค่านี้สร้างขึ้นโดย Garabatapp เวอร์ชันที่ใหม่กว่า โปรดอัปเดต Garabatapp ก่อน";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "จับภาพ แปล และวางข้อความซ้อนทับบนภาพ";
@@ -773,7 +773,7 @@
 "Apply Default Zoom to All" = "ใช้ซูมเริ่มต้นกับทั้งหมด";
 "Auto" = "อัตโนมัติ";
 "Auto Zoom" = "ซูมอัตโนมัติ";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "ซูมอัตโนมัติต้องใช้ข้อมูลตัวชี้ ซึ่ง macshot บันทึกไว้ในการบันทึกใหม่ทุกครั้ง คุณยังคงเพิ่มการซูมได้โดยคลิกสองครั้งที่แทร็กซูม";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "ซูมอัตโนมัติต้องใช้ข้อมูลตัวชี้ ซึ่ง Garabatapp บันทึกไว้ในการบันทึกใหม่ทุกครั้ง คุณยังคงเพิ่มการซูมได้โดยคลิกสองครั้งที่แทร็กซูม";
 "Background blur" = "เบลอพื้นหลัง";
 "Background color" = "สีพื้นหลัง";
 "Background, padding, rounded corners and shadow" = "พื้นหลัง ระยะห่าง มุมมน และเงา";
@@ -874,7 +874,7 @@
 "Shrink during zooms" = "ย่อขณะซูม";
 "Smoothing" = "ความเรียบ";
 "Snappy" = "ฉับไว";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "การรู้จำเสียงพูดถูกปิดสำหรับ macshot ในการตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "การรู้จำเสียงพูดถูกปิดสำหรับ Garabatapp ในการตั้งค่าระบบ › ความเป็นส่วนตัวและความปลอดภัย";
 "Speed" = "ความเร็ว";
 "Spotlight" = "สปอตไลท์";
 "Square" = "สี่เหลี่ยมจัตุรัส";
@@ -884,12 +884,12 @@
 "The recording's audio could not be read." = "ไม่สามารถอ่านเสียงของการบันทึกได้";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "การบันทึกนี้มีตัวชี้อยู่ในพิกเซลแล้ว จึงไม่สามารถเปลี่ยนสไตล์ได้ แต่การซูมยังคงติดตามตัวชี้ได้";
 "This recording has no audio to transcribe." = "การบันทึกนี้ไม่มีเสียงให้ถอดความ";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "วิดีโอนี้ไม่มีข้อมูลตัวชี้ที่บันทึกไว้ การบันทึกที่สร้างด้วย macshot และเปิดในตัวแก้ไขจะให้คุณเปลี่ยนสไตล์ ปรับให้เรียบ และปรับขนาดตัวชี้ได้หลังการบันทึก";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "วิดีโอนี้ไม่มีข้อมูลตัวชี้ที่บันทึกไว้ การบันทึกที่สร้างด้วย Garabatapp และเปิดในตัวแก้ไขจะให้คุณเปลี่ยนสไตล์ ปรับให้เรียบ และปรับขนาดตัวชี้ได้หลังการบันทึก";
 "Title" = "ชื่อเรื่อง";
 "Transcribing…" = "กำลังถอดความ…";
 "Transition" = "การเปลี่ยนผ่าน";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "เปิด “แสดงการกดปุ่ม” ก่อนบันทึก จากนั้น macshot จะบันทึกการกดปุ่มแยกต่างหากเพื่อให้คุณปรับสไตล์ได้ที่นี่";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "เปิดกล้องก่อนบันทึก macshot จะบันทึกกล้องแยกต่างหากเพื่อให้คุณย้าย ปรับขนาด เปลี่ยนสไตล์ หรือซ่อนได้ที่นี่, และย่อลงขณะซูม";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "เปิด “แสดงการกดปุ่ม” ก่อนบันทึก จากนั้น Garabatapp จะบันทึกการกดปุ่มแยกต่างหากเพื่อให้คุณปรับสไตล์ได้ที่นี่";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "เปิดกล้องก่อนบันทึก Garabatapp จะบันทึกกล้องแยกต่างหากเพื่อให้คุณย้าย ปรับขนาด เปลี่ยนสไตล์ หรือซ่อนได้ที่นี่, และย่อลงขณะซูม";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "ใช้ “ทึบ” เพื่อซ่อนข้อมูลที่ละเอียดอ่อน: การเบลอและการทำพิกเซลบางครั้งสามารถย้อนกลับได้";
 "Visibility" = "การแสดงผล";
 "Wallpaper" = "วอลเปเปอร์";

@@ -2097,7 +2097,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.setCustomSpacing(10, after: stack.arrangedSubviews.last!)
 
         gdriveFolderField = NSTextField()
-        gdriveFolderField.placeholderString = "macshot"
+        gdriveFolderField.placeholderString = "Garabatapp"
         gdriveFolderField.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         gdriveFolderField.stringValue = UserDefaults.standard.string(forKey: "gdriveFolderName") ?? ""
         gdriveFolderField.target = self
@@ -2354,7 +2354,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
                 var lines: [String] = []
                 let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
                 let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-                lines.append("macshot \(version) (\(build))")
+                lines.append("Garabatapp \(version) (\(build))")
                 lines.append("macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
                 lines.append("")
                 lines.append("=== NSScreen Info ===")
@@ -3570,20 +3570,20 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         if let existing = urlSchemeInfoPopover, existing.isShown { return }
 
         let commands: [(String, String)] = [
-            ("macshot://capture",             L("Start area capture")),
-            ("macshot://capture-fullscreen",  L("Capture the full screen")),
-            ("macshot://capture-last",        L("Re-capture the last selected area")),
-            ("macshot://quick-capture",       L("Quick capture (uses your Enter action)")),
-            ("macshot://ocr",                 L("Capture area and read text/QR codes")),
-            ("macshot://ocr-translate?target=zh-CN", L("Capture, translate, and overlay the text on the image")),
-            ("macshot://record",              L("Start area recording")),
-            ("macshot://record-fullscreen",   L("Start full-screen recording")),
-            ("macshot://stop-recording",      L("Stop the current recording")),
-            ("macshot://scroll-capture",      L("Start scroll capture")),
-            ("macshot://history",             L("Open the recent captures overlay")),
-            ("macshot://settings",            L("Open this settings window")),
-            ("macshot://open?file=/path.png", L("Open an image file in the editor")),
-            ("macshot://edit?id=<id>",        L("Open a history entry in the editor (keeps annotations editable)")),
+            ("garabatapp://capture",             L("Start area capture")),
+            ("garabatapp://capture-fullscreen",  L("Capture the full screen")),
+            ("garabatapp://capture-last",        L("Re-capture the last selected area")),
+            ("garabatapp://quick-capture",       L("Quick capture (uses your Enter action)")),
+            ("garabatapp://ocr",                 L("Capture area and read text/QR codes")),
+            ("garabatapp://ocr-translate?target=zh-CN", L("Capture, translate, and overlay the text on the image")),
+            ("garabatapp://record",              L("Start area recording")),
+            ("garabatapp://record-fullscreen",   L("Start full-screen recording")),
+            ("garabatapp://stop-recording",      L("Stop the current recording")),
+            ("garabatapp://scroll-capture",      L("Start scroll capture")),
+            ("garabatapp://history",             L("Open the recent captures overlay")),
+            ("garabatapp://settings",            L("Open this settings window")),
+            ("garabatapp://open?file=/path.png", L("Open an image file in the editor")),
+            ("garabatapp://edit?id=<id>",        L("Open a history entry in the editor (keeps annotations editable)")),
         ]
 
         let title = NSTextField(labelWithString: L("Supported URL Scheme Commands"))

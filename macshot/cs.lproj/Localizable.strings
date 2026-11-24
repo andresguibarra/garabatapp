@@ -36,7 +36,7 @@
 "Pin from Clipboard" = "Připnout ze schránky";
 "Preferences..." = "Předvolby...";
 "Check for Updates..." = "Zkontrolovat aktualizace...";
-"Quit macshot" = "Ukončit macshot";
+"Quit macshot" = "Ukončit Garabatapp";
 "No recent captures" = "Žádné nedávné snímky";
 "Clear History" = "Vymazat historii";
 
@@ -163,7 +163,7 @@
 "Move up" = "Přesunout nahoru";
 "Move down" = "Přesunout dolů";
 "Menu Bar Order" = "Pořadí v liště nabídek";
-"Choose the order of capture actions in the macshot menu bar menu." = "Zvolte pořadí akcí snímání v nabídce macshot v liště nabídek.";
+"Choose the order of capture actions in the macshot menu bar menu." = "Zvolte pořadí akcí snímání v nabídce Garabatapp v liště nabídek.";
 
 /* Toolbar - Recording */
 "Start Recording" = "Spustit nahrávání";
@@ -238,7 +238,7 @@
 "Copy to clipboard" = "Kopírovat do schránky";
 
 /* Preferences - General */
-"macshot Preferences" = "Předvolby macshot";
+"macshot Preferences" = "Předvolby Garabatapp";
 "General" = "Obecné";
 "Tools" = "Nástroje";
 "Recording" = "Nahrávání";
@@ -264,7 +264,7 @@
 "Hide capture instructions" = "Skrýt pokyny při snímání";
 "Use window title in saved filename" = "Použít název okna v uloženém souboru";
 "Hide menu bar icon" = "Skrýt ikonu v liště";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "Klávesové zkratky stále fungují. Pro opětovné zobrazení ikony znovu spusťte macshot.";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "Klávesové zkratky stále fungují. Pro opětovné zobrazení ikony znovu spusťte Garabatapp.";
 "Check for updates automatically" = "Automaticky kontrolovat aktualizace";
 "Check for beta updates" = "Kontrolovat beta aktualizace";
 "Thumbnail" = "Náhled";
@@ -398,7 +398,7 @@
 "Video upload requires Google Drive or S3" = "Nahrávání videa vyžaduje Google Drive nebo S3";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "Verze %@ (%@)";
 "Made by" = "Vytvořil";
 "Licensed under the GPLv3" = "Licencováno pod GPLv3";
@@ -411,30 +411,30 @@
 "Copy an image or text to the clipboard first, then try again." = "Nejprve zkopírujte obrázek nebo text do schránky a zkuste to znovu.";
 "OK" = "OK";
 "Accessibility Access Required" = "Vyžadován přístup k usnadnění";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "macshot potřebuje oprávnění Usnadnění pro automatické posouvání jiných aplikací. Udělte přístup v Nastavení systému a zkuste to znovu.";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "macshot potřebuje oprávnění Zpřístupnění pro snímání posouváním. Povolte přístup v Nastavení systému a zkuste to znovu.";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Garabatapp potřebuje oprávnění Usnadnění pro automatické posouvání jiných aplikací. Udělte přístup v Nastavení systému a zkuste to znovu.";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Garabatapp potřebuje oprávnění Zpřístupnění pro snímání posouváním. Povolte přístup v Nastavení systému a zkuste to znovu.";
 "Open Settings" = "Otevřít nastavení";
 "Cancel" = "Zrušit";
 "Microphone Access Required" = "Vyžadován přístup k mikrofonu";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "macshot potřebuje oprávnění k mikrofonu pro nahrávání hlasu. Otevřete Nastavení systému pro udělení přístupu.";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Garabatapp potřebuje oprávnění k mikrofonu pro nahrávání hlasu. Otevřete Nastavení systému pro udělení přístupu.";
 "Upload to Google Drive?" = "Nahrát na Google Drive?";
 "Upload to S3?" = "Nahrát na S3?";
 "Upload to imgbb.com?" = "Nahrát na imgbb.com?";
 "Your screenshot will be uploaded." = "Váš snímek bude nahrán.";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "Vítejte v macshot";
-"Welcome back to macshot" = "Vítejte zpět v macshotu";
+"Welcome to macshot" = "Vítejte v Garabatapp";
+"Welcome back to macshot" = "Vítejte zpět v Garabatappu";
 "Turn Screen Recording back on" = "Znovu zapněte nahrávání obrazovky";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Po některých aktualizacích vás macOS požádá, abyste macshotu znovu udělili oprávnění. Vaše nastavení a snímky jsou v bezpečí. Pokud už je macshot v seznamu, vyberte ho, klikněte na tlačítko minus (−) a odstraňte ho, potom klikněte na tlačítko plus (+) a macshot znovu přidejte.";
-"macshot needs one permission" = "macshot potřebuje jedno oprávnění";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Po některých aktualizacích vás macOS požádá, abyste Garabatappu znovu udělili oprávnění. Vaše nastavení a snímky jsou v bezpečí. Pokud už je Garabatapp v seznamu, vyberte ho, klikněte na tlačítko minus (−) a odstraňte ho, potom klikněte na tlačítko plus (+) a Garabatapp znovu přidejte.";
+"macshot needs one permission" = "Garabatapp potřebuje jedno oprávnění";
 "Screen Recording not yet granted" = "Nahrávání obrazovky zatím nebylo povoleno";
 "Screen Recording granted!" = "Nahrávání obrazovky povoleno!";
-"Enable macshot, then try taking a screenshot" = "Povolte macshot a zkuste pořídit snímek";
+"Enable macshot, then try taking a screenshot" = "Povolte Garabatapp a zkuste pořídit snímek";
 "Open Screen Recording Settings" = "Otevřít nastavení nahrávání obrazovky";
-"Still not working? Run this command in Terminal, then restart macshot." = "Stále to nefunguje? Spusťte tento příkaz v Terminálu a poté restartujte macshot.";
+"Still not working? Run this command in Terminal, then restart macshot." = "Stále to nefunguje? Spusťte tento příkaz v Terminálu a poté restartujte Garabatapp.";
 "Copy Command" = "Kopírovat příkaz";
-"Restart macshot" = "Restartovat macshot";
+"Restart macshot" = "Restartovat Garabatapp";
 "Continue" = "Pokračovat";
 
 /* OCR Window */
@@ -464,7 +464,7 @@
 "Path copied!" = "Cesta zkopírována!";
 
 /* Video Editor */
-"macshot Video Editor" = "macshot Video Editor";
+"macshot Video Editor" = "Garabatapp Video Editor";
 "%@ selected" = "%@ vybráno";
 "Exporting..." = "Exportování...";
 "Export failed" = "Export selhal";
@@ -486,12 +486,12 @@
 "Save Project" = "Uložit projekt";
 "Save Project As..." = "Uložit projekt jako...";
 "Save as Editable Project (⇧⌘S)" = "Uložit jako upravitelný projekt (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Uloží obrázek tak, že všechny anotace zůstanou upravitelné. Otevřete soubor v macshot a pokračujte v úpravách.";
-"Choose an image or macshot project to open in the editor" = "Vyberte obrázek nebo projekt macshot k otevření v editoru";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Uloží obrázek tak, že všechny anotace zůstanou upravitelné. Otevřete soubor v Garabatapp a pokračujte v úpravách.";
+"Choose an image or macshot project to open in the editor" = "Vyberte obrázek nebo projekt Garabatapp k otevření v editoru";
 "Could not open “%@”" = "Nepodařilo se otevřít „%@“";
 "Could not save the project: %@" = "Nepodařilo se uložit projekt: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "Některé anotace v tomto projektu nebylo možné obnovit, proto byl otevřen jako sloučený obrázek. Původní soubor zůstal beze změny.";
-"The file is not a macshot project or is damaged." = "Soubor není projekt macshot nebo je poškozený.";
+"The file is not a macshot project or is damaged." = "Soubor není projekt Garabatapp nebo je poškozený.";
 "The project could not be prepared for saving." = "Projekt se nepodařilo připravit k uložení.";
 "The image is too large to save as an editable project." = "Obrázek je příliš velký na uložení jako upravitelný projekt.";
 "The project file is too large to open." = "Soubor projektu je příliš velký na otevření.";
@@ -527,8 +527,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "Vyžadováno monitorování vstupu";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "macshot potřebuje oprávnění Monitorování vstupu ke zvýraznění kliknutí myší nebo zobrazení stisknutých kláves během nahrávání. Udělte přístup v Nastavení systému a zkuste to znovu.";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "macshot potřebuje oprávnění Zpřístupnění pro přichytávání k jednotlivým prvkům rozhraní. Povolte přístup v Nastavení systému a zkuste to znovu.";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Garabatapp potřebuje oprávnění Monitorování vstupu ke zvýraznění kliknutí myší nebo zobrazení stisknutých kláves během nahrávání. Udělte přístup v Nastavení systému a zkuste to znovu.";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Garabatapp potřebuje oprávnění Zpřístupnění pro přichytávání k jednotlivým prvkům rozhraní. Povolte přístup v Nastavení systému a zkuste to znovu.";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "Zobrazit stisknuté klávesy";
@@ -544,7 +544,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "Překryv webkamery";
 "Camera Access Required" = "Vyžadován přístup ke kameře";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "macshot potřebuje oprávnění ke kameře pro překryv webkamery. Otevřete Nastavení systému pro udělení přístupu.";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Garabatapp potřebuje oprávnění ke kameře pro překryv webkamery. Otevřete Nastavení systému pro udělení přístupu.";
 "Webcam" = "Webkamera";
 "Bottom Right" = "Vpravo dole";
 "Bottom Left" = "Vlevo dole";
@@ -565,7 +565,7 @@
 /* New Strings */
 "Settings" = "Nastavení";
 "Settings..." = "Nastavení...";
-"macshot Settings" = "Nastavení macshot";
+"macshot Settings" = "Nastavení Garabatapp";
 "Also open in Editor" = "Otevřít také v editoru";
 "Open in Editor right after selection" = "Otevřít v editoru hned po výběru";
 "Close editor after copying" = "Zavřít editor po zkopírování";
@@ -620,13 +620,13 @@
 "Clear History?" = "Vymazat historii?";
 "This will permanently delete all screenshots from history." = "Tím se trvale odstraní všechny snímky obrazovky z historie.";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "Klikněte na \"Nastavit\" a stiskněte kombinaci kláves s alespoň jedním modifikátorem (⌘, ⌥, ⌃, ⇧) pro nastavení zkratky.";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Soubory jsou nahrávány do této složky na vašem Disku Google. Ponecháte-li pole prázdné, použije se \"macshot\". macshot může používat pouze složky, které sám vytvořil, takže složka se stejným názvem, kterou jste vytvořili na Disku, nebude použita, místo ní se vytvoří nová. Vše zůstává soukromé, nic není veřejně sdíleno.";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Soubory jsou nahrávány do této složky na vašem Disku Google. Ponecháte-li pole prázdné, použije se \"Garabatapp\". Garabatapp může používat pouze složky, které sám vytvořil, takže složka se stejným názvem, kterou jste vytvořili na Disku, nebude použita, místo ní se vytvoří nová. Vše zůstává soukromé, nic není veřejně sdíleno.";
 
 "Pressure" = "Přítlak";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "Otevřít video...";
-"Choose a video to open in macshot editor" = "Vyberte video k otevření v editoru macshot";
+"Choose a video to open in macshot editor" = "Vyberte video k otevření v editoru Garabatapp";
 "Click to add effects" = "Kliknutím přidejte efekty";
 "Add Zoom" = "Přidat přiblížení";
 "Add Censor" = "Přidat cenzuru";
@@ -704,8 +704,8 @@
 "Stop the current recording" = "Zastavit aktuální nahrávání";
 "Supported URL Scheme Commands" = "Podporované příkazy URL schématu";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "Přípona souboru se přidá automaticky. Lomítka a dvojtečky v {window} se změní na pomlčky.";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Spusťte macshot z Raycast, Alfred, Shortcuts nebo jakéhokoli nástroje, který otevírá URL.";
-"Enable macshot:// URL scheme" = "Povolit URL schéma macshot://";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Spusťte Garabatapp z Raycast, Alfred, Shortcuts nebo jakéhokoli nástroje, který otevírá URL.";
+"Enable macshot:// URL scheme" = "Povolit URL schéma garabatapp://";
 "URL scheme info" = "Informace o URL schématu";
 "sec (0 = never)" = "s (0 = nikdy)";
 
@@ -714,7 +714,7 @@
 "Export Settings…" = "Exportovat nastavení…";
 "Import Settings…" = "Importovat nastavení…";
 "Reveal Settings File in Finder" = "Zobrazit soubor nastavení ve Finderu";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Exportujte své předvolby do souboru a přeneste je na jiný Mac nebo do čisté instalace. Přihlašovací údaje pro nahrávání, složka pro ukládání a historie snímků obrazovky nejsou zahrnuty. Nastavení je uloženo v kontejneru aplikace macshot.";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Exportujte své předvolby do souboru a přeneste je na jiný Mac nebo do čisté instalace. Přihlašovací údaje pro nahrávání, složka pro ukládání a historie snímků obrazovky nejsou zahrnuty. Nastavení je uloženo v kontejneru aplikace Garabatapp.";
 "Export Settings" = "Exportovat nastavení";
 "Import Settings" = "Importovat nastavení";
 "Import failed" = "Import se nezdařil";
@@ -725,12 +725,12 @@
 "Relaunch Now" = "Restartovat nyní";
 "Replace your current settings?" = "Nahradit aktuální nastavení?";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "Import nahradí vaše aktuální předvolby těmi z tohoto souboru. Vaše složka pro ukládání, přihlašovací údaje pro nahrávání a historie snímků obrazovky zůstanou zachovány. Tuto akci nelze vrátit zpět.";
-"%d settings were applied. Relaunch macshot to apply all changes." = "Bylo použito %d nastavení. Restartujte macshot, aby se projevily všechny změny.";
+"%d settings were applied. Relaunch macshot to apply all changes." = "Bylo použito %d nastavení. Restartujte Garabatapp, aby se projevily všechny změny.";
 "A few large items were too big to include. Everything else was saved." = "Několik velkých položek bylo příliš velkých na zahrnutí. Vše ostatní bylo uloženo.";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "Váš vlastní obrázek pozadí Beautify byl příliš velký na zahrnutí. Vše ostatní bylo uloženo.";
-"This file is not a valid macshot settings file." = "Tento soubor není platným souborem nastavení macshot.";
+"This file is not a valid macshot settings file." = "Tento soubor není platným souborem nastavení Garabatapp.";
 "This settings file contains no settings." = "Tento soubor nastavení neobsahuje žádná nastavení.";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "Tento soubor nastavení byl vytvořen novější verzí aplikace macshot. Nejprve prosím aktualizujte macshot.";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "Tento soubor nastavení byl vytvořen novější verzí aplikace Garabatapp. Nejprve prosím aktualizujte Garabatapp.";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "Zachytit, přeložit a překrýt text na obrázku";
@@ -775,7 +775,7 @@
 "Apply Default Zoom to All" = "Použít výchozí přiblížení na vše";
 "Auto" = "Auto";
 "Auto Zoom" = "Automatické přiblížení";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Automatické přiblížení potřebuje data ukazatele, která macshot zaznamenává s každou novou nahrávkou. Přiblížení můžete stále přidávat dvojklikem na stopu přiblížení.";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Automatické přiblížení potřebuje data ukazatele, která Garabatapp zaznamenává s každou novou nahrávkou. Přiblížení můžete stále přidávat dvojklikem na stopu přiblížení.";
 "Background blur" = "Rozostření pozadí";
 "Background color" = "Barva pozadí";
 "Background, padding, rounded corners and shadow" = "Pozadí, odsazení, zaoblené rohy a stín";
@@ -876,7 +876,7 @@
 "Shrink during zooms" = "Zmenšit při přiblížení";
 "Smoothing" = "Vyhlazování";
 "Snappy" = "Svižný";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Rozpoznávání řeči je pro macshot vypnuté v Nastavení systému › Soukromí a zabezpečení.";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Rozpoznávání řeči je pro Garabatapp vypnuté v Nastavení systému › Soukromí a zabezpečení.";
 "Speed" = "Rychlost";
 "Spotlight" = "Reflektor";
 "Square" = "Čtverec";
@@ -886,12 +886,12 @@
 "The recording's audio could not be read." = "Zvuk nahrávky nelze přečíst.";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "Tato nahrávka už obsahuje ukazatel v obrazu, takže jeho styl nelze změnit. Přiblížení jej však mohou sledovat.";
 "This recording has no audio to transcribe." = "Tato nahrávka nemá žádný zvuk k přepisu.";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Toto video neobsahuje zaznamenaná data ukazatele. Nahrávky pořízené v macshotu, které se otevřou v editoru, umožňují po nahrání měnit styl, vyhlazení a velikost ukazatele.";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Toto video neobsahuje zaznamenaná data ukazatele. Nahrávky pořízené v Garabatappu, které se otevřou v editoru, umožňují po nahrání měnit styl, vyhlazení a velikost ukazatele.";
 "Title" = "Nadpis";
 "Transcribing…" = "Přepisování…";
 "Transition" = "Přechod";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Před nahráváním zapněte Zobrazit stisky kláves. macshot je pak zaznamená zvlášť, abyste jim zde mohli upravit styl.";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Před nahráváním zapněte kameru. macshot ji zaznamená zvlášť, takže ji zde můžete přesouvat, měnit její velikost a styl, skrýt ji, a zmenšit ji během přiblížení.";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Před nahráváním zapněte Zobrazit stisky kláves. Garabatapp je pak zaznamená zvlášť, abyste jim zde mohli upravit styl.";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Před nahráváním zapněte kameru. Garabatapp ji zaznamená zvlášť, takže ji zde můžete přesouvat, měnit její velikost a styl, skrýt ji, a zmenšit ji během přiblížení.";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "K skrytí citlivých údajů použijte Plná: rozostření a pixelizaci lze někdy zvrátit.";
 "Visibility" = "Viditelnost";
 "Wallpaper" = "Tapeta";

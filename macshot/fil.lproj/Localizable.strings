@@ -35,7 +35,7 @@
 "Pin from Clipboard" = "I-pin mula sa Clipboard";
 "Preferences..." = "Mga Kagustuhan...";
 "Check for Updates..." = "Tingnan ang mga Update...";
-"Quit macshot" = "Isara ang macshot";
+"Quit macshot" = "Isara ang Garabatapp";
 "No recent captures" = "Walang kamakailang pagkuha";
 "Clear History" = "Burahin ang Kasaysayan";
 
@@ -233,7 +233,7 @@
 "Copy to clipboard" = "Kopyahin sa clipboard";
 
 /* Preferences - General */
-"macshot Preferences" = "Mga Kagustuhan ng macshot";
+"macshot Preferences" = "Mga Kagustuhan ng Garabatapp";
 "General" = "Pangkalahatan";
 "Tools" = "Mga Kasangkapan";
 "Recording" = "Pag-record";
@@ -261,9 +261,9 @@
 "Show shortcuts in tooltips" = "Ipakita ang mga shortcut sa mga tooltip";
 "Use window title in saved filename" = "Gamitin ang pamagat ng window sa na-save na filename";
 "Hide menu bar icon" = "Itago ang icon sa menu bar";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "Gumagana pa rin ang mga hotkey. Upang ipakita muli ang icon, i-restart ang macshot.";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "Gumagana pa rin ang mga hotkey. Upang ipakita muli ang icon, i-restart ang Garabatapp.";
 "Menu Bar Order" = "Pagkakasunod-sunod ng Menu Bar";
-"Choose the order of capture actions in the macshot menu bar menu." = "Piliin ang pagkakasunod-sunod ng mga aksyon sa pagkuha sa menu ng menu bar ng macshot.";
+"Choose the order of capture actions in the macshot menu bar menu." = "Piliin ang pagkakasunod-sunod ng mga aksyon sa pagkuha sa menu ng menu bar ng Garabatapp.";
 "Move up" = "Ilipat pataas";
 "Move down" = "Ilipat pababa";
 "Check for updates automatically" = "Awtomatikong tingnan ang mga update";
@@ -395,7 +395,7 @@
 "Video upload requires Google Drive or S3" = "Ang pag-upload ng video ay nangangailangan ng Google Drive o S3";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "Bersyon %@ (%@)";
 "Made by" = "Ginawa ni";
 "Licensed under the GPLv3" = "Lisensiyado sa ilalim ng GPLv3";
@@ -408,30 +408,30 @@
 "Copy an image or text to the clipboard first, then try again." = "Kopyahin muna ang isang larawan o teksto sa clipboard, pagkatapos ay subukang muli.";
 "OK" = "OK";
 "Accessibility Access Required" = "Kinakailangan ang Accessibility Access";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Kailangan ng macshot ang Accessibility permission upang mag-auto-scroll sa ibang app. Pakibigyan ng access sa System Settings, pagkatapos ay subukang muli.";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Kailangan ng macshot ang Accessibility permission para sa scroll capture. Mangyaring bigyan ng access sa System Settings, pagkatapos subukan muli.";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Kailangan ng Garabatapp ang Accessibility permission upang mag-auto-scroll sa ibang app. Pakibigyan ng access sa System Settings, pagkatapos ay subukang muli.";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Kailangan ng Garabatapp ang Accessibility permission para sa scroll capture. Mangyaring bigyan ng access sa System Settings, pagkatapos subukan muli.";
 "Open Settings" = "Buksan ang Settings";
 "Cancel" = "Kanselahin";
 "Microphone Access Required" = "Kinakailangan ang Access sa Mikropono";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Kailangan ng macshot ang microphone permission upang mag-record ng boses. Buksan ang System Settings upang bigyan ng access.";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Kailangan ng Garabatapp ang microphone permission upang mag-record ng boses. Buksan ang System Settings upang bigyan ng access.";
 "Upload to Google Drive?" = "I-upload sa Google Drive?";
 "Upload to S3?" = "I-upload sa S3?";
 "Upload to imgbb.com?" = "I-upload sa imgbb.com?";
 "Your screenshot will be uploaded." = "Ia-upload ang iyong screenshot.";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "Maligayang pagdating sa macshot";
-"Welcome back to macshot" = "Maligayang pagbabalik sa macshot";
+"Welcome to macshot" = "Maligayang pagdating sa Garabatapp";
+"Welcome back to macshot" = "Maligayang pagbabalik sa Garabatapp";
 "Turn Screen Recording back on" = "Buksan muli ang Screen Recording";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Pagkatapos ng ilang update, hinihiling ng macOS na payagan mo ulit ang macshot. Ligtas ang iyong mga setting at capture. Kung nasa listahan na ang macshot, piliin ito, i-click ang minus button (−) para alisin ito, pagkatapos ay i-click ang plus button (+) at idagdag ulit ang macshot.";
-"macshot needs one permission" = "Kailangan ng macshot ang isang permission";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Pagkatapos ng ilang update, hinihiling ng macOS na payagan mo ulit ang Garabatapp. Ligtas ang iyong mga setting at capture. Kung nasa listahan na ang Garabatapp, piliin ito, i-click ang minus button (−) para alisin ito, pagkatapos ay i-click ang plus button (+) at idagdag ulit ang Garabatapp.";
+"macshot needs one permission" = "Kailangan ng Garabatapp ang isang permission";
 "Screen Recording not yet granted" = "Hindi pa naibibigay ang Screen Recording";
 "Screen Recording granted!" = "Naibigay na ang Screen Recording!";
-"Enable macshot, then try taking a screenshot" = "I-enable ang macshot, pagkatapos ay subukang kumuha ng screenshot";
+"Enable macshot, then try taking a screenshot" = "I-enable ang Garabatapp, pagkatapos ay subukang kumuha ng screenshot";
 "Open Screen Recording Settings" = "Buksan ang Screen Recording Settings";
-"Still not working? Run this command in Terminal, then restart macshot." = "Hindi pa rin gumagana? Patakbuhin ang command na ito sa Terminal, pagkatapos ay i-relaunch ang macshot.";
+"Still not working? Run this command in Terminal, then restart macshot." = "Hindi pa rin gumagana? Patakbuhin ang command na ito sa Terminal, pagkatapos ay i-relaunch ang Garabatapp.";
 "Copy Command" = "Kopyahin ang Command";
-"Restart macshot" = "I-relaunch ang macshot";
+"Restart macshot" = "I-relaunch ang Garabatapp";
 "Continue" = "Magpatuloy";
 
 /* OCR Window */
@@ -461,7 +461,7 @@
 "Path copied!" = "Nakopya ang path!";
 
 /* Video Editor */
-"macshot Video Editor" = "macshot Video Editor";
+"macshot Video Editor" = "Garabatapp Video Editor";
 "%@ selected" = "%@ ang napili";
 "Exporting..." = "Ini-export...";
 "Export failed" = "Nabigo ang pag-export";
@@ -483,13 +483,13 @@
 "Save Project" = "I-save ang Project";
 "Save Project As..." = "I-save ang Project Bilang...";
 "Save as Editable Project (⇧⌘S)" = "I-save bilang Project na Ma-e-edit (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Sine-save ang larawan nang nananatiling ma-e-edit ang bawat anotasyon. Buksan ang file sa macshot upang magpatuloy sa pag-edit.";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Sine-save ang larawan nang nananatiling ma-e-edit ang bawat anotasyon. Buksan ang file sa Garabatapp upang magpatuloy sa pag-edit.";
 "Open..." = "Buksan...";
-"Choose an image or macshot project to open in the editor" = "Pumili ng larawan o macshot project na bubuksan sa editor";
+"Choose an image or macshot project to open in the editor" = "Pumili ng larawan o Garabatapp project na bubuksan sa editor";
 "Could not open “%@”" = "Hindi mabuksan ang “%@”";
 "Could not save the project: %@" = "Hindi ma-save ang project: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "Hindi ma-restore ang ilang anotasyon sa project na ito, kaya binuksan ito bilang flattened na larawan. Hindi nabago ang orihinal na file.";
-"The file is not a macshot project or is damaged." = "Ang file ay hindi macshot project o sira ito.";
+"The file is not a macshot project or is damaged." = "Ang file ay hindi Garabatapp project o sira ito.";
 "The project could not be prepared for saving." = "Hindi maihanda ang project para sa pag-save.";
 "The image is too large to save as an editable project." = "Masyadong malaki ang larawan para i-save bilang project na ma-e-edit.";
 "The project file is too large to open." = "Masyadong malaki ang project file para mabuksan.";
@@ -525,8 +525,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "Kinakailangan ang Input Monitoring";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Kailangan ng macshot ang pahintulot sa Input Monitoring upang i-highlight ang mga pag-click ng mouse o ipakita ang mga keystroke habang nagre-record. Magbigay ng access sa System Settings, pagkatapos ay subukang muli.";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Kailangan ng macshot ang Accessibility permission para sa pag-snap sa mga indibidwal na elemento ng interface. Mangyaring bigyan ng access sa System Settings, pagkatapos subukan muli.";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Kailangan ng Garabatapp ang pahintulot sa Input Monitoring upang i-highlight ang mga pag-click ng mouse o ipakita ang mga keystroke habang nagre-record. Magbigay ng access sa System Settings, pagkatapos ay subukang muli.";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Kailangan ng Garabatapp ang Accessibility permission para sa pag-snap sa mga indibidwal na elemento ng interface. Mangyaring bigyan ng access sa System Settings, pagkatapos subukan muli.";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "Ipakita ang mga Keystroke";
@@ -542,7 +542,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "Webcam Overlay";
 "Camera Access Required" = "Kinakailangan ang Access sa Camera";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Kailangan ng macshot ang camera permission para sa webcam overlay. Buksan ang System Settings upang bigyan ng access.";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Kailangan ng Garabatapp ang camera permission para sa webcam overlay. Buksan ang System Settings upang bigyan ng access.";
 "Webcam" = "Webcam";
 "Bottom Right" = "Ibaba Kanan";
 "Bottom Left" = "Ibaba Kaliwa";
@@ -562,7 +562,7 @@
 
 /* Settings */
 "Settings..." = "Mga Setting...";
-"macshot Settings" = "Mga Setting ng macshot";
+"macshot Settings" = "Mga Setting ng Garabatapp";
 "Also open in Editor" = "Buksan din sa Editor";
 "Open in Editor right after selection" = "Buksan sa Editor agad pagkatapos pumili";
 "Close editor after copying" = "Isara ang editor pagkatapos kumopya";
@@ -618,13 +618,13 @@
 "Clear History?" = "I-clear ang History?";
 "This will permanently delete all screenshots from history." = "Permanenteng mabubura ang lahat ng screenshot mula sa history.";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "I-click ang \"Set\" at pindutin ang kombinasyon ng key na may kahit isang modifier (⌘, ⌥, ⌃, ⇧) upang magtakda ng shortcut.";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Ina-upload ang mga file sa folder na ito sa iyong Google Drive. Iwanang blangko para gamitin ang \"macshot\". Maaari lamang gamitin ng macshot ang mga folder na nilikha nito, kaya ang folder na may parehong pangalan na ginawa mo sa Drive ay hindi gagamitin muli, sa halip ay lilikha ng bagong folder. Nananatiling pribado ang lahat, walang ibinabahagi nang publiko.";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Ina-upload ang mga file sa folder na ito sa iyong Google Drive. Iwanang blangko para gamitin ang \"Garabatapp\". Maaari lamang gamitin ng Garabatapp ang mga folder na nilikha nito, kaya ang folder na may parehong pangalan na ginawa mo sa Drive ay hindi gagamitin muli, sa halip ay lilikha ng bagong folder. Nananatiling pribado ang lahat, walang ibinabahagi nang publiko.";
 
 "Pressure" = "Pressure";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "Buksan ang Video...";
-"Choose a video to open in macshot editor" = "Pumili ng video na bubuksan sa macshot editor";
+"Choose a video to open in macshot editor" = "Pumili ng video na bubuksan sa Garabatapp editor";
 "Click to add effects" = "I-click upang magdagdag ng mga effect";
 "Add Zoom" = "Magdagdag ng Zoom";
 "Add Censor" = "Magdagdag ng Sensura";
@@ -702,9 +702,9 @@
 "Stop the current recording" = "Ihinto ang kasalukuyang pag-record";
 "Supported URL Scheme Commands" = "Mga Suportadong URL Scheme Command";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "Awtomatikong idinaragdag ang extension ng file. Ang mga slash at colon sa {window} ay nagiging mga gitling.";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "I-trigger ang macshot mula sa Raycast, Alfred, Shortcuts, o anumang tool na nagbubukas ng URL.";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "I-trigger ang Garabatapp mula sa Raycast, Alfred, Shortcuts, o anumang tool na nagbubukas ng URL.";
 "URL scheme info" = "Impormasyon ng URL scheme";
-"Enable macshot:// URL scheme" = "I-enable ang macshot:// URL scheme";
+"Enable macshot:// URL scheme" = "I-enable ang garabatapp:// URL scheme";
 "sec (0 = never)" = "seg (0 = hindi kailanman)";
 "Settings" = "Settings";
 "Offline build: upload and cloud storage integrations are removed. Update checks may still connect to MacShot's update server. Screenshots and recordings stay local unless you share or save them yourself." = "Offline build: inalis ang mga integrasyon para sa pag-upload at cloud storage. Maaaring kumonekta pa rin ang mga pagsusuri sa update sa update server ng MacShot. Nananatiling lokal ang mga screenshot at recording maliban kung ibabahagi o ise-save mo mismo ang mga ito.";
@@ -714,7 +714,7 @@
 "Export Settings…" = "I-export ang Mga Setting…";
 "Import Settings…" = "Mag-import ng Mga Setting…";
 "Reveal Settings File in Finder" = "Ipakita ang Settings File sa Finder";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "I-export ang iyong mga kagustuhan sa isang file para ilipat ang mga ito sa ibang Mac o sa isang malinis na install. Hindi kasama ang upload credentials, ang iyong save folder, at ang history ng mga screenshot. Naka-store ang mga setting sa loob ng app container ng macshot.";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "I-export ang iyong mga kagustuhan sa isang file para ilipat ang mga ito sa ibang Mac o sa isang malinis na install. Hindi kasama ang upload credentials, ang iyong save folder, at ang history ng mga screenshot. Naka-store ang mga setting sa loob ng app container ng Garabatapp.";
 "Export Settings" = "I-export ang Mga Setting";
 "Import Settings" = "Mag-import ng Mga Setting";
 "Import failed" = "Nabigo ang pag-import";
@@ -725,12 +725,12 @@
 "Relaunch Now" = "I-relaunch Ngayon";
 "Replace your current settings?" = "Palitan ang iyong kasalukuyang mga setting?";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "Papalitan ng pag-import ang iyong kasalukuyang mga kagustuhan ng mga nasa file na ito. Mananatili ang iyong save folder, upload credentials, at history ng mga screenshot. Hindi ito maaaring i-undo.";
-"%d settings were applied. Relaunch macshot to apply all changes." = "%d na setting ang na-apply. I-relaunch ang macshot para i-apply ang lahat ng pagbabago.";
+"%d settings were applied. Relaunch macshot to apply all changes." = "%d na setting ang na-apply. I-relaunch ang Garabatapp para i-apply ang lahat ng pagbabago.";
 "A few large items were too big to include. Everything else was saved." = "May ilang malalaking item na masyadong malaki para isama. Na-save ang lahat ng iba pa.";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "Masyadong malaki ang iyong custom na Beautify background image para isama. Na-save ang lahat ng iba pa.";
-"This file is not a valid macshot settings file." = "Ang file na ito ay hindi isang valid na settings file ng macshot.";
+"This file is not a valid macshot settings file." = "Ang file na ito ay hindi isang valid na settings file ng Garabatapp.";
 "This settings file contains no settings." = "Walang lamang setting ang settings file na ito.";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "Ang settings file na ito ay ginawa ng mas bagong bersyon ng macshot. Mangyaring i-update muna ang macshot.";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "Ang settings file na ito ay ginawa ng mas bagong bersyon ng Garabatapp. Mangyaring i-update muna ang Garabatapp.";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "I-capture, isalin, at i-overlay ang text sa imahe";
@@ -775,7 +775,7 @@
 "Apply Default Zoom to All" = "Ilapat ang Default na Zoom sa Lahat";
 "Auto" = "Auto";
 "Auto Zoom" = "Auto Zoom";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Kailangan ng Auto Zoom ang pointer data, na nire-record ng macshot sa bawat bagong recording. Maaari ka pa ring magdagdag ng zoom sa pamamagitan ng pag-double-click sa zoom lane.";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Kailangan ng Auto Zoom ang pointer data, na nire-record ng Garabatapp sa bawat bagong recording. Maaari ka pa ring magdagdag ng zoom sa pamamagitan ng pag-double-click sa zoom lane.";
 "Background blur" = "Blur ng background";
 "Background color" = "Kulay ng background";
 "Background, padding, rounded corners and shadow" = "Background, padding, bilugang sulok at anino";
@@ -876,7 +876,7 @@
 "Shrink during zooms" = "Paliitin habang naka-zoom";
 "Smoothing" = "Pagpapakinis";
 "Snappy" = "Mabilis";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Naka-off ang speech recognition para sa macshot sa System Settings › Privacy & Security.";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Naka-off ang speech recognition para sa Garabatapp sa System Settings › Privacy & Security.";
 "Speed" = "Bilis";
 "Spotlight" = "Spotlight";
 "Square" = "Parisukat";
@@ -886,12 +886,12 @@
 "The recording's audio could not be read." = "Hindi mabasa ang audio ng recording.";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "Nakikita na ang pointer sa mga pixel ng recording na ito, kaya hindi na mababago ang estilo nito. Maaari pa rin itong sundan ng mga zoom.";
 "This recording has no audio to transcribe." = "Walang audio na maaaring i-transcribe sa recording na ito.";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Walang naka-record na pointer data ang video na ito. Sa mga recording na ginawa gamit ang macshot na binubuksan sa editor, maaari mong baguhin ang estilo, pakinisin at baguhin ang laki ng pointer pagkatapos mag-record.";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Walang naka-record na pointer data ang video na ito. Sa mga recording na ginawa gamit ang Garabatapp na binubuksan sa editor, maaari mong baguhin ang estilo, pakinisin at baguhin ang laki ng pointer pagkatapos mag-record.";
 "Title" = "Pamagat";
 "Transcribing…" = "Nagta-transcribe…";
 "Transition" = "Transition";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "I-on ang Ipakita ang mga Keystroke bago mag-record. Ire-record ng macshot ang mga ito nang hiwalay para ma-style mo ang mga ito dito.";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "I-on ang camera bago mag-record. Nire-record ito ng macshot nang hiwalay para mailipat, mabago ang laki, mabago ang estilo o maitago mo ito dito, at paliitin ito habang naka-zoom.";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "I-on ang Ipakita ang mga Keystroke bago mag-record. Ire-record ng Garabatapp ang mga ito nang hiwalay para ma-style mo ang mga ito dito.";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "I-on ang camera bago mag-record. Nire-record ito ng Garabatapp nang hiwalay para mailipat, mabago ang laki, mabago ang estilo o maitago mo ito dito, at paliitin ito habang naka-zoom.";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "Gamitin ang Solid para itago ang sensitibong impormasyon: minsan ay maaaring maibalik ang blur at pixelation.";
 "Visibility" = "Visibility";
 "Wallpaper" = "Wallpaper";

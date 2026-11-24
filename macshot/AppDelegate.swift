@@ -623,7 +623,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         } catch {
             let errAlert = NSAlert()
             errAlert.messageText = "Could not move to Applications"
-            errAlert.informativeText = "Please drag macshot to your Applications folder manually.\n\n\(error.localizedDescription)"
+            errAlert.informativeText = "Please drag Garabatapp to your Applications folder manually.\n\n\(error.localizedDescription)"
             errAlert.runModal()
         }
     }
@@ -685,9 +685,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         mainMenu.addItem(appMenuItem)
 
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About macshot", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About Garabatapp", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit macshot", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit Garabatapp", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
 
         let fileMenuItem = NSMenuItem()
@@ -817,7 +817,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         let symbolName = UserDefaults.standard.string(forKey: Self.statusBarIconSymbolNameKey) ?? ""
 
         if mode == "symbol", !symbolName.isEmpty,
-           let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: "macshot") {
+           let symbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Garabatapp") {
             symbol.isTemplate = true
             symbol.size = NSSize(width: 22, height: 22)
             button.image = symbol
@@ -829,7 +829,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             button.title = ""
         } else {
             button.image = nil
-            button.title = "macshot"
+            button.title = "Garabatapp"
         }
     }
 
@@ -2685,7 +2685,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "tiff", "tif", "bmp", "gif", "heic", "heif", "webp", "icns"]
         let videoExtensions: Set<String> = ["mp4", "mov", "m4v"]
         for url in urls {
-            if url.scheme == "macshot" {
+            if url.scheme == "garabatapp" || url.scheme == "macshot" {
                 let urlSchemeEnabled = UserDefaults.standard.object(forKey: "urlSchemeEnabled") as? Bool ?? true
                 guard urlSchemeEnabled else { continue }
                 if Self.screenCaptureURLActions.contains(url.host ?? "") {

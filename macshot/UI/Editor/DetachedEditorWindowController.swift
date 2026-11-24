@@ -125,7 +125,7 @@ class DetachedEditorWindowController: NSObject, NSWindowDelegate {
         // in the Dock menu, Window menu, and Mission Control.
         let dateFmt = DateFormatter()
         dateFmt.dateFormat = "HH:mm:ss"
-        defaultWindowTitle = "macshot Editor · \(dateFmt.string(from: Date()))"
+        defaultWindowTitle = "Garabatapp Editor · \(dateFmt.string(from: Date()))"
         win.title = defaultWindowTitle
         win.minSize = NSSize(width: minW, height: minH)
         win.maxSize = NSSize(width: screenFrame.width, height: screenFrame.height)

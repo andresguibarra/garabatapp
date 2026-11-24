@@ -36,7 +36,7 @@
 "Pin from Clipboard" = "Καρφίτσωμα από πρόχειρο";
 "Preferences..." = "Προτιμήσεις...";
 "Check for Updates..." = "Έλεγχος για ενημερώσεις...";
-"Quit macshot" = "Τερματισμός macshot";
+"Quit macshot" = "Τερματισμός Garabatapp";
 "No recent captures" = "Δεν υπάρχουν πρόσφατες λήψεις";
 "Clear History" = "Εκκαθάριση ιστορικού";
 
@@ -230,7 +230,7 @@
 "Copy to clipboard" = "Αντιγραφή στο πρόχειρο";
 
 /* Preferences - General */
-"macshot Preferences" = "Προτιμήσεις macshot";
+"macshot Preferences" = "Προτιμήσεις Garabatapp";
 "General" = "Γενικά";
 "Tools" = "Εργαλεία";
 "Recording" = "Εγγραφή";
@@ -260,7 +260,7 @@
 "Custom symbol" = "Προσαρμοσμένο σύμβολο";
 "Default" = "Προεπιλογή";
 "Enter any SF Symbol name (e.g. camera.fill) or pick a preset. Browse names in Apple's SF Symbols app. Invalid names fall back to the default icon." = "Εισαγάγετε οποιοδήποτε όνομα SF Symbol (π.χ. camera.fill) ή επιλέξτε μια προεπιλογή. Περιηγηθείτε στα ονόματα στην εφαρμογή SF Symbols της Apple. Τα μη έγκυρα ονόματα επιστρέφουν στο προεπιλεγμένο εικονίδιο.";
-"Hotkeys still work. To show the icon again, re-launch macshot." = "Τα πλήκτρα συντόμευσης λειτουργούν ακόμα. Για εμφάνιση του εικονιδίου, επανεκκινήστε το macshot.";
+"Hotkeys still work. To show the icon again, re-launch macshot." = "Τα πλήκτρα συντόμευσης λειτουργούν ακόμα. Για εμφάνιση του εικονιδίου, επανεκκινήστε το Garabatapp.";
 "Check for updates automatically" = "Αυτόματος έλεγχος ενημερώσεων";
 "Check for beta updates" = "Έλεγχος για ενημερώσεις beta";
 "Thumbnail" = "Μικρογραφία";
@@ -271,7 +271,7 @@
 "Stack (keep all)" = "Στοίβαξη (διατήρηση όλων)";
 "Replace (show only latest)" = "Αντικατάσταση (εμφάνιση μόνο τελευταίου)";
 "Menu Bar Order" = "Σειρά γραμμής μενού";
-"Choose the order of capture actions in the macshot menu bar menu." = "Επιλέξτε τη σειρά των ενεργειών λήψης στο μενού της γραμμής μενού του macshot.";
+"Choose the order of capture actions in the macshot menu bar menu." = "Επιλέξτε τη σειρά των ενεργειών λήψης στο μενού της γραμμής μενού του Garabatapp.";
 "Move up" = "Μετακίνηση πάνω";
 "Move down" = "Μετακίνηση κάτω";
 "Output" = "Έξοδος";
@@ -397,7 +397,7 @@
 "Video upload requires Google Drive or S3" = "Η μεταφόρτωση βίντεο απαιτεί Google Drive ή S3";
 
 /* Preferences - About */
-"macshot" = "macshot";
+"macshot" = "Garabatapp";
 "Version %@ (%@)" = "Έκδοση %@ (%@)";
 "Made by" = "Δημιουργήθηκε από";
 "Licensed under the GPLv3" = "Με άδεια GPLv3";
@@ -410,30 +410,30 @@
 "Copy an image or text to the clipboard first, then try again." = "Αντιγράψτε πρώτα μια εικόνα ή κείμενο στο πρόχειρο και δοκιμάστε ξανά.";
 "OK" = "OK";
 "Accessibility Access Required" = "Απαιτείται πρόσβαση προσβασιμότητας";
-"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Το macshot χρειάζεται άδεια προσβασιμότητας για αυτόματη κύλιση άλλων εφαρμογών. Παραχωρήστε πρόσβαση στις Ρυθμίσεις συστήματος και δοκιμάστε ξανά.";
-"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Το macshot χρειάζεται άδεια Προσβασιμότητας για λήψη κύλισης. Παραχωρήστε πρόσβαση στις Ρυθμίσεις Συστήματος και δοκιμάστε ξανά.";
+"macshot needs Accessibility permission to auto-scroll other apps. Please grant access in System Settings, then try again." = "Το Garabatapp χρειάζεται άδεια προσβασιμότητας για αυτόματη κύλιση άλλων εφαρμογών. Παραχωρήστε πρόσβαση στις Ρυθμίσεις συστήματος και δοκιμάστε ξανά.";
+"macshot needs Accessibility permission for scroll capture. Please grant access in System Settings, then try again." = "Το Garabatapp χρειάζεται άδεια Προσβασιμότητας για λήψη κύλισης. Παραχωρήστε πρόσβαση στις Ρυθμίσεις Συστήματος και δοκιμάστε ξανά.";
 "Open Settings" = "Άνοιγμα ρυθμίσεων";
 "Cancel" = "Ακύρωση";
 "Microphone Access Required" = "Απαιτείται πρόσβαση μικροφώνου";
-"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Το macshot χρειάζεται άδεια μικροφώνου για εγγραφή φωνητικού ήχου. Ανοίξτε τις Ρυθμίσεις συστήματος για παραχώρηση πρόσβασης.";
+"macshot needs microphone permission to record voice audio. Open System Settings to grant access." = "Το Garabatapp χρειάζεται άδεια μικροφώνου για εγγραφή φωνητικού ήχου. Ανοίξτε τις Ρυθμίσεις συστήματος για παραχώρηση πρόσβασης.";
 "Upload to Google Drive?" = "Μεταφόρτωση στο Google Drive;";
 "Upload to S3?" = "Μεταφόρτωση στο S3;";
 "Upload to imgbb.com?" = "Μεταφόρτωση στο imgbb.com;";
 "Your screenshot will be uploaded." = "Το στιγμιότυπό σας θα μεταφορτωθεί.";
 
 /* Permission Onboarding */
-"Welcome to macshot" = "Καλώς ήρθατε στο macshot";
-"Welcome back to macshot" = "Καλώς ήρθατε ξανά στο macshot";
+"Welcome to macshot" = "Καλώς ήρθατε στο Garabatapp";
+"Welcome back to macshot" = "Καλώς ήρθατε ξανά στο Garabatapp";
 "Turn Screen Recording back on" = "Ενεργοποιήστε ξανά την εγγραφή οθόνης";
-"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Μετά από ορισμένες ενημερώσεις, το macOS σάς ζητά να επιτρέψετε ξανά το macshot. Οι ρυθμίσεις και οι λήψεις σας είναι ασφαλείς. Αν το macshot υπάρχει ήδη στη λίστα, επιλέξτε το, πατήστε το κουμπί μείον (−) για να το αφαιρέσετε, έπειτα πατήστε το κουμπί συν (+) και προσθέστε ξανά το macshot.";
-"macshot needs one permission" = "Το macshot χρειάζεται μία άδεια";
+"After some updates, macOS asks you to allow macshot again. Your settings and captures are safe. If macshot is already in the list, select it, click the minus button (−) to remove it, then click the plus button (+) and add macshot again." = "Μετά από ορισμένες ενημερώσεις, το macOS σάς ζητά να επιτρέψετε ξανά το Garabatapp. Οι ρυθμίσεις και οι λήψεις σας είναι ασφαλείς. Αν το Garabatapp υπάρχει ήδη στη λίστα, επιλέξτε το, πατήστε το κουμπί μείον (−) για να το αφαιρέσετε, έπειτα πατήστε το κουμπί συν (+) και προσθέστε ξανά το Garabatapp.";
+"macshot needs one permission" = "Το Garabatapp χρειάζεται μία άδεια";
 "Screen Recording not yet granted" = "Η εγγραφή οθόνης δεν έχει παραχωρηθεί ακόμα";
 "Screen Recording granted!" = "Η εγγραφή οθόνης παραχωρήθηκε!";
-"Enable macshot, then try taking a screenshot" = "Ενεργοποιήστε το macshot και δοκιμάστε να τραβήξετε στιγμιότυπο";
+"Enable macshot, then try taking a screenshot" = "Ενεργοποιήστε το Garabatapp και δοκιμάστε να τραβήξετε στιγμιότυπο";
 "Open Screen Recording Settings" = "Άνοιγμα ρυθμίσεων εγγραφής οθόνης";
-"Still not working? Run this command in Terminal, then restart macshot." = "Εξακολουθεί να μη λειτουργεί; Εκτελέστε αυτήν την εντολή στο Τερματικό και, στη συνέχεια, επανεκκινήστε το macshot.";
+"Still not working? Run this command in Terminal, then restart macshot." = "Εξακολουθεί να μη λειτουργεί; Εκτελέστε αυτήν την εντολή στο Τερματικό και, στη συνέχεια, επανεκκινήστε το Garabatapp.";
 "Copy Command" = "Αντιγραφή εντολής";
-"Restart macshot" = "Επανεκκίνηση macshot";
+"Restart macshot" = "Επανεκκίνηση Garabatapp";
 "Continue" = "Συνέχεια";
 
 /* OCR Window */
@@ -464,7 +464,7 @@
 "Path copied!" = "Η διαδρομή αντιγράφηκε!";
 
 /* Video Editor */
-"macshot Video Editor" = "Επεξεργαστής βίντεο macshot";
+"macshot Video Editor" = "Επεξεργαστής βίντεο Garabatapp";
 "%@ selected" = "%@ επιλεγμένο";
 "Exporting..." = "Εξαγωγή...";
 "Export failed" = "Αποτυχία εξαγωγής";
@@ -486,13 +486,13 @@
 "Save Project" = "Αποθήκευση έργου";
 "Save Project As..." = "Αποθήκευση έργου ως...";
 "Save as Editable Project (⇧⌘S)" = "Αποθήκευση ως επεξεργάσιμο έργο (⇧⌘S)";
-"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Αποθηκεύει την εικόνα με όλες τις επισημάνσεις να παραμένουν επεξεργάσιμες. Ανοίξτε το αρχείο στο macshot για να συνεχίσετε την επεξεργασία.";
+"Saves the image with every annotation still editable. Open the file in macshot to keep editing." = "Αποθηκεύει την εικόνα με όλες τις επισημάνσεις να παραμένουν επεξεργάσιμες. Ανοίξτε το αρχείο στο Garabatapp για να συνεχίσετε την επεξεργασία.";
 "Open..." = "Άνοιγμα...";
-"Choose an image or macshot project to open in the editor" = "Επιλέξτε μια εικόνα ή ένα έργο macshot για άνοιγμα στον επεξεργαστή";
+"Choose an image or macshot project to open in the editor" = "Επιλέξτε μια εικόνα ή ένα έργο Garabatapp για άνοιγμα στον επεξεργαστή";
 "Could not open “%@”" = "Δεν ήταν δυνατό το άνοιγμα του «%@»";
 "Could not save the project: %@" = "Δεν ήταν δυνατή η αποθήκευση του έργου: %@";
 "Some annotations in this project could not be restored, so it opened flattened. The original file is unchanged." = "Ορισμένες επισημάνσεις αυτού του έργου δεν ήταν δυνατό να επαναφερθούν, οπότε άνοιξε ως ενιαία εικόνα. Το αρχικό αρχείο δεν έχει αλλάξει.";
-"The file is not a macshot project or is damaged." = "Το αρχείο δεν είναι έργο macshot ή είναι κατεστραμμένο.";
+"The file is not a macshot project or is damaged." = "Το αρχείο δεν είναι έργο Garabatapp ή είναι κατεστραμμένο.";
 "The project could not be prepared for saving." = "Δεν ήταν δυνατή η προετοιμασία του έργου για αποθήκευση.";
 "The image is too large to save as an editable project." = "Η εικόνα είναι πολύ μεγάλη για να αποθηκευτεί ως επεξεργάσιμο έργο.";
 "The project file is too large to open." = "Το αρχείο του έργου είναι πολύ μεγάλο για να ανοίξει.";
@@ -528,8 +528,8 @@
 
 /* Recording — Input Monitoring Permission */
 "Input Monitoring Required" = "Απαιτείται παρακολούθηση εισόδου";
-"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Το macshot χρειάζεται άδεια παρακολούθησης εισόδου για να επισημαίνει τα κλικ του ποντικιού ή να εμφανίζει τα πατήματα πλήκτρων κατά την εγγραφή. Παραχωρήστε πρόσβαση στις Ρυθμίσεις συστήματος και δοκιμάστε ξανά.";
-"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Το macshot χρειάζεται άδεια Προσβασιμότητας για προσκόλληση σε μεμονωμένα στοιχεία της διεπαφής. Παραχωρήστε πρόσβαση στις Ρυθμίσεις Συστήματος και δοκιμάστε ξανά.";
+"macshot needs Input Monitoring permission to highlight mouse clicks or show keystrokes during recording. Please grant access in System Settings, then try again." = "Το Garabatapp χρειάζεται άδεια παρακολούθησης εισόδου για να επισημαίνει τα κλικ του ποντικιού ή να εμφανίζει τα πατήματα πλήκτρων κατά την εγγραφή. Παραχωρήστε πρόσβαση στις Ρυθμίσεις συστήματος και δοκιμάστε ξανά.";
+"macshot needs Accessibility permission to snap to individual interface elements. Please grant access in System Settings, then try again." = "Το Garabatapp χρειάζεται άδεια Προσβασιμότητας για προσκόλληση σε μεμονωμένα στοιχεία της διεπαφής. Παραχωρήστε πρόσβαση στις Ρυθμίσεις Συστήματος και δοκιμάστε ξανά.";
 
 /* Recording — Keystroke Overlay */
 "Show Keystrokes" = "Εμφάνιση πλήκτρων";
@@ -545,7 +545,7 @@
 /* Webcam Overlay */
 "Webcam Overlay" = "Επικάλυψη κάμερας";
 "Camera Access Required" = "Απαιτείται πρόσβαση κάμερας";
-"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Το macshot χρειάζεται άδεια κάμερας για την επικάλυψη κάμερας. Ανοίξτε τις Ρυθμίσεις συστήματος για παραχώρηση πρόσβασης.";
+"macshot needs camera permission for the webcam overlay. Open System Settings to grant access." = "Το Garabatapp χρειάζεται άδεια κάμερας για την επικάλυψη κάμερας. Ανοίξτε τις Ρυθμίσεις συστήματος για παραχώρηση πρόσβασης.";
 "Webcam" = "Κάμερα";
 "Bottom Right" = "Κάτω δεξιά";
 "Bottom Left" = "Κάτω αριστερά";
@@ -566,7 +566,7 @@
 /* Settings */
 "Settings" = "Ρυθμίσεις";
 "Settings..." = "Ρυθμίσεις...";
-"macshot Settings" = "Ρυθμίσεις macshot";
+"macshot Settings" = "Ρυθμίσεις Garabatapp";
 "Also open in Editor" = "Άνοιγμα και σε επεξεργαστή";
 "Open in Editor right after selection" = "Άνοιγμα σε επεξεργαστή αμέσως μετά την επιλογή";
 "Close editor after copying" = "Κλείσιμο του επεξεργαστή μετά την αντιγραφή";
@@ -622,13 +622,13 @@
 "Clear History?" = "Εκκαθάριση ιστορικού;";
 "This will permanently delete all screenshots from history." = "Αυτό θα διαγράψει μόνιμα όλα τα στιγμιότυπα από το ιστορικό.";
 "Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut." = "Κάνε κλικ στο \"Ορισμός\" και πάτησε έναν συνδυασμό πλήκτρων με τουλάχιστον έναν τροποποιητή (⌘, ⌥, ⌃, ⇧) για να ορίσεις μια συντόμευση.";
-"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Τα αρχεία ανεβαίνουν σε αυτόν τον φάκελο στο Google Drive σου. Άφησέ το κενό για να χρησιμοποιηθεί ο \"macshot\". Το macshot μπορεί να χρησιμοποιήσει μόνο φακέλους που δημιούργησε το ίδιο, οπότε ένας φάκελος με το ίδιο όνομα που δημιούργησες στο Drive δεν θα επαναχρησιμοποιηθεί, αντί γι' αυτό δημιουργείται νέος. Όλα παραμένουν ιδιωτικά, τίποτα δεν κοινοποιείται δημόσια.";
+"Files are uploaded to this folder in your Google Drive. Leave empty to use \"macshot\". macshot can only use folders it created itself, so a folder you made in Drive with the same name won't be reused. A new one is created instead. Everything stays private and nothing is shared publicly." = "Τα αρχεία ανεβαίνουν σε αυτόν τον φάκελο στο Google Drive σου. Άφησέ το κενό για να χρησιμοποιηθεί ο \"Garabatapp\". Το Garabatapp μπορεί να χρησιμοποιήσει μόνο φακέλους που δημιούργησε το ίδιο, οπότε ένας φάκελος με το ίδιο όνομα που δημιούργησες στο Drive δεν θα επαναχρησιμοποιηθεί, αντί γι' αυτό δημιουργείται νέος. Όλα παραμένουν ιδιωτικά, τίποτα δεν κοινοποιείται δημόσια.";
 
 "Pressure" = "Πίεση";
 
 /* Added for v4.1.0-beta.3 — video editor, effects, open-video, shortcuts help */
 "Open Video..." = "Άνοιγμα βίντεο...";
-"Choose a video to open in macshot editor" = "Επιλέξτε ένα βίντεο για άνοιγμα στον επεξεργαστή του macshot";
+"Choose a video to open in macshot editor" = "Επιλέξτε ένα βίντεο για άνοιγμα στον επεξεργαστή του Garabatapp";
 "Click to add effects" = "Κάντε κλικ για προσθήκη εφέ";
 "Add Zoom" = "Προσθήκη ζουμ";
 "Add Censor" = "Προσθήκη λογοκρισίας";
@@ -698,7 +698,7 @@
 "Re-capture the last selected area" = "Επανάληψη λήψης της τελευταίας επιλεγμένης περιοχής";
 "Captured window title (screenshots only, blank otherwise)" = "Μόνο στιγμιότυπα, τίτλος παραθύρου λήψης (κενό διαφορετικά)";
 "Show available filename tokens" = "Εμφάνιση διαθέσιμων διακριτικών ονόματος αρχείου";
-"Enable macshot:// URL scheme" = "Ενεργοποίηση URL scheme macshot://";
+"Enable macshot:// URL scheme" = "Ενεργοποίηση URL scheme garabatapp://";
 "Show supported URL scheme commands" = "Εμφάνιση υποστηριζόμενων εντολών URL scheme";
 "Start area capture" = "Έναρξη λήψης περιοχής";
 "Start area recording" = "Έναρξη εγγραφής περιοχής";
@@ -707,7 +707,7 @@
 "Stop the current recording" = "Διακοπή της τρέχουσας εγγραφής";
 "Supported URL Scheme Commands" = "Υποστηριζόμενες εντολές URL Scheme";
 "The file extension is appended automatically. Slashes and colons in {window} become dashes." = "Η επέκταση αρχείου προστίθεται αυτόματα. Οι κάθετοι και οι άνω κάτω τελείες στο {window} γίνονται παύλες.";
-"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Ενεργοποιήστε το macshot από το Raycast, το Alfred, τα Shortcuts ή οποιοδήποτε εργαλείο ανοίγει URLs.";
+"Trigger macshot from Raycast, Alfred, Shortcuts, or any tool that opens URLs." = "Ενεργοποιήστε το Garabatapp από το Raycast, το Alfred, τα Shortcuts ή οποιοδήποτε εργαλείο ανοίγει URLs.";
 "URL scheme info" = "Πληροφορίες URL scheme";
 "sec (0 = never)" = "δευτ. (0 = ποτέ)";
 
@@ -716,7 +716,7 @@
 "Export Settings…" = "Εξαγωγή ρυθμίσεων…";
 "Import Settings…" = "Εισαγωγή ρυθμίσεων…";
 "Reveal Settings File in Finder" = "Εμφάνιση αρχείου ρυθμίσεων στο Finder";
-"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Εξαγάγετε τις προτιμήσεις σας σε ένα αρχείο για να τις μεταφέρετε σε άλλο Mac ή σε μια καθαρή εγκατάσταση. Τα διαπιστευτήρια μεταφόρτωσης, ο φάκελος αποθήκευσης και το ιστορικό στιγμιότυπων δεν περιλαμβάνονται. Οι ρυθμίσεις αποθηκεύονται μέσα στο app container του macshot.";
+"Export your preferences to a file to move them to another Mac or a clean install. Upload credentials, your save folder, and screenshot history are not included. Settings are stored inside macshot's app container." = "Εξαγάγετε τις προτιμήσεις σας σε ένα αρχείο για να τις μεταφέρετε σε άλλο Mac ή σε μια καθαρή εγκατάσταση. Τα διαπιστευτήρια μεταφόρτωσης, ο φάκελος αποθήκευσης και το ιστορικό στιγμιότυπων δεν περιλαμβάνονται. Οι ρυθμίσεις αποθηκεύονται μέσα στο app container του Garabatapp.";
 "Export Settings" = "Εξαγωγή ρυθμίσεων";
 "Import Settings" = "Εισαγωγή ρυθμίσεων";
 "Import failed" = "Η εισαγωγή απέτυχε";
@@ -727,12 +727,12 @@
 "Relaunch Now" = "Επανεκκίνηση τώρα";
 "Replace your current settings?" = "Αντικατάσταση των τρεχουσών ρυθμίσεων;";
 "Importing will replace your current preferences with the ones in this file. Your save folder, upload credentials, and screenshot history are kept. This cannot be undone." = "Η εισαγωγή θα αντικαταστήσει τις τρέχουσες προτιμήσεις σας με αυτές του αρχείου. Ο φάκελος αποθήκευσης, τα διαπιστευτήρια μεταφόρτωσης και το ιστορικό στιγμιότυπων διατηρούνται. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.";
-"%d settings were applied. Relaunch macshot to apply all changes." = "Εφαρμόστηκαν %d ρυθμίσεις. Κάντε επανεκκίνηση του macshot για να εφαρμοστούν όλες οι αλλαγές.";
+"%d settings were applied. Relaunch macshot to apply all changes." = "Εφαρμόστηκαν %d ρυθμίσεις. Κάντε επανεκκίνηση του Garabatapp για να εφαρμοστούν όλες οι αλλαγές.";
 "A few large items were too big to include. Everything else was saved." = "Ορισμένα μεγάλα στοιχεία ήταν πολύ μεγάλα για να συμπεριληφθούν. Όλα τα υπόλοιπα αποθηκεύτηκαν.";
 "Your custom Beautify background image was too large to include. Everything else was saved." = "Η προσαρμοσμένη εικόνα φόντου Beautify ήταν πολύ μεγάλη για να συμπεριληφθεί. Όλα τα υπόλοιπα αποθηκεύτηκαν.";
-"This file is not a valid macshot settings file." = "Αυτό το αρχείο δεν είναι έγκυρο αρχείο ρυθμίσεων του macshot.";
+"This file is not a valid macshot settings file." = "Αυτό το αρχείο δεν είναι έγκυρο αρχείο ρυθμίσεων του Garabatapp.";
 "This settings file contains no settings." = "Αυτό το αρχείο ρυθμίσεων δεν περιέχει ρυθμίσεις.";
-"This settings file was made by a newer version of macshot. Please update macshot first." = "Αυτό το αρχείο ρυθμίσεων δημιουργήθηκε από νεότερη έκδοση του macshot. Ενημερώστε πρώτα το macshot.";
+"This settings file was made by a newer version of macshot. Please update macshot first." = "Αυτό το αρχείο ρυθμίσεων δημιουργήθηκε από νεότερη έκδοση του Garabatapp. Ενημερώστε πρώτα το Garabatapp.";
 
 /* URL scheme: ocr-translate (issue #283) */
 "Capture, translate, and overlay the text on the image" = "Καταγράψτε, μεταφράστε και επικαλύψτε το κείμενο στην εικόνα";
@@ -777,7 +777,7 @@
 "Apply Default Zoom to All" = "Εφαρμογή προεπιλεγμένου ζουμ σε όλα";
 "Auto" = "Αυτόμ.";
 "Auto Zoom" = "Αυτόματο ζουμ";
-"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Το αυτόματο ζουμ χρειάζεται δεδομένα δείκτη, τα οποία το macshot καταγράφει σε κάθε νέα εγγραφή. Μπορείτε ακόμα να προσθέσετε ζουμ κάνοντας διπλό κλικ στη λωρίδα ζουμ.";
+"Auto Zoom needs pointer data, which macshot records with every new recording. You can still add zooms by double-clicking the zoom lane." = "Το αυτόματο ζουμ χρειάζεται δεδομένα δείκτη, τα οποία το Garabatapp καταγράφει σε κάθε νέα εγγραφή. Μπορείτε ακόμα να προσθέσετε ζουμ κάνοντας διπλό κλικ στη λωρίδα ζουμ.";
 "Background blur" = "Θόλωμα φόντου";
 "Background color" = "Χρώμα φόντου";
 "Background, padding, rounded corners and shadow" = "Φόντο, περιθώριο, στρογγυλεμένες γωνίες και σκιά";
@@ -878,7 +878,7 @@
 "Shrink during zooms" = "Σμίκρυνση κατά το ζουμ";
 "Smoothing" = "Εξομάλυνση";
 "Snappy" = "Γρήγορο";
-"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Η αναγνώριση ομιλίας είναι απενεργοποιημένη για το macshot στις Ρυθμίσεις συστήματος › Απόρρητο και ασφάλεια.";
+"Speech recognition is turned off for macshot in System Settings › Privacy & Security." = "Η αναγνώριση ομιλίας είναι απενεργοποιημένη για το Garabatapp στις Ρυθμίσεις συστήματος › Απόρρητο και ασφάλεια.";
 "Speed" = "Ταχύτητα";
 "Spotlight" = "Προβολέας";
 "Square" = "Τετράγωνο";
@@ -888,12 +888,12 @@
 "The recording's audio could not be read." = "Δεν ήταν δυνατή η ανάγνωση του ήχου της εγγραφής.";
 "This recording already shows the pointer in its pixels, so it can't be restyled. Zooms can still follow it." = "Αυτή η εγγραφή δείχνει ήδη τον δείκτη στα pixel της, οπότε δεν μπορεί να αλλάξει στυλ. Τα ζουμ μπορούν ακόμα να τον ακολουθούν.";
 "This recording has no audio to transcribe." = "Αυτή η εγγραφή δεν έχει ήχο για απομαγνητοφώνηση.";
-"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Αυτό το βίντεο δεν έχει καταγεγραμμένα δεδομένα δείκτη. Οι εγγραφές του macshot που ανοίγουν στον επεξεργαστή σάς επιτρέπουν να αλλάξετε το στυλ, την εξομάλυνση και το μέγεθος του δείκτη μετά την εγγραφή.";
+"This video has no recorded pointer data. Recordings made with macshot that open in the editor let you restyle, smooth and resize the pointer after recording." = "Αυτό το βίντεο δεν έχει καταγεγραμμένα δεδομένα δείκτη. Οι εγγραφές του Garabatapp που ανοίγουν στον επεξεργαστή σάς επιτρέπουν να αλλάξετε το στυλ, την εξομάλυνση και το μέγεθος του δείκτη μετά την εγγραφή.";
 "Title" = "Τίτλος";
 "Transcribing…" = "Απομαγνητοφώνηση…";
 "Transition" = "Μετάβαση";
-"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Ενεργοποιήστε την Εμφάνιση πλήκτρων πριν από την εγγραφή. Το macshot θα τα καταγράψει ξεχωριστά ώστε να μπορείτε να τα μορφοποιήσετε εδώ.";
-"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Ενεργοποιήστε την κάμερα πριν από την εγγραφή. Το macshot την καταγράφει ξεχωριστά ώστε να μπορείτε να τη μετακινήσετε, να αλλάξετε το μέγεθος ή το στυλ της ή να την αποκρύψετε εδώ, και να τη σμικρύνετε κατά το ζουμ.";
+"Turn on Show Keystrokes before recording. macshot then records them separately so you can style them here." = "Ενεργοποιήστε την Εμφάνιση πλήκτρων πριν από την εγγραφή. Το Garabatapp θα τα καταγράψει ξεχωριστά ώστε να μπορείτε να τα μορφοποιήσετε εδώ.";
+"Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms." = "Ενεργοποιήστε την κάμερα πριν από την εγγραφή. Το Garabatapp την καταγράφει ξεχωριστά ώστε να μπορείτε να τη μετακινήσετε, να αλλάξετε το μέγεθος ή το στυλ της ή να την αποκρύψετε εδώ, και να τη σμικρύνετε κατά το ζουμ.";
 "Use Solid to hide sensitive information: blur and pixelation can sometimes be reversed." = "Χρησιμοποιήστε το Συμπαγές για απόκρυψη ευαίσθητων πληροφοριών: το θόλωμα και τα εικονοστοιχεία μπορούν μερικές φορές να αντιστραφούν.";
 "Visibility" = "Ορατότητα";
 "Wallpaper" = "Ταπετσαρία";
