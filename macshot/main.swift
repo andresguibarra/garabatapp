@@ -8,6 +8,10 @@ import Cocoa
 // screenshot tool where captured colors must be exact.
 UserDefaults.standard.set(false, forKey: "NSViewUsesAutomaticLayerBackingStores")
 
+// Show native tooltips almost immediately (AppKit's default waits about a
+// second). Icon-only buttons like the editor top bar rely on them.
+UserDefaults.standard.set(150, forKey: "NSInitialToolTipDelay")
+
 let app = NSApplication.shared
 // main.swift always runs on the main thread. We use assumeIsolated on
 // macOS 14+ (Swift 5.9 runtime) and fall back to an unchecked cast on
