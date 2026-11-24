@@ -8634,20 +8634,16 @@ class OverlayView: NSView {
 
     // MARK: - Garabatapp overflow (⋯) menu
 
+    /// Garabatapp: the ⋯ list is a floating panel (popover), not an NSMenu:
+    /// an open NSMenu holds back the app's global capture hotkeys. Arrow keys,
+    /// Enter, Esc and each item's own shortcut work like in a menu.
     private func showOverflowMenu(_ items: [ToolbarButton], anchor: NSView?, isBottom: Bool) {
+        if PopoverHelper.toggleClosedIfOpen() { return }
         guard let anchor, !items.isEmpty else { return }
-        let menu = NSMenu()
         var rows: [OverflowMenuItemView] = []
+        var keys: [String?] = []
         for button in items {
-            let item = NSMenuItem(title: button.tooltip, action: #selector(overflowMenuPicked(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = OverflowAction(button.action)
-            // The key still works while the menu is open.
             let key = ToolShortcutManager.tooltipShortcut(for: button.action)
-            if let key, key.count == 1 {
-                item.keyEquivalent = key.lowercased()
-                item.keyEquivalentModifierMask = []
-            }
             let symbol: String? = {
                 switch button.sfSymbol {
                 case "_custom.text": return "textformat"
@@ -8656,37 +8652,30 @@ class OverlayView: NSView {
                 }
             }()
             let action = button.action
-            let row = OverflowMenuItemView(
+            rows.append(OverflowMenuItemView(
                 title: button.tooltip,
                 icon: symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) },
                 key: key?.uppercased(), checked: button.isSelected) { [weak self] in
+                    PopoverHelper.dismiss()
                     self?.handleToolbarAction(action)
-                }
-            item.view = row
-            rows.append(row)
-            menu.addItem(item)
+                })
+            keys.append(key.map { $0.lowercased() })
         }
-        let width = rows.map { $0.fittingWidth }.max() ?? 200
-        for row in rows { row.setFrameSize(NSSize(width: width, height: OverflowMenuItemView.rowHeight)) }
-        menu.addItem(.separator())
-        let edit = NSMenuItem(title: L("Customize Toolbar…"), action: #selector(overflowMenuOpenSettings), keyEquivalent: "")
-        edit.target = self
-        menu.addItem(edit)
-        if isBottom {
-            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: anchor.bounds.height + 4), in: anchor)
-        } else {
-            menu.popUp(positioning: nil, at: NSPoint(x: anchor.bounds.width + 4, y: anchor.bounds.height), in: anchor)
+        rows.append(OverflowMenuItemView(
+            title: L("Customize Toolbar…"),
+            icon: NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: nil),
+            key: nil, checked: false) { [weak self] in
+                PopoverHelper.dismiss()
+                self?.overflowMenuOpenSettings()
+            })
+        keys.append(nil)
+        let panel = OverflowPanelView(rows: rows, keys: keys, separatorBeforeLast: true)
+        PopoverHelper.show(panel, size: panel.frame.size, relativeTo: anchor.bounds, of: anchor,
+                           preferredEdge: isBottom ? .maxY : .minX)
+        DispatchQueue.main.async {
+            panel.window?.makeKey()
+            panel.window?.makeFirstResponder(panel)
         }
-    }
-
-    private final class OverflowAction {
-        let action: ToolbarButtonAction
-        init(_ action: ToolbarButtonAction) { self.action = action }
-    }
-
-    @objc private func overflowMenuPicked(_ sender: NSMenuItem) {
-        guard let wrapped = sender.representedObject as? OverflowAction else { return }
-        handleToolbarAction(wrapped.action)
     }
 
     @objc private func overflowMenuOpenSettings() {
@@ -11903,8 +11892,27 @@ final class OverflowMenuItemView: NSView {
         return ceil(44 + titleW + keyW + 16)
     }
 
+    /// Highlight when used outside an NSMenu (the ⋯ panel).
+    var isRowHighlighted = false { didSet { needsDisplay = true } }
+    var onHover: (() -> Void)?
+    private var hoverArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) { onHover?() }
+    override func mouseMoved(with event: NSEvent) { if !isRowHighlighted { onHover?() } }
+
+    func pick() { onPick() }
+
     override func draw(_ dirtyRect: NSRect) {
-        let highlighted = enclosingMenuItem?.isHighlighted ?? false
+        let highlighted = enclosingMenuItem?.isHighlighted ?? isRowHighlighted
         if highlighted {
             NSColor.selectedContentBackgroundColor.setFill()
             NSBezierPath(roundedRect: bounds.insetBy(dx: 5, dy: 0), xRadius: 4, yRadius: 4).fill()
@@ -11953,7 +11961,67 @@ final class OverflowMenuItemView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         let pick = onPick
-        enclosingMenuItem?.menu?.cancelTracking()
-        DispatchQueue.main.async { pick() }
+        if let menu = enclosingMenuItem?.menu {
+            menu.cancelTracking()
+            DispatchQueue.main.async { pick() }
+        } else {
+            pick()
+        }
+    }
+}
+
+/// The ⋯ panel: a column of rows with keyboard navigation like a menu.
+final class OverflowPanelView: NSView {
+    private let rows: [OverflowMenuItemView]
+    private let keys: [String?]
+    private var selected: Int? {
+        didSet { for (i, r) in rows.enumerated() { r.isRowHighlighted = (i == selected) } }
+    }
+
+    init(rows: [OverflowMenuItemView], keys: [String?], separatorBeforeLast: Bool) {
+        self.rows = rows
+        self.keys = keys
+        let pad: CGFloat = 5, sepH: CGFloat = separatorBeforeLast ? 9 : 0
+        let width = rows.map { $0.fittingWidth }.max() ?? 200
+        let h = CGFloat(rows.count) * OverflowMenuItemView.rowHeight + pad * 2 + sepH
+        super.init(frame: NSRect(x: 0, y: 0, width: width, height: h))
+        var y = h - pad
+        for (i, row) in rows.enumerated() {
+            if separatorBeforeLast && i == rows.count - 1 {
+                let sep = NSBox(frame: NSRect(x: 12, y: y - sepH / 2 - 0.5, width: width - 24, height: 1))
+                sep.boxType = .separator
+                addSubview(sep)
+                y -= sepH
+            }
+            y -= OverflowMenuItemView.rowHeight
+            row.frame = NSRect(x: 0, y: y, width: width, height: OverflowMenuItemView.rowHeight)
+            row.onHover = { [weak self] in self?.selected = i }
+            addSubview(row)
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 125:  // ↓
+            selected = selected.map { min(rows.count - 1, $0 + 1) } ?? 0
+        case 126:  // ↑
+            selected = selected.map { max(0, $0 - 1) } ?? rows.count - 1
+        case 36, 76, 49:  // Return, Enter, Space
+            if let i = selected { rows[i].pick() }
+        case 53:  // Esc
+            PopoverHelper.dismiss()
+        default:
+            if KeyboardShortcutMatcher.modifiers(in: event).isEmpty,
+               let ch = KeyboardShortcutMatcher.semanticCharacter(for: event)?.lowercased(),
+               let i = keys.firstIndex(where: { $0 == ch }) {
+                rows[i].pick()
+            } else {
+                super.keyDown(with: event)
+            }
+        }
     }
 }
