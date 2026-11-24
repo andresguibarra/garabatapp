@@ -25,6 +25,16 @@ final class ArrowConnectorsTests: XCTestCase {
         assertPoint(top, 50, 50)
     }
 
+    func testDiagonalArrowKeepsTheFullGapAcrossTheEdge() {
+        // A slanted arrow must still clear the border by the whole gap measured
+        // perpendicular to it, not only along the arrow (#arrow overlap at 45°).
+        let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
+        let corner = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 1000, y: 1000), gap: 14)!
+        assertPoint(corner, 114, 114)
+        let slanted = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 1050, y: 550), gap: 14)!
+        XCTAssertEqual(slanted.x, 114, accuracy: 0.001, "exits the right side a full 14 pt out")
+    }
+
     func testBorderPointOfEllipseAndNumber() {
         let oval = Annotation(tool: .ellipse, startPoint: .zero, endPoint: NSPoint(x: 200, y: 100),
                               color: .red, strokeWidth: 2)
@@ -79,7 +89,7 @@ final class ArrowConnectorsTests: XCTestCase {
         b.move(dx: 0, dy: 200)
         XCTAssertTrue(ArrowConnectors.resolve([a, b, link]))
         // From a's center (50,50) toward b's center (350,250): exits through a's right edge.
-        XCTAssertEqual(link.startPoint.x, 100 + startGap * 300 / hypot(300, 200), accuracy: 0.01)
+        XCTAssertEqual(link.startPoint.x, 100 + startGap, accuracy: 0.01, "the gap is measured across the edge")
         XCTAssertGreaterThan(link.endPoint.y, link.startPoint.y)
     }
 
