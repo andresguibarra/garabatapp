@@ -14,6 +14,11 @@ class ToolOptionsRowView: NSView {
     private let padding: CGFloat = 8
     /// The natural content width calculated during rebuild, before any external resizing.
     private(set) var contentWidth: CGFloat = 200
+    /// Hover feedback over the option under the pointer (see the extension below).
+    fileprivate let hoverHighlight = OptionHoverHighlightView(frame: .zero)
+    fileprivate var hoverTrackingArea: NSTrackingArea?
+    /// True while ⌥ is held and the option number badges are showing.
+    fileprivate(set) var shortcutBadgesVisible = false
     // Consume clicks on gaps between controls so they don't fall through to OverlayView.
     // In editor mode, let gap clicks pass through so drawing works over the options area.
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -29,6 +34,11 @@ class ToolOptionsRowView: NSView {
 
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .arrow)
+        // Pointing hand over every clickable option (per enabled segment for
+        // segmented controls) so the row reads as a set of buttons.
+        for target in hoverTargets() where target.clickable {
+            addCursorRect(target.rect, cursor: .pointingHand)
+        }
     }
 
     /// Auto-tint controls to match toolbar accent color.
@@ -37,7 +47,10 @@ class ToolOptionsRowView: NSView {
         super.addSubview(view)
         if let btn = view as? NSButton, btn.tag < 990 { btn.contentTintColor = ToolbarLayout.accentColor }
         if let slider = view as? NSSlider { slider.trackFillColor = ToolbarLayout.accentColor }
-        if let seg = view as? NSSegmentedControl { seg.selectedSegmentBezelColor = ToolbarLayout.accentColor }
+        if let seg = view as? NSSegmentedControl {
+            seg.selectedSegmentBezelColor = ToolbarLayout.accentColor
+            applyDefaultSegmentToolTips(seg)
+        }
     }
 
     override init(frame: NSRect) {
@@ -103,6 +116,8 @@ class ToolOptionsRowView: NSView {
 
     /// Rebuild the options row for the given tool. Call when tool or state changes.
     func rebuild(for tool: AnnotationTool) {
+        // The controls under the pointer change; re-evaluate hover on every exit path.
+        defer { refreshHoverFromCurrentMouse() }
         // Remove old subviews
         subviews.forEach { $0.removeFromSuperview() }
         guard let ov = overlayView else { return }
@@ -2064,6 +2079,302 @@ class ToolOptionsRowView: NSView {
 
     @objc private func textConfirmClicked() {
         overlayView?.commitTextFieldIfNeeded()
+    }
+}
+
+// MARK: - Hover feedback (highlight, pointing-hand cursor, segment tooltips)
+
+/// Non-interactive highlight drawn over the option under the pointer.
+private final class OptionHoverHighlightView: NSView {
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.cornerRadius = 5
+        isHidden = true
+    }
+    required init?(coder: NSCoder) { fatalError() }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+/// Small numbered badge shown over an option while ⌥ is held.
+private final class OptionShortcutBadgeView: NSView {
+    private let number: Int
+    init(number: Int, frame: NSRect) {
+        self.number = number
+        super.init(frame: frame)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func draw(_ dirtyRect: NSRect) {
+        let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
+        ToolbarLayout.accentColor.setFill()
+        NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .bold),
+            .foregroundColor: NSColor.white,
+        ]
+        let str = NSAttributedString(string: "\(number)", attributes: attrs)
+        let size = str.size()
+        str.draw(at: NSPoint(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2))
+    }
+}
+
+// MARK: - Option shortcuts (⌥1…⌥9 pick an option, [ ] change the main slider)
+
+extension ToolOptionsRowView {
+
+    /// Options reachable with ⌥1…⌥9, left to right. Steppers are left out:
+    /// a single press can't say which way to step.
+    func shortcutTargets() -> [HoverTarget] {
+        hoverTargets()
+            .filter { $0.clickable && !($0.control is NSStepper) }
+            .sorted { $0.rect.minX < $1.rect.minX }
+    }
+
+    /// Show or hide the ⌥ number badges.
+    func setShortcutBadgesVisible(_ visible: Bool) {
+        guard visible != shortcutBadgesVisible else { return }
+        shortcutBadgesVisible = visible
+        if visible { layoutShortcutBadges() } else { removeShortcutBadges() }
+    }
+
+    fileprivate func removeShortcutBadges() {
+        subviews.filter { $0 is OptionShortcutBadgeView }.forEach { $0.removeFromSuperview() }
+    }
+
+    fileprivate func layoutShortcutBadges() {
+        removeShortcutBadges()
+        guard !isHidden else { return }
+        let size: CGFloat = 13
+        for (i, target) in shortcutTargets().prefix(9).enumerated() {
+            var x = target.rect.maxX - size + 3
+            var y = target.rect.maxY - size + 3
+            x = min(max(x, bounds.minX + 1), bounds.maxX - size - 1)
+            y = min(max(y, bounds.minY + 1), bounds.maxY - size - 1)
+            let badge = OptionShortcutBadgeView(number: i + 1, frame: NSRect(x: x, y: y, width: size, height: size))
+            addSubview(badge, positioned: .above, relativeTo: nil)
+        }
+    }
+
+    /// Handles ⌥1…⌥9 and [ / ] for the visible options row. Returns true when consumed.
+    func handleOptionShortcut(_ event: NSEvent) -> Bool {
+        guard !isHidden, window != nil, !subviews.isEmpty else { return false }
+        let mods = KeyboardShortcutMatcher.modifiers(in: event)
+
+        if mods == [.option], let n = Self.digit(for: event), (1...9).contains(n) {
+            let targets = shortcutTargets()
+            guard n <= targets.count else { return true }  // swallow: no stray ⌥-characters
+            activate(targets[n - 1])
+            return true
+        }
+
+        if mods.isEmpty {
+            let decrease = KeyboardShortcutMatcher.matches(event, character: "[", modifiers: [])
+            let increase = KeyboardShortcutMatcher.matches(event, character: "]", modifiers: [])
+            guard decrease || increase,
+                  let slider = subviews.first(where: { !$0.isHidden && $0 is NSSlider }) as? NSSlider,
+                  slider.isEnabled else { return false }
+            let range = slider.maxValue - slider.minValue
+            let step = range >= 20 ? max(1, (range / 20).rounded()) : range / 20
+            let newValue = min(slider.maxValue, max(slider.minValue,
+                                                    slider.doubleValue + (increase ? step : -step)))
+            guard newValue != slider.doubleValue else { return true }
+            slider.doubleValue = newValue
+            if let action = slider.action { NSApp.sendAction(action, to: slider.target, from: slider) }
+            return true
+        }
+        return false
+    }
+
+    private func activate(_ target: HoverTarget) {
+        if let seg = target.control as? NSSegmentedControl, let i = target.segment {
+            if seg.trackingMode == .selectAny {
+                seg.setSelected(!seg.isSelected(forSegment: i), forSegment: i)
+            } else {
+                seg.selectedSegment = i
+            }
+            if let action = seg.action { NSApp.sendAction(action, to: seg.target, from: seg) }
+        } else if let button = target.control as? NSButton {
+            button.performClick(nil)
+        } else if let action = target.control.action {
+            NSApp.sendAction(action, to: target.control.target, from: target.control)
+        }
+    }
+
+    /// 1…9 from the main row or the keypad. Physical digit keys are used as a
+    /// fallback because ⌥ turns digits into symbols, and AZERTY needs Shift for them.
+    private static func digit(for event: NSEvent) -> Int? {
+        if let ch = KeyboardShortcutMatcher.semanticCharacter(for: event), ch.count == 1, let n = Int(ch) {
+            return n
+        }
+        let rowDigits: [UInt16: Int] = [18: 1, 19: 2, 20: 3, 21: 4, 23: 5, 22: 6, 26: 7, 28: 8, 25: 9,
+                                        83: 1, 84: 2, 85: 3, 86: 4, 87: 5, 88: 6, 89: 7, 91: 8, 92: 9]
+        return rowDigits[event.keyCode]
+    }
+}
+
+extension ToolOptionsRowView {
+
+    /// A spot in the row the pointer can be over. Clickable targets get the
+    /// hover highlight and a pointing hand; sliders keep a plain arrow.
+    struct HoverTarget {
+        let rect: NSRect
+        let clickable: Bool
+        let control: NSControl
+        /// Segment index for a segmented control, nil for any other control.
+        let segment: Int?
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let area = hoverTrackingArea { removeTrackingArea(area) }
+        let area = NSTrackingArea(rect: .zero,
+                                  options: [.mouseEnteredAndExited, .mouseMoved, .cursorUpdate,
+                                            .activeAlways, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverTrackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        _ = updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        _ = updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        _ = updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hideHoverHighlight()
+    }
+
+    /// Called by the canvas views from their own imperative cursor code: when the
+    /// pointer is over one of this row's options, the row sets the cursor and the
+    /// caller must not override it. `point` is in `view`'s coordinates.
+    func handlesCursor(at point: NSPoint, in view: NSView) -> Bool {
+        guard !isHidden, let window, window === view.window else { return false }
+        let local = convert(point, from: view)
+        guard bounds.contains(local) else { return false }
+        return updateHover(at: local)
+    }
+
+    /// Updates the highlight and cursor for a point in this view's coordinates.
+    /// Returns true when the point is over an option (the row owns the cursor).
+    @discardableResult
+    private func updateHover(at point: NSPoint) -> Bool {
+        guard !isHidden, bounds.contains(point),
+              let target = hoverTargets().last(where: { $0.rect.contains(point) }) else {
+            hideHoverHighlight()
+            return false
+        }
+        if target.clickable {
+            showHoverHighlight(in: target.rect)
+            NSCursor.pointingHand.set()
+        } else {
+            hideHoverHighlight()
+            NSCursor.arrow.set()
+        }
+        return true
+    }
+
+    private func refreshHoverFromCurrentMouse() {
+        window?.invalidateCursorRects(for: self)
+        if shortcutBadgesVisible { layoutShortcutBadges() }
+        guard let window, !isHidden else { hideHoverHighlight(); return }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        if bounds.contains(point) {
+            updateHover(at: point)
+        } else {
+            hideHoverHighlight()
+        }
+    }
+
+    private func showHoverHighlight(in rect: NSRect) {
+        let highlight = hoverHighlight
+        if highlight.superview !== self || subviews.last !== highlight {
+            highlight.removeFromSuperview()
+            addSubview(highlight, positioned: .above, relativeTo: nil)
+        }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        highlight.frame = rect.insetBy(dx: -2, dy: -2).intersection(bounds)
+        highlight.layer?.backgroundColor = ToolbarLayout.iconColor.withAlphaComponent(0.16).cgColor
+        highlight.layer?.borderColor = ToolbarLayout.iconColor.withAlphaComponent(0.22).cgColor
+        highlight.layer?.borderWidth = 1
+        highlight.isHidden = false
+        CATransaction.commit()
+    }
+
+    private func hideHoverHighlight() {
+        hoverHighlight.isHidden = true
+    }
+
+    /// Every hover spot in the row, in this view's coordinates.
+    func hoverTargets() -> [HoverTarget] {
+        var targets: [HoverTarget] = []
+        for view in subviews where !view.isHidden && !(view is OptionHoverHighlightView)
+            && !(view is OptionShortcutBadgeView) {
+            guard let control = view as? NSControl else { continue }
+            if let field = control as? NSTextField, !field.isEditable { continue }
+            guard control.isEnabled else { continue }
+            switch control {
+            case is NSSlider:
+                targets.append(HoverTarget(rect: control.frame, clickable: false, control: control, segment: nil))
+            case let seg as NSSegmentedControl:
+                for (i, rect) in Self.segmentRects(seg).enumerated() where seg.isEnabled(forSegment: i) {
+                    targets.append(HoverTarget(rect: rect, clickable: true, control: seg, segment: i))
+                }
+            case is NSTextField:
+                continue
+            default:
+                targets.append(HoverTarget(rect: control.frame, clickable: true, control: control, segment: nil))
+            }
+        }
+        return targets
+    }
+
+    /// Segment rects in the segmented control's superview coordinates.
+    static func segmentRects(_ seg: NSSegmentedControl) -> [NSRect] {
+        let count = seg.segmentCount
+        guard count > 0 else { return [] }
+        let frame = seg.frame
+        var widths = (0..<count).map { seg.width(forSegment: $0) }
+        let total = widths.reduce(0, +)
+        if widths.contains(where: { $0 <= 0 }) || total <= 0 {
+            widths = Array(repeating: frame.width / CGFloat(count), count: count)
+        } else {
+            // Explicit widths exclude the bezel's end caps; spread the slack evenly.
+            let scale = frame.width / total
+            widths = widths.map { $0 * scale }
+        }
+        var x = frame.minX
+        return widths.map { w in
+            defer { x += w }
+            return NSRect(x: x, y: frame.minY, width: w, height: frame.height)
+        }
+    }
+
+    /// Native tooltips for icon-only segments, so hovering says what each one does.
+    /// Never replaces a tooltip a builder already set.
+    func applyDefaultSegmentToolTips(_ seg: NSSegmentedControl) {
+        let names: [String]
+        switch seg.action {
+        case #selector(lineStyleChanged(_:)) where seg.segmentCount == 3:
+            names = [L("Solid"), L("Dashed"), L("Dotted")]
+        case #selector(highlightBorderChanged(_:)) where seg.segmentCount == 2:
+            names = [L("Solid"), L("Dashed")]
+        case #selector(shapeFillChanged(_:)) where seg.segmentCount == 3:
+            names = [L("Outline"), L("Outline + Fill"), L("Fill")]
+        default:
+            return
+        }
+        for (i, name) in names.enumerated() where seg.toolTip(forSegment: i) == nil {
+            seg.setToolTip(name, forSegment: i)
+        }
     }
 }
 

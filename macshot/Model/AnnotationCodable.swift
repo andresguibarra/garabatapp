@@ -71,6 +71,11 @@ struct CodableAnnotation: Codable {
     var randomSeed: UInt32 = 0  // 0 = legacy capture, regenerate at decode
     var dimOpacity: CGFloat = 0.55  // highlight (spotlight) dim strength
 
+    // Arrow connectors (UUID strings)
+    var connectorID: String?
+    var connectedStartID: String?
+    var connectedEndID: String?
+
     init(
         tool: Int, startX: CGFloat, startY: CGFloat, endX: CGFloat, endY: CGFloat,
         colorRGBA: [CGFloat], strokeWidth: CGFloat
@@ -148,6 +153,9 @@ struct CodableAnnotation: Codable {
         groupID = c.decodeOptional(.groupID)
         randomSeed = c.decode(.randomSeed, or: 0)
         dimOpacity = c.decode(.dimOpacity, or: 0.55)
+        connectorID = c.decodeOptional(.connectorID)
+        connectedStartID = c.decodeOptional(.connectedStartID)
+        connectedEndID = c.decodeOptional(.connectedEndID)
     }
 }
 
@@ -233,6 +241,9 @@ extension Annotation {
         if let gid = groupID { c.groupID = gid.uuidString }
         c.randomSeed = randomSeed
         c.dimOpacity = dimOpacity
+        c.connectorID = connectorID.uuidString
+        c.connectedStartID = connectedStartID?.uuidString
+        c.connectedEndID = connectedEndID?.uuidString
 
         return c
     }
@@ -336,6 +347,9 @@ extension Annotation {
         // struct default 0.55). Guard against a zero/invalid value.
         ann.dimOpacity = c.dimOpacity.isFinite && c.dimOpacity > 0 ? min(1, c.dimOpacity) : 0.55
         if let gidStr = c.groupID { ann.groupID = UUID(uuidString: gidStr) }
+        if let id = c.connectorID.flatMap(UUID.init(uuidString:)) { ann.connectorID = id }
+        ann.connectedStartID = c.connectedStartID.flatMap(UUID.init(uuidString:))
+        ann.connectedEndID = c.connectedEndID.flatMap(UUID.init(uuidString:))
         // Legacy captures have seed=0; assign a fresh one so sketchy variation
         // remains deterministic per-load even for old data.
         ann.randomSeed = c.randomSeed != 0 ? c.randomSeed : UInt32.random(in: 1...UInt32.max)

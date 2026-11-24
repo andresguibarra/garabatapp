@@ -967,3 +967,7 @@
 "Minimize" = "Minimizar";
 "Help" = "Ayuda";
 "on GitHub" = "en GitHub";
+
+"Dashed" = "Guiones";
+"Dotted" = "Puntos";
+"Outline + Fill" = "Contorno y relleno";

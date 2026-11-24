@@ -199,6 +199,12 @@ class Annotation {
     var lineStyle: LineStyle = .solid // line/arrow/rect/ellipse stroke style
     var arrowStyle: ArrowStyle = .single // arrow head style
     var arrowReversed: Bool = false      // head at start instead of end
+    /// Stable identity arrow connectors refer to (see `ArrowConnectors`).
+    var connectorID = UUID()
+    /// Shape the arrow's start / end is attached to (`connectorID`), nil = free end.
+    var connectedStartID: UUID?
+    var connectedEndID: UUID?
+    var hasConnector: Bool { connectedStartID != nil || connectedEndID != nil }
     var rectFillStyle: RectFillStyle = .stroke // rectangle fill mode
     var stampImage: NSImage?          // rendered emoji or loaded picture for stamp tool
     /// True when the stamp is a full capture added via "Add Capture" in the editor
@@ -268,6 +274,9 @@ class Annotation {
         c.lineStyle = lineStyle
         c.arrowStyle = arrowStyle
         c.arrowReversed = arrowReversed
+        c.connectorID = connectorID
+        c.connectedStartID = connectedStartID
+        c.connectedEndID = connectedEndID
         c.rectFillStyle = rectFillStyle
         c.stampImage = stampImage
         c.isCaptureStamp = isCaptureStamp
@@ -319,6 +328,8 @@ class Annotation {
         points = src.points
         controlPoint = src.controlPoint
         anchorPoints = src.anchorPoints
+        connectedStartID = src.connectedStartID
+        connectedEndID = src.connectedEndID
         textDrawRect = src.textDrawRect
         rotation = src.rotation
         censorMode = src.censorMode
