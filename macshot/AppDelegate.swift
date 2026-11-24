@@ -1323,19 +1323,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         startCapture(fromMenu: false)
     }
 
-    /// Frontmost normal window of the frontmost app. When this app is in front
-    /// (e.g. Settings is open), the topmost window of any other app instead.
+    /// Frontmost normal window of the frontmost app, this app included
+    /// (Settings in front captures Settings). Falls back to the topmost
+    /// normal window on screen.
     private static func frontmostWindowTarget() -> (id: CGWindowID, rect: NSRect)? {
         guard let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements],
                                                     kCGNullWindowID) as? [[String: Any]]
         else { return nil }
-        let ownPID = ProcessInfo.processInfo.processIdentifier
         let frontPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
-        let wantedPID: pid_t? = (frontPID == ownPID) ? nil : frontPID
         let screenH = NSScreen.screens.first?.frame.height ?? 0
+        let hasFrontWindow = list.contains {
+            ($0[kCGWindowOwnerPID as String] as? pid_t) == frontPID && ($0[kCGWindowLayer as String] as? Int) == 0
+        }
         for info in list {
-            guard let owner = info[kCGWindowOwnerPID as String] as? pid_t, owner != ownPID,
-                  wantedPID == nil || owner == wantedPID,
+            guard let owner = info[kCGWindowOwnerPID as String] as? pid_t,
+                  !hasFrontWindow || owner == frontPID,
                   (info[kCGWindowLayer as String] as? Int) == 0,
                   ((info[kCGWindowAlpha as String] as? Double) ?? 1) > 0,
                   let number = info[kCGWindowNumber as String] as? Int,
@@ -1985,10 +1987,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// of its own windows, so we leave everything alone.
     private func stashBackgroundWindows() {
         clearBackgroundRestoreObservers()
-        let macshotWasFrontmost = previousApp?.bundleIdentifier == Bundle.main.bundleIdentifier
-        let additions = macshotWasFrontmost ? [] : NSApp.windows.filter {
-            $0.isVisible && $0.styleMask.contains(.titled)
-        }
+        // Garabatapp: never hide this app's own windows (Settings, editor)
+        // before a capture; what is on screen is what gets captured.
+        let additions: [NSWindow] = []
         // Keep windows hidden by the preceding capture until this one can
         // restore them. Clearing the list here loses those windows permanently.
         backgroundWindowRestoration.begin(adding: additions)
