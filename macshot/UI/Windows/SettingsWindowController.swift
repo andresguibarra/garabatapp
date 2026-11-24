@@ -810,6 +810,16 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.addArrangedSubview(indented(closeEditorAfterCopyCheckbox))
         stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
 
+        // Garabatapp: what closing the editor (Esc, ⌘W) does with unsaved edits.
+        let closePopup = NSPopUpButton()
+        closePopup.addItems(withTitles: [L("Ask"), L("Save to history"), L("Discard")])
+        closePopup.selectItem(at: min(2, max(0, UserDefaults.standard.integer(forKey: "editorCloseAction"))))
+        closePopup.target = self
+        closePopup.action = #selector(editorCloseActionChanged(_:))
+        closePopup.toolTip = L("What happens to a capture with unsaved changes when you close the editor (Esc, ⌘W, the red button).")
+        stack.addArrangedSubview(labeledRow(L("On close:"), controls: [closePopup]))
+        stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
+
         // Where pins from the capture overlay open
         pinPlacementPopup = NSPopUpButton()
         for placement in PinPlacement.allCases {
@@ -3081,6 +3091,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
     }
     @objc private func openEditorAfterSelectionChanged(_ sender: NSButton) {
         UserDefaults.standard.set(sender.state == .on, forKey: "openEditorAfterSelection")
+    }
+    @objc private func editorCloseActionChanged(_ sender: NSPopUpButton) {
+        UserDefaults.standard.set(sender.indexOfSelectedItem, forKey: "editorCloseAction")
     }
     @objc private func closeEditorAfterCopyChanged(_ sender: NSButton) {
         UserDefaults.standard.set(sender.state == .on, forKey: "closeEditorAfterCopy")

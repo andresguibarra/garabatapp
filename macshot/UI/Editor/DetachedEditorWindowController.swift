@@ -504,6 +504,18 @@ class DetachedEditorWindowController: NSObject, NSWindowDelegate {
 
         guard hasChanges else { return true }
 
+        // Garabatapp: Settings › Capture › "On close" (0 ask, 1 save, 2 discard).
+        switch UserDefaults.standard.integer(forKey: "editorCloseAction") {
+        case 1:
+            saveAndClose(sender)
+            return false
+        case 2:
+            discardAndClose(view, sender)
+            return false
+        default:
+            break
+        }
+
         let alert = NSAlert()
         alert.messageText = L("Save changes?")
         alert.informativeText = L("Your annotations will be lost if you close without saving.")
@@ -516,30 +528,37 @@ class DetachedEditorWindowController: NSObject, NSWindowDelegate {
             guard let self = self else { return }
             switch response {
             case .alertFirstButtonReturn:
-                // A project's changes belong in its file; everything else
-                // keeps going to history.
-                if self.projectURL != nil {
-                    self.saveProject(choosingLocation: false) { [weak sender] clean in
-                        guard clean else { return }
-                        sender?.close()
-                    }
-                    return
-                }
-                self.saveToHistory { [weak self, weak sender] success in
-                    guard success, let self, !self.isDirty() else { return }
-                    sender?.close()
-                }
+                if let sender { self.saveAndClose(sender) }
             case .alertSecondButtonReturn:
-                // Discard — close without saving, suppress re-triggering the warning
-                self.historyEntryID = nil
-                self.screenshotNeverOutput = false
-                self.captureCleanBaseline(view)
-                sender?.close()
+                if let sender { self.discardAndClose(view, sender) }
             default:
                 break  // Cancel
             }
         }
         return false
+    }
+
+    /// A project's changes belong in its file; everything else goes to history.
+    private func saveAndClose(_ sender: NSWindow) {
+        if projectURL != nil {
+            saveProject(choosingLocation: false) { [weak sender] clean in
+                guard clean else { return }
+                sender?.close()
+            }
+            return
+        }
+        saveToHistory { [weak self, weak sender] success in
+            guard success, let self, !self.isDirty() else { return }
+            sender?.close()
+        }
+    }
+
+    /// Close without saving, without re-triggering the warning.
+    private func discardAndClose(_ view: OverlayView, _ sender: NSWindow) {
+        historyEntryID = nil
+        screenshotNeverOutput = false
+        captureCleanBaseline(view)
+        sender.close()
     }
 
     func windowWillClose(_ notification: Notification) {
