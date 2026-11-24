@@ -928,3 +928,7 @@
 "Press Esc again to close" = "กด Esc อีกครั้งเพื่อปิด";
 "Capture Active Window" = "จับภาพหน้าต่างที่ใช้งานอยู่";
 "Search shortcuts" = "ค้นหาปุ่มลัด";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";

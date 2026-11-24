@@ -932,3 +932,7 @@
 "Press Esc again to close" = "बंद करने के लिए फिर से Esc दबाएँ";
 "Capture Active Window" = "सक्रिय विंडो कैप्चर करें";
 "Search shortcuts" = "शॉर्टकट खोजें";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";

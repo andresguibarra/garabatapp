@@ -3977,16 +3977,18 @@ class OverlayView: NSView {
               let oldCG = original.cgImage(forProposedRect: nil, context: nil, hints: nil)
         else { return }
 
-        // Only resize canvas when there are add-capture image stamps that might be outside bounds.
-        // Normal annotations (arrows, text, etc.) don't need canvas resizing.
+        // Garabatapp: any annotation that leaves the image grows the canvas.
+        // With add-capture image stamps the canvas also shrinks back to the
+        // opaque content (upstream behaviour); otherwise it only grows, so a
+        // capture's own transparent edges (window shadow) are never cut.
         let hasImageStamps = annotations.contains { $0.tool == .stamp && $0.stampImage != nil }
-        guard hasImageStamps else { return }
 
         let scale = CGFloat(oldCG.width) / original.size.width
 
-        // Detect the non-transparent bounding box of the original image.
         let opaqueRect: NSRect
-        if let cached = cachedOpaqueRect {
+        if !hasImageStamps {
+            opaqueRect = NSRect(origin: .zero, size: selectionRect.size)
+        } else if let cached = cachedOpaqueRect {
             opaqueRect = cached
         } else {
             opaqueRect = opaqueContentRect(of: oldCG, scale: scale)
@@ -4000,13 +4002,21 @@ class OverlayView: NSView {
         var maxY: CGFloat = opaqueRect.maxY
 
         for ann in annotations {
-            let r = ann.boundingRect
-            guard r.width > 0, r.height > 0 else { continue }
+            let r: NSRect
+            if hasImageStamps {
+                r = ann.boundingRect
+                guard r.width > 0, r.height > 0 else { continue }
+            } else {
+                guard let g = canvasGrowthRect(of: ann, image: opaqueRect) else { continue }
+                r = g
+            }
             minX = min(minX, r.minX)
             minY = min(minY, r.minY)
             maxX = max(maxX, r.maxX)
             maxY = max(maxY, r.maxY)
         }
+        // Whole points, so the original pixels keep landing on whole pixels.
+        minX = floor(minX); minY = floor(minY); maxX = ceil(maxX); maxY = ceil(maxY)
 
         let targetRect = NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
 
@@ -4037,6 +4047,7 @@ class OverlayView: NSView {
         let prevImage = original.copy() as! NSImage
         let shiftDx = -targetRect.origin.x
         let shiftDy = -targetRect.origin.y
+        autoGrowthImages.insert(ObjectIdentifier(prevImage))
         undoStack.append(.imageTransform(previousImage: prevImage, previousSnappedWindowImage: nil,
                                          annotationSnapshots: annotations.map { ($0, $0.clone()) }))
 
@@ -4052,6 +4063,105 @@ class OverlayView: NSView {
         rebindEffectSourcesToCanvas()
         layoutEditorDocument(forImageSize: NSSize(width: newPtW, height: newPtH))
         cachedCompositedImage = nil
+    }
+
+    /// Previous-image identities of undo/redo entries made by automatic canvas
+    /// growth. Undo/redo step over them together with the edit that caused them.
+    var autoGrowthImages = Set<ObjectIdentifier>()
+
+    func isAutoGrowth(_ entry: UndoEntry) -> Bool {
+        if case .imageTransform(let img, _, _) = entry { return autoGrowthImages.contains(ObjectIdentifier(img)) }
+        return false
+    }
+
+    /// The area an annotation visibly covers, for canvas growth. Nil when its
+    /// geometry stays inside the image (an arrow pointing at the edge must not
+    /// add a sliver), or for annotations that only make sense over pixels.
+    private func canvasGrowthRect(of ann: Annotation, image: NSRect) -> NSRect? {
+        let core: NSRect
+        switch ann.tool {
+        case .pixelate, .blur, .loupe, .translateOverlay, .crop, .select, .colorSampler, .highlight:
+            return nil
+        case .pencil, .marker:
+            guard let pts = ann.points, !pts.isEmpty else { return nil }
+            var r = NSRect(origin: pts[0], size: .zero)
+            for p in pts { r = r.union(NSRect(origin: p, size: .zero)) }
+            core = r
+        case .text:
+            core = ann.textDrawRect != .zero ? ann.textDrawRect : ann.boundingRect
+        default:
+            core = ann.boundingRect
+        }
+        let c = rotatedBounds(core, by: ann)
+        if c.minX >= image.minX - 1 && c.maxX <= image.maxX + 1
+            && c.minY >= image.minY - 1 && c.maxY <= image.maxY + 1 {
+            return nil
+        }
+        let base: NSRect
+        switch ann.tool {
+        case .pencil, .marker:
+            guard let pts = ann.points, !pts.isEmpty else { return nil }
+            var r = NSRect(origin: pts[0], size: .zero)
+            for p in pts { r = r.union(NSRect(origin: p, size: .zero)) }
+            let radius = (ann.tool == .marker ? ann.strokeWidth * 6 : ann.strokeWidth) / 2 + 2
+            base = r.insetBy(dx: -radius, dy: -radius)
+        case .text:
+            base = (ann.textDrawRect != .zero ? ann.textDrawRect : ann.boundingRect).insetBy(dx: -2, dy: -2)
+        case .arrow, .line, .measure:
+            let pad = max(ann.strokeWidth * 3, 8)
+            base = ann.boundingRect.insetBy(dx: -pad, dy: -pad)
+        case .stamp, .number:
+            base = ann.boundingRect
+        default:
+            let pad = ann.strokeWidth / 2 + 2
+            base = ann.boundingRect.insetBy(dx: -pad, dy: -pad)
+        }
+        guard base.width > 0 || base.height > 0 else { return nil }
+        return rotatedBounds(base, by: ann)
+    }
+
+    private func rotatedBounds(_ base: NSRect, by ann: Annotation) -> NSRect {
+        guard ann.rotation != 0, ann.supportsRotation else { return base }
+        let c = NSPoint(x: base.midX, y: base.midY)
+        let cosA = cos(ann.rotation), sinA = sin(ann.rotation)
+        var out = NSRect.null
+        for p in [NSPoint(x: base.minX, y: base.minY), NSPoint(x: base.maxX, y: base.minY),
+                  NSPoint(x: base.minX, y: base.maxY), NSPoint(x: base.maxX, y: base.maxY)] {
+            let dx = p.x - c.x, dy = p.y - c.y
+            let q = NSPoint(x: c.x + dx * cosA - dy * sinA, y: c.y + dx * sinA + dy * cosA)
+            out = out.union(NSRect(origin: q, size: .zero))
+        }
+        return out
+    }
+
+    /// Garabatapp: in the editor, drawing tools can start in the margin around
+    /// the image; the canvas then grows to take the new annotation.
+    func toolCanStartOutsideImage(_ tool: AnnotationTool) -> Bool {
+        guard isEditorMode else { return false }
+        switch tool {
+        case .pencil, .line, .arrow, .rectangle, .filledRectangle, .ellipse, .marker, .text, .number, .stamp:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Grow the canvas once the current gesture or text box is done.
+    func requestAutoCanvasGrowth() {
+        guard isEditorMode else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if self.isDraggingAnnotation || self.isResizingAnnotation || self.isRotatingAnnotation
+                || self.textEditView != nil || self.currentAnnotation != nil { return }
+            let before = self.selectionRect.size
+            self.expandCanvasToFitAnnotations()
+            guard self.selectionRect.size != before else { return }
+            if let cg = self.screenshotImage?.cgImage(forProposedRect: nil, context: nil, hints: nil),
+               let topBar = self.chromeParentView?.subviews.compactMap({ $0 as? EditorTopBarView }).first {
+                topBar.updateSizeLabel(width: cg.width, height: cg.height)
+            }
+            self.needsDisplay = true
+        }
     }
 
     /// Shift every annotation with the canvas (crop, canvas growth). The pixels
@@ -6337,7 +6447,7 @@ class OverlayView: NSView {
 
             // Start annotation (convert to canvas space for zoom).
             // Require the click to be inside the selection rectangle.
-            if currentTool != .crop && pointIsInSelection(point) {
+            if currentTool != .crop && (pointIsInSelection(point) || toolCanStartOutsideImage(currentTool)) {
                 let canvasPoint = viewToCanvas(point)
                 startAnnotation(at: canvasPoint)
                 return
@@ -9113,6 +9223,7 @@ class OverlayView: NSView {
         // Past the image edge nothing new is drawn; a click there can only pick
         // up an annotation whose controls or body stick out (see mouseDown).
         let outsideCanvas = currentTool != .colorSampler && !selectionRect.contains(point)
+            && !toolCanStartOutsideImage(currentTool)
         let pencilHasMultiSelection = isPencilOrMarker && selectedAnnotations.count > 1
         let textHitsAnnotation = currentTool == .text
             && annotations.reversed().contains(where: { $0.isMovable && $0.hitTest(point: point) })
@@ -9496,6 +9607,7 @@ class OverlayView: NSView {
         window?.makeFirstResponder(self)
         rebuildToolbarLayout()
         needsDisplay = true
+        requestAutoCanvasGrowth()
     }
 
     // MARK: - Mic Permission & Toggle
@@ -10282,6 +10394,11 @@ class OverlayView: NSView {
 
     func undo() {
         guard let entry = undoStack.last else { return }
+        let wasAutoGrowth = isAutoGrowth(entry)
+        defer {
+            // Canvas growth and the edit that caused it undo as one step.
+            if wasAutoGrowth, !undoStack.isEmpty { undo() }
+        }
         undoStack.removeLast()
         switch entry {
         case .added(let ann):
@@ -10321,6 +10438,7 @@ class OverlayView: NSView {
             // annotations the transform moved with their saved geometry.
             let currentImage = screenshotImage?.copy() as? NSImage ?? previousImage
             let currentSnapped = previousSnapped != nil ? snappedWindowImage : nil
+            if isAutoGrowth(entry) { autoGrowthImages.insert(ObjectIdentifier(currentImage)) }
             redoStack.append(.imageTransform(previousImage: currentImage,
                                              previousSnappedWindowImage: currentSnapped,
                                              annotationSnapshots: restoreAnnotationSnapshots(snapshots)))
@@ -10376,6 +10494,10 @@ class OverlayView: NSView {
 
     func redo() {
         guard let entry = redoStack.last else { return }
+        let wasAutoGrowth = isAutoGrowth(entry)
+        defer {
+            if !wasAutoGrowth, let next = redoStack.last, isAutoGrowth(next) { redo() }
+        }
         isReplayingRedo = true
         defer { isReplayingRedo = false }
         redoStack.removeLast()
@@ -10410,6 +10532,7 @@ class OverlayView: NSView {
             // Redo crop/flip — swap back
             let currentImage = screenshotImage?.copy() as? NSImage ?? redoImage
             let currentSnapped = redoSnapped != nil ? snappedWindowImage : nil
+            if isAutoGrowth(entry) { autoGrowthImages.insert(ObjectIdentifier(currentImage)) }
             undoStack.append(.imageTransform(previousImage: currentImage,
                                              previousSnappedWindowImage: currentSnapped,
                                              annotationSnapshots: restoreAnnotationSnapshots(snapshots)))

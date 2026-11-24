@@ -66,9 +66,21 @@ class EditorView: OverlayView {
         // the image, so it always runs; the empty margin keeps a plain arrow
         // unless an annotation's controls or body are under the pointer.
         super.mouseMoved(with: event)
-        if !selectionRect.contains(point) && !pointHitsAnnotationInteraction(point) {
+        if !selectionRect.contains(point) && !toolCanStartOutsideImage(currentTool)
+            && !pointHitsAnnotationInteraction(point) {
             NSCursor.arrow.set()
         }
+    }
+
+    // Garabatapp: anything drawn, moved or resized past the edge grows the canvas.
+    override func mouseUp(with event: NSEvent) {
+        super.mouseUp(with: event)
+        requestAutoCanvasGrowth()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        super.keyDown(with: event)
+        requestAutoCanvasGrowth()
     }
 
     // MARK: - Selection interaction (disabled in editor)

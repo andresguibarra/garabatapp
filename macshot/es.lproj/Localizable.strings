@@ -930,3 +930,7 @@
 "Press Esc again to close" = "Presiona Esc otra vez para cerrar";
 "Capture Active Window" = "Capturar ventana activa";
 "Search shortcuts" = "Buscar atajos";
+"Click and press a key combination" = "Hacé clic y presioná una combinación de teclas";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Hacé clic en un atajo y presioná una combinación con al menos un modificador (⌘, ⌥, ⌃, ⇧). Esc cancela.";
+"These need ⌘ and work in the overlay and the editor." = "Necesitan ⌘ y funcionan en el overlay y en el editor.";
+"Search" = "Buscar";

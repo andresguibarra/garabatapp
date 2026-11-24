@@ -930,3 +930,7 @@
 "Press Esc again to close" = "Pindutin muli ang Esc para isara";
 "Capture Active Window" = "Kunan ang aktibong window";
 "Search shortcuts" = "Maghanap ng mga shortcut";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";
