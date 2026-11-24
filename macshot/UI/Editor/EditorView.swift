@@ -66,6 +66,11 @@ class EditorView: OverlayView {
         // the image, so it always runs; the empty margin keeps a plain arrow
         // unless an annotation's controls or body are under the pointer.
         super.mouseMoved(with: event)
+        // Toolbars and bars over the canvas always get a plain arrow.
+        if pointIsUnderEditorChrome(point) {
+            NSCursor.arrow.set()
+            return
+        }
         if !selectionRect.contains(point) && !toolCanStartOutsideImage(currentTool)
             && !pointHitsAnnotationInteraction(point) {
             NSCursor.arrow.set()
