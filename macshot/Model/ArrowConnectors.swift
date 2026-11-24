@@ -9,48 +9,111 @@ import Cocoa
 /// undoing or reloading a shape carries its arrows along without any extra
 /// undo bookkeeping. Each attached end sits on the shape's outline, on the line
 /// toward whatever the arrow points at (the other shape's center, the bend
-/// point, or the free end), far enough out that the arrow's cap or head and the
-/// shape's stroke don't overlap (`clearance`).
+/// point, or the free end), where the arrow's cap or tip just touches the
+/// shape's painted edge: the same path the shape draws, plus half its stroke
+/// (`Silhouette`), so every shape type, corner radius and outline is handled alike.
 ///
 /// Pure geometry: no view state, so it is unit tested directly.
 enum ArrowConnectors {
 
-    /// Extra space between an attached arrow end and the shape's drawn edge.
-    /// 0: the arrow's cap or tip just touches the outside of the stroke.
+    /// Extra space between an attached arrow end and the shape's painted edge.
+    /// 0: the arrow's cap or tip just touches the outside of the shape's paint.
     static let gap: CGFloat = 0
 
-    /// How far a shape's paint reaches outside its geometric outline: half its
-    /// stroke (strokes are centered on the outline), its outline ring, the text
-    /// background pill.
-    static func edgeExtent(of shape: Annotation) -> CGFloat {
-        let ring: CGFloat = shape.outlineColor != nil ? 3 : 0
-        switch shape.tool {
-        case .rectangle, .ellipse:
-            let stroke = shape.rectFillStyle == .fill ? 0 : shape.strokeWidth / 2
-            return stroke + ring
-        case .filledRectangle, .number:
-            return ring
-        case .text:
-            return shape.textBgColor != nil ? 4 : 0
-        default:
-            return 0
+    /// One round dab of the arrow's paint near an end, in the end's own frame:
+    /// `back` along the arrow away from its tip, `side` across it, `radius` of paint.
+    struct Dab { let back: CGFloat; let side: CGFloat; let radius: CGFloat }
+
+    /// The paint an arrow puts down around one end, as dabs: the tip, the head's
+    /// two edges back to its wings, a tail circle or round cap. Mirrors
+    /// `Annotation.drawArrow`, `drawThickArrow` and `drawSketchyArrow`, so a
+    /// head that meets a long edge at a shallow angle keeps its wings off it too.
+    /// `length` is the arrow's length, which sizes its head.
+    static func endPaint(of arrow: Annotation, atStart: Bool, length: CGFloat) -> [Dab] {
+        let sw = arrow.strokeWidth
+        let ring: CGFloat = arrow.outlineColor != nil ? 3 : 0
+        // The drawn path runs end → start when reversed: the head is on its last point.
+        let isHeadEnd = atStart == arrow.arrowReversed
+        func head(length headLen: CGFloat, halfWidth: CGFloat, radius: CGFloat, nose: CGFloat = 0) -> [Dab] {
+            var dabs: [Dab] = []
+            for k in 0...12 {
+                let f = CGFloat(k) / 12
+                let back = -nose + (headLen + nose) * f
+                dabs.append(Dab(back: back, side: halfWidth * f, radius: radius))
+                dabs.append(Dab(back: back, side: -halfWidth * f, radius: radius))
+            }
+            return dabs
+        }
+        let arrowLen = min(max(14, sw * 5), max(4, length * 0.45))
+        let wingBack = arrowLen * cos(CGFloat.pi / 6), wingSide = arrowLen * sin(CGFloat.pi / 6)
+        switch arrow.arrowStyle {
+        case .single, .tail, .double:
+            if isHeadEnd || arrow.arrowStyle == .double {
+                return head(length: wingBack, halfWidth: wingSide, radius: ring)
+            }
+            let reach = arrow.arrowStyle == .tail ? max(4, sw * 2) : sw / 2
+            return [Dab(back: 0, side: 0, radius: reach + ring)]
+        case .open:
+            if isHeadEnd { return head(length: wingBack, halfWidth: wingSide, radius: sw / 2 + ring) }
+            return [Dab(back: 0, side: 0, radius: sw / 2 + ring)]
+        case .thick:
+            let shaftHalf = max(4, sw * 1.5)
+            let fit = min(1, length / max(1, shaftHalf * 2 * 2 * 1.5))
+            if isHeadEnd {
+                let headHalf = shaftHalf * 2 * fit
+                return head(length: min(length * 0.35, headHalf * 1.8), halfWidth: headHalf, radius: ring)
+            }
+            let tailHalf = max(2, sw * 0.5) * fit
+            return (0...4).flatMap { k -> [Dab] in
+                let side = tailHalf * CGFloat(k) / 4
+                return [Dab(back: 0, side: side, radius: ring), Dab(back: 0, side: -side, radius: ring)]
+            }
+        case .sketchy:
+            let width = max(1.2, sw)
+            if isHeadEnd {
+                let headLen = min(max(width * 4.3, 13), length * 0.27)
+                // Uneven legs: up to 1.18x long, 1.25x spread, nose up to 0.14x ahead.
+                return head(length: headLen * 1.18, halfWidth: max(width * 2.6, 8) * 1.25,
+                            radius: width / 2 + ring, nose: headLen * 0.14)
+            }
+            return [Dab(back: 0, side: 0, radius: width / 2 + ring)]
         }
     }
 
-    /// How far the arrow's paint reaches past its start or end point: the round
-    /// cap or stroked head tip, the tail circle, the outline ring.
-    static func endExtent(of arrow: Annotation, atStart: Bool) -> CGFloat {
-        let ring: CGFloat = arrow.outlineColor != nil ? 3 : 0
-        // The tail circle sits on the drawn first point (the end when reversed).
-        let isTail = arrow.arrowStyle == .tail && atStart != arrow.arrowReversed
-        let reach = isTail ? max(4, arrow.strokeWidth * 2) : arrow.strokeWidth / 2
-        return reach + ring
-    }
-
-    /// Distance from a shape's outline to where an attached arrow end goes, so the
-    /// two drawings meet with a small clean gap instead of overlapping.
-    static func clearance(arrow: Annotation, atStart: Bool, shape: Annotation) -> CGFloat {
-        edgeExtent(of: shape) + endExtent(of: arrow, atStart: atStart) + gap
+    /// Where an arrow end attached to `shape` goes: on the ray from the shape's
+    /// center toward `aim` (what the arrow points at), as close as it can be
+    /// while none of the arrow's paint there touches the shape's paint.
+    static func attachPoint(of arrow: Annotation, atStart: Bool, on shape: Annotation,
+                            toward aim: NSPoint) -> NSPoint? {
+        guard let silhouette = silhouette(of: shape) else { return nil }
+        let c = silhouette.center
+        var ux = aim.x - c.x, uy = aim.y - c.y
+        let distance = hypot(ux, uy)
+        if distance < 0.0001 { ux = 1; uy = 0 } else { ux /= distance; uy /= distance }
+        let dabs = endPaint(of: arrow, atStart: atStart, length: max(distance, 1))
+        // The arrow runs from its tip out toward the aim: `back` is +u, `side` is the normal.
+        var regions: [CGFloat: (CGPoint) -> Bool] = [:]
+        for d in dabs where regions[d.radius + gap] == nil {
+            regions[d.radius + gap] = silhouette.region(clearance: d.radius + gap)
+        }
+        func clear(_ t: CGFloat) -> Bool {
+            for d in dabs {
+                let p = CGPoint(x: c.x + ux * (t + d.back) - uy * d.side,
+                                y: c.y + uy * (t + d.back) + ux * d.side)
+                if regions[d.radius + gap]!(p) { return false }
+            }
+            return true
+        }
+        let box = silhouette.path.boundingBoxOfPath
+        let maxDab = dabs.map { abs($0.back) + abs($0.side) + $0.radius }.max() ?? 0
+        var hi = hypot(box.width, box.height) + silhouette.stroke * 2 + maxDab * 2 + 2
+        while !clear(hi) { hi *= 2 }
+        var lo: CGFloat = 0
+        for _ in 0..<40 {
+            let mid = (lo + hi) / 2
+            if clear(mid) { hi = mid } else { lo = mid }
+        }
+        return NSPoint(x: c.x + ux * hi, y: c.y + uy * hi)
     }
 
     /// Shapes an arrow end can attach to.
@@ -65,90 +128,137 @@ enum ArrowConnectors {
         }
     }
 
-    /// The outline an attached end follows.
-    enum Outline: Equatable {
-        case rect(NSRect, rotation: CGFloat)
-        case ellipse(NSRect, rotation: CGFloat)
-        case circle(center: NSPoint, radius: CGFloat)
+    /// What a shape actually paints, for every shape the same way: the path its
+    /// drawing code fills or strokes (rotation applied) and the width of the
+    /// stroke centered on that path (0 when it is only filled). The painted area
+    /// is the inside of `path` plus `stroke / 2` on each side of it. Mirrors
+    /// `Annotation.drawRectangle`, `drawEllipse`, `drawNumber` and `drawText`.
+    struct Silhouette {
+        let path: CGPath
+        let stroke: CGFloat
+        let center: NSPoint
+        var join: CGLineJoin = .miter
 
-        var center: NSPoint {
-            switch self {
-            case .rect(let r, _), .ellipse(let r, _): return NSPoint(x: r.midX, y: r.midY)
-            case .circle(let c, _): return c
+        /// The painted area's own boundary: the stroke's outer contour (with the
+        /// shape's real join, so sharp miter corners count), or the filled path.
+        private var paintedEdge: CGPath {
+            stroke > 0
+                ? path.copy(strokingWithWidth: stroke, lineCap: .butt, lineJoin: join, miterLimit: 10)
+                : path
+        }
+
+        /// Membership test for the painted area grown by `clearance`.
+        func region(clearance: CGFloat) -> (CGPoint) -> Bool {
+            let edge = paintedEdge
+            let fill = path
+            let grown = clearance > 0
+                ? edge.copy(strokingWithWidth: 2 * clearance, lineCap: .round, lineJoin: .round, miterLimit: 10)
+                : nil
+            let hasStroke = stroke > 0
+            return { p in
+                fill.contains(p) || (hasStroke && edge.contains(p, using: .winding)) || (grown?.contains(p) ?? false)
             }
+        }
+
+        /// The painted area grown by `clearance` on every side.
+        func contains(_ point: NSPoint, clearance: CGFloat) -> Bool {
+            region(clearance: clearance)(point)
+        }
+
+        /// Where the ray from the center toward `target` leaves the painted area
+        /// grown by `clearance`: the spot an arrow end of that reach just touches.
+        func exitPoint(toward target: NSPoint, clearance: CGFloat) -> NSPoint {
+            var dx = target.x - center.x, dy = target.y - center.y
+            let len = hypot(dx, dy)
+            if len < 0.0001 { dx = 1; dy = 0 } else { dx /= len; dy /= len }
+            let inside = region(clearance: clearance)
+            func at(_ t: CGFloat) -> CGPoint { CGPoint(x: center.x + dx * t, y: center.y + dy * t) }
+            let box = path.boundingBoxOfPath
+            var hi = hypot(box.width, box.height) + stroke * 2 + 2 * clearance + 2
+            while inside(at(hi)) { hi *= 2 }
+            // Painted areas here are convex, so there is one crossing.
+            var lo: CGFloat = 0
+            for _ in 0..<40 {
+                let mid = (lo + hi) / 2
+                if inside(at(mid)) { lo = mid } else { hi = mid }
+            }
+            return at(hi)
         }
     }
 
-    static func outline(of annotation: Annotation) -> Outline? {
-        guard isConnectable(annotation) else { return nil }
-        switch annotation.tool {
+    static func silhouette(of a: Annotation) -> Silhouette? {
+        guard isConnectable(a) else { return nil }
+        let ring: CGFloat = a.outlineColor != nil ? 6 : 0  // outline strokes are strokeWidth + 6 wide
+        var path: CGPath
+        var stroke: CGFloat
+        var center: NSPoint
+        var join: CGLineJoin = .miter
+        switch a.tool {
         case .number:
-            return .circle(center: annotation.startPoint, radius: 8 + annotation.strokeWidth * 3)
-        case .ellipse:
-            return .ellipse(annotation.boundingRect, rotation: annotation.rotation)
+            let radius = 8 + a.strokeWidth * 3 + (a.outlineColor != nil ? 3 : 0)
+            center = a.startPoint
+            path = CGPath(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius,
+                                            width: radius * 2, height: radius * 2), transform: nil)
+            stroke = 0
         case .text:
-            return .rect(annotation.textDrawRect, rotation: annotation.rotation)
-        default:
-            return .rect(annotation.boundingRect, rotation: annotation.rotation)
+            let boxed = a.textBgColor != nil || a.textOutlineColor != nil
+            let rect = boxed ? a.textDrawRect.insetBy(dx: -4, dy: -4) : a.textDrawRect
+            path = roundedRect(rect, radius: boxed ? 4 : 0)
+            stroke = a.textOutlineColor != nil ? 2 : 0
+            center = NSPoint(x: rect.midX, y: rect.midY)
+        case .ellipse:
+            let rect = a.boundingRect
+            path = CGPath(ellipseIn: rect, transform: nil)
+            stroke = a.rectFillStyle == .fill ? (ring > 0 ? a.strokeWidth + ring : 0) : a.strokeWidth + ring
+            center = NSPoint(x: rect.midX, y: rect.midY)
+        default:  // rectangle, filledRectangle
+            let rect = a.boundingRect
+            let radius = a.rectCornerRadius > 0 ? a.rectCornerRadius
+                : (a.isRounded ? min(rect.width, rect.height) * 0.2 : 0)
+            path = roundedRect(rect, radius: radius)
+            join = radius > 0 ? .round : .miter
+            let filledOnly = a.tool == .filledRectangle || a.rectFillStyle == .fill
+            stroke = filledOnly ? (ring > 0 ? a.strokeWidth + ring : 0) : a.strokeWidth + ring
+            center = NSPoint(x: rect.midX, y: rect.midY)
         }
+        if a.rotation != 0 && a.supportsRotation {
+            // Same pivot as Annotation.draw(in:).
+            let pivot = NSPoint(x: a.boundingRect.midX, y: a.boundingRect.midY)
+            var t = CGAffineTransform(translationX: pivot.x, y: pivot.y)
+                .rotated(by: a.rotation)
+                .translatedBy(x: -pivot.x, y: -pivot.y)
+            path = path.copy(using: &t) ?? path
+            center = center.applying(t)
+        }
+        return Silhouette(path: path, stroke: stroke, center: center, join: join)
+    }
+
+    private static func roundedRect(_ rect: CGRect, radius: CGFloat) -> CGPath {
+        let r = max(0, min(radius, rect.width / 2, rect.height / 2))
+        guard rect.width > 0, rect.height > 0 else { return CGPath(rect: rect, transform: nil) }
+        return r > 0 ? CGPath(roundedRect: rect, cornerWidth: r, cornerHeight: r, transform: nil)
+                     : CGPath(rect: rect, transform: nil)
     }
 
     static func center(of annotation: Annotation) -> NSPoint? {
-        outline(of: annotation)?.center
+        silhouette(of: annotation)?.center
     }
 
-    /// Where the ray from the center toward `target` crosses the outline grown by `gap`.
-    static func borderPoint(of outline: Outline, toward target: NSPoint, gap: CGFloat = gap) -> NSPoint {
-        let c = outline.center
-        var dx = target.x - c.x
-        var dy = target.y - c.y
-        let len = hypot(dx, dy)
-        if len < 0.0001 { dx = 1; dy = 0 } else { dx /= len; dy /= len }
-
-        switch outline {
-        case .circle(_, let radius):
-            let t = radius + gap
-            return NSPoint(x: c.x + dx * t, y: c.y + dy * t)
-        case .rect(let r, let rotation), .ellipse(let r, let rotation):
-            // Work in the shape's unrotated frame.
-            let cosR = cos(-rotation), sinR = sin(-rotation)
-            let ux = dx * cosR - dy * sinR
-            let uy = dx * sinR + dy * cosR
-            // Grow the shape by `gap` and meet its edge, so the gap is measured
-            // across the border (perpendicular), not along a slanted arrow,
-            // which would leave too little room at an angle.
-            let hw = max(r.width / 2 + gap, 0.0001), hh = max(r.height / 2 + gap, 0.0001)
-            let t: CGFloat
-            if case .ellipse = outline {
-                t = 1 / ((ux * ux) / (hw * hw) + (uy * uy) / (hh * hh)).squareRoot()
-            } else {
-                let tx = abs(ux) > 0.0001 ? hw / abs(ux) : .greatestFiniteMagnitude
-                let ty = abs(uy) > 0.0001 ? hh / abs(uy) : .greatestFiniteMagnitude
-                t = min(tx, ty)
-            }
-            return NSPoint(x: c.x + dx * t, y: c.y + dy * t)
-        }
-    }
-
+    /// Where the ray from the shape's center toward `target` leaves its painted
+    /// area grown by `gap`.
     static func borderPoint(of annotation: Annotation, toward target: NSPoint, gap: CGFloat = gap) -> NSPoint? {
-        outline(of: annotation).map { borderPoint(of: $0, toward: target, gap: gap) }
+        silhouette(of: annotation)?.exitPoint(toward: target, clearance: gap)
     }
 
-    /// The outline point under the pointer's direction and how far the pointer is from it.
+    /// The painted edge in the pointer's direction and how far the pointer is from it.
     static func nearestBorder(of annotation: Annotation, to point: NSPoint) -> (point: NSPoint, distance: CGFloat)? {
-        guard let o = outline(of: annotation) else { return nil }
-        let p = borderPoint(of: o, toward: point, gap: 0)
+        guard let p = borderPoint(of: annotation, toward: point, gap: 0) else { return nil }
         return (p, hypot(p.x - point.x, p.y - point.y))
     }
 
-    /// Whether `point` is inside the shape (grown by `margin`).
+    /// Whether `point` is on the shape's painted area (grown by `margin`).
     static func contains(_ annotation: Annotation, point: NSPoint, margin: CGFloat = 0) -> Bool {
-        guard let o = outline(of: annotation) else { return false }
-        let c = o.center
-        let d = hypot(point.x - c.x, point.y - c.y)
-        if d < 0.0001 { return true }
-        let edge = borderPoint(of: o, toward: point, gap: margin)
-        return d <= hypot(edge.x - c.x, edge.y - c.y)
+        silhouette(of: annotation)?.contains(point, clearance: margin) ?? false
     }
 
     /// Topmost connectable shape whose border is within `threshold` of `point`.
@@ -198,10 +308,10 @@ enum ArrowConnectors {
         let endAim = from.flatMap { center(of: $0) }
             ?? (multi ? anchors[anchors.count - 2] : arrow.controlPoint ?? arrow.startPoint)
         let newStart = from.flatMap {
-            borderPoint(of: $0, toward: startAim, gap: clearance(arrow: arrow, atStart: true, shape: $0))
+            attachPoint(of: arrow, atStart: true, on: $0, toward: startAim)
         } ?? arrow.startPoint
         let newEnd = to.flatMap {
-            borderPoint(of: $0, toward: endAim, gap: clearance(arrow: arrow, atStart: false, shape: $0))
+            attachPoint(of: arrow, atStart: false, on: $0, toward: endAim)
         } ?? arrow.endPoint
 
         func moved(_ a: NSPoint, _ b: NSPoint) -> Bool { abs(a.x - b.x) > 0.01 || abs(a.y - b.y) > 0.01 }
