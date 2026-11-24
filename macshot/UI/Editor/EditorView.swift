@@ -23,6 +23,12 @@ class EditorView: OverlayView {
         // CenteringClipView handles centering. Magnification handles zoom.
         guard !beautifyEnabled else { return }
 
+        // Garabatapp: the area the canvas is growing into, in the capture's border color.
+        if let live = liveCanvasExtent, let fill = canvasFillColor() {
+            fill.setFill()
+            live.fill()
+        }
+
         // Fast path: if we have a cached composite (screenshot + all committed annotations)
         // and nothing is actively being drawn, draw the single cached image.
         // This avoids re-rendering the screenshot + iterating all annotations every frame.
@@ -79,8 +85,14 @@ class EditorView: OverlayView {
     }
 
     // Garabatapp: anything drawn, moved or resized past the edge grows the canvas.
+    override func mouseDragged(with event: NSEvent) {
+        super.mouseDragged(with: event)
+        updateLiveCanvasExtent()
+    }
+
     override func mouseUp(with event: NSEvent) {
         super.mouseUp(with: event)
+        finishLiveCanvasExtent()
         requestAutoCanvasGrowth()
     }
 
