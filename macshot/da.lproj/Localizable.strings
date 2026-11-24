@@ -942,3 +942,5 @@
 "Save to history" = "Save to history";
 "On close:" = "On close:";
 "What happens to a capture with unsaved changes when you close the editor (Esc, ⌘W, the red button)." = "What happens to a capture with unsaved changes when you close the editor (Esc, ⌘W, the red button).";
+"Default tool:" = "Default tool:";
+"Tool a capture starts with. With \"Remember last selected tool\" on, it's used only until you pick one." = "Tool a capture starts with. With \"Remember last selected tool\" on, it's used only until you pick one.";

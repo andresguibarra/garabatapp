@@ -875,10 +875,27 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         filenameTemplatePreview.textColor = .secondaryLabelColor
         filenameTemplatePreview.lineBreakMode = .byTruncatingMiddle
 
-        for cb in [openEditorAfterSelectionCheckbox!, copySoundCheckbox!, startCapturesInMoveModeCheckbox!, rememberToolCheckbox!, thumbnailCheckbox!] {
+        for cb in [openEditorAfterSelectionCheckbox!, copySoundCheckbox!, startCapturesInMoveModeCheckbox!, rememberToolCheckbox!] {
             stack.addArrangedSubview(indented(cb))
             stack.setCustomSpacing(6, after: stack.arrangedSubviews.last!)
         }
+
+        // Garabatapp: the tool a capture/editor starts with (when the last one isn't remembered).
+        let defaultToolPopup = NSPopUpButton()
+        let current = OverlayView.defaultToolSetting
+        for (tool, title) in OverlayView.defaultToolChoices {
+            defaultToolPopup.addItem(withTitle: title)
+            defaultToolPopup.lastItem?.tag = tool.rawValue
+            if tool == current { defaultToolPopup.select(defaultToolPopup.lastItem) }
+        }
+        defaultToolPopup.target = self
+        defaultToolPopup.action = #selector(defaultToolChanged(_:))
+        defaultToolPopup.toolTip = L("Tool a capture starts with. With \"Remember last selected tool\" on, it's used only until you pick one.")
+        stack.addArrangedSubview(labeledRow(L("Default tool:"), controls: [defaultToolPopup]))
+        stack.setCustomSpacing(6, after: stack.arrangedSubviews.last!)
+
+        stack.addArrangedSubview(indented(thumbnailCheckbox))
+        stack.setCustomSpacing(6, after: stack.arrangedSubviews.last!)
 
         // Thumbnail auto-dismiss stepper
         thumbnailAutoDismissField = NSTextField()
@@ -3091,6 +3108,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
     }
     @objc private func openEditorAfterSelectionChanged(_ sender: NSButton) {
         UserDefaults.standard.set(sender.state == .on, forKey: "openEditorAfterSelection")
+    }
+    @objc private func defaultToolChanged(_ sender: NSPopUpButton) {
+        UserDefaults.standard.set(sender.selectedTag(), forKey: OverlayView.defaultToolKey)
     }
     @objc private func editorCloseActionChanged(_ sender: NSPopUpButton) {
         UserDefaults.standard.set(sender.indexOfSelectedItem, forKey: "editorCloseAction")

@@ -289,16 +289,29 @@ class OverlayView: NSView {
            let tool = AnnotationTool(rawValue: raw) {
             return tool
         }
-        return .select  // Garabatapp: Select is the default tool
+        return OverlayView.defaultToolSetting
     }()
+    /// Garabatapp: Settings › Capture › "Default tool" (Select unless changed).
+    static let defaultToolKey = "defaultTool"
+    static var defaultToolSetting: AnnotationTool {
+        if let raw = UserDefaults.standard.object(forKey: defaultToolKey) as? Int,
+           let tool = AnnotationTool(rawValue: raw) { return tool }
+        return .select
+    }
+    static var defaultToolChoices: [(AnnotationTool, String)] {
+        [(.select, L("Select & Move")), (.arrow, L("Arrow")), (.rectangle, L("Rectangle")),
+         (.ellipse, L("Ellipse")), (.line, L("Line")), (.pencil, L("Pencil")), (.marker, L("Marker")),
+         (.text, L("Text")), (.number, L("Number / Counter")), (.pixelate, L("Censor")),
+         (.highlight, L("Highlight (Spotlight)")), (.crop, L("Crop"))]
+    }
     private static var shouldRememberLastTool: Bool {
         UserDefaults.standard.object(forKey: "rememberLastTool") as? Bool ?? true
     }
     private static var initialTool: AnnotationTool {
-        shouldRememberLastTool ? lastUsedTool : .select
+        shouldRememberLastTool ? lastUsedTool : defaultToolSetting
     }
     static func resetRememberedTool() {
-        lastUsedTool = .select
+        lastUsedTool = defaultToolSetting
         UserDefaults.standard.removeObject(forKey: "lastUsedTool")
     }
     /// Opt-in "Start captures in move mode": a capture starts with no
