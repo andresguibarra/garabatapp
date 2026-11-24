@@ -74,6 +74,10 @@ final class AnnotationPersistenceTests: XCTestCase {
         "groupID": .persisted,
         "randomSeed": .persisted,
         "dimOpacity": .persisted,
+        // Arrow connectors
+        "connectorID": .persisted,
+        "connectedStartID": .persisted,
+        "connectedEndID": .persisted,
         // Intentionally not copied
         "sourceImage": .transient,        // drawing-time reference, cleared after bake
         "sourceImageBounds": .transient,  // paired with sourceImage
@@ -141,6 +145,9 @@ final class AnnotationPersistenceTests: XCTestCase {
         ann.groupID = UUID(uuidString: "11111111-2222-3333-4444-555555555555")
         ann.randomSeed = 123_456_789
         ann.dimOpacity = 0.42
+        ann.connectorID = UUID(uuidString: "AAAAAAAA-0000-0000-0000-000000000001")!
+        ann.connectedStartID = UUID(uuidString: "AAAAAAAA-0000-0000-0000-000000000002")
+        ann.connectedEndID = UUID(uuidString: "AAAAAAAA-0000-0000-0000-000000000003")
         // Transient fields set too, to prove they're dropped on purpose.
         ann.sourceImage = ImageProbe.solidImage()
         ann.sourceImageBounds = NSRect(x: 1, y: 2, width: 3, height: 4)
