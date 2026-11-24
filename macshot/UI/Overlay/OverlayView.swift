@@ -289,16 +289,16 @@ class OverlayView: NSView {
            let tool = AnnotationTool(rawValue: raw) {
             return tool
         }
-        return .arrow
+        return .select  // Garabatapp: Select is the default tool
     }()
     private static var shouldRememberLastTool: Bool {
         UserDefaults.standard.object(forKey: "rememberLastTool") as? Bool ?? true
     }
     private static var initialTool: AnnotationTool {
-        shouldRememberLastTool ? lastUsedTool : .arrow
+        shouldRememberLastTool ? lastUsedTool : .select
     }
     static func resetRememberedTool() {
-        lastUsedTool = .arrow
+        lastUsedTool = .select
         UserDefaults.standard.removeObject(forKey: "lastUsedTool")
     }
     /// Opt-in "Start captures in move mode": a capture starts with no
@@ -5074,7 +5074,7 @@ class OverlayView: NSView {
         } else {
             resetZoom()
         }
-        currentTool = .arrow
+        currentTool = .select
         rebuildToolbarLayout()
         needsDisplay = true
     }
