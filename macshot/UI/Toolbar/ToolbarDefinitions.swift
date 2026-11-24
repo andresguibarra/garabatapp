@@ -43,6 +43,8 @@ enum ToolbarButtonAction {
     case webcam
     case recordSettings  // recording mode: open format/FPS/when-done popover
     case effects  // image effects (CIFilter adjustments + presets)
+    case moreBottom  // Garabatapp: ⋯ menu with the bottom items hidden in Settings
+    case moreRight   // Garabatapp: ⋯ menu with the right items hidden in Settings
 }
 
 struct ToolbarButton {
@@ -54,6 +56,8 @@ struct ToolbarButton {
     var selectedTintColor: NSColor? = nil  // optional status tint that remains visible while selected
     var bgColor: NSColor? = nil  // for color swatches
     var hasContextMenu: Bool = false  // draw small corner triangle to indicate right-click options
+    /// Garabatapp: hidden in Settings — lives in the ⋯ menu instead of the strip.
+    var isOverflow: Bool = false
 }
 
 enum ToolbarCustomAction: Int {
@@ -456,12 +460,12 @@ class ToolbarLayout {
         ]
 
         for (tool, symbol, tip) in tools {
-            // Skip if disabled
-            if let enabledRawValues = enabledRawValues, !enabledRawValues.contains(tool.rawValue) {
-                continue
-            }
             var btn = ToolbarButton(action: .tool(tool), sfSymbol: symbol, tooltip: tip)
             btn.isSelected = (tool == selectedTool)
+            // Hidden in Settings: goes to the ⋯ menu.
+            if let enabledRawValues = enabledRawValues, !enabledRawValues.contains(tool.rawValue) {
+                btn.isOverflow = true
+            }
             switch tool {
             case .pencil, .line, .arrow, .rectangle, .ellipse, .marker, .number, .loupe:
                 break  // options shown in the tool options row, not via right-click
@@ -486,17 +490,28 @@ class ToolbarLayout {
 
         let enabledActions = ToolbarActionPreferences.enabledRawValuesAfterMigration()
         for action in ToolbarCustomAction.bottomToolbarActions {
-            guard ToolbarActionPreferences.isEnabled(action, in: enabledActions) else { continue }
-            if let button = action.makeToolbarButton(
+            if var button = action.makeToolbarButton(
                 beautifyEnabled: beautifyEnabled,
                 effectsActive: effectsActive,
                 isRecording: isRecording
             ) {
+                button.isOverflow = !ToolbarActionPreferences.isEnabled(action, in: enabledActions)
                 buttons.append(button)
             }
         }
 
-        return buttons
+        return withMoreButton(buttons, action: .moreBottom)
+    }
+
+    /// Garabatapp: appends the ⋯ button when something is hidden. It shows as
+    /// selected while a hidden tool is the active one.
+    static func withMoreButton(_ buttons: [ToolbarButton], action: ToolbarButtonAction) -> [ToolbarButton] {
+        let hidden = buttons.filter { $0.isOverflow }
+        guard !hidden.isEmpty else { return buttons }
+        var more = ToolbarButton(action: action, sfSymbol: "ellipsis", tooltip: L("More"))
+        more.isSelected = hidden.contains { $0.isSelected }
+        more.hasContextMenu = false
+        return buttons + [more]
     }
 
     // Right toolbar items (output actions + cancel + delay)
@@ -607,16 +622,16 @@ class ToolbarLayout {
         buttons.append(saveBtn)
 
         for action in ToolbarCustomAction.rightToolbarActions {
-            guard ToolbarActionPreferences.isEnabled(action, in: enabledActions) else { continue }
-            if let button = action.makeToolbarButton(
+            if var button = action.makeToolbarButton(
                 translateEnabled: translateEnabled,
                 isRecording: isRecording,
                 isEditorMode: isEditorMode
             ) {
+                button.isOverflow = !ToolbarActionPreferences.isEnabled(action, in: enabledActions)
                 buttons.append(button)
             }
         }
 
-        return buttons
+        return withMoreButton(buttons, action: .moreRight)
     }
 }

@@ -2856,6 +2856,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         settingsController?.showWindow()
     }
 
+    /// Garabatapp: open Settings on a given tab (e.g. from the toolbar ⋯ menu).
+    func openSettings(tab: String) {
+        openSettings()
+        settingsController?.selectTab(id: tab)
+    }
+
     // MARK: - Quit
 
     @objc private func checkForUpdates() {
