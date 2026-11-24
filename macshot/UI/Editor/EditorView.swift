@@ -70,6 +70,7 @@ class EditorView: OverlayView {
             && !pointHitsAnnotationInteraction(point) {
             NSCursor.arrow.set()
         }
+        if let cursor = areaCursor(at: point) { cursor.set() }
     }
 
     // Garabatapp: anything drawn, moved or resized past the edge grows the canvas.

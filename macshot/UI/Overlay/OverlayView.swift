@@ -321,6 +321,7 @@ class OverlayView: NSView {
     }() {
         didSet {
             hasChosenCaptureTool = true
+            if currentTool != .select && currentTool != .crop { areaRect = nil }
             if currentTool != .measure { isAwaitingMeasureReference = false }
             // Persist drawing tool choices; skip transient/mode tools
             if OverlayView.shouldRememberLastTool && currentTool != .select && currentTool != .loupe {
@@ -754,6 +755,11 @@ class OverlayView: NSView {
 
     // Crop tool state
     private var isCropDragging: Bool = false
+    /// Garabatapp: Shottr-style area (editor, Select and Crop tools), canvas coords.
+    var areaRect: NSRect? { didSet { if areaRect != oldValue { needsDisplay = true } } }
+    fileprivate var areaDrag: AreaDrag = .none
+    fileprivate var areaDragStart: NSPoint = .zero
+    fileprivate var areaDragOrig: NSRect = .zero
     private var cropDragStart: NSPoint = .zero
     private var cropDragRect: NSRect = .zero
 
@@ -2468,6 +2474,8 @@ class OverlayView: NSView {
                 colorWheel.draw(currentColor: currentColor)
             }
         }
+
+        drawArea()
 
         // Overlay error message
         if let errorMsg = overlayErrorMessage {
@@ -6434,6 +6442,9 @@ class OverlayView: NSView {
                 return
             }
 
+            // Garabatapp: Select and Crop mark an area in the editor.
+            if beginAreaInteraction(viewPoint: point) { return }
+
             // Crop tool drag (use canvas coords so it aligns with the image)
             if currentTool == .crop && pointIsInSelection(point) {
                 isCropDragging = true
@@ -6483,6 +6494,10 @@ class OverlayView: NSView {
     override func mouseDragged(with event: NSEvent) {
         if isRecognizingText { return }
         let point = convert(event.locationInWindow, from: nil)
+        if areaDrag != .none {
+            updateAreaDrag(viewPoint: point, shiftHeld: event.modifierFlags.contains(.shift))
+            return
+        }
         if let pending = pendingDoubleClickCopy {
             guard hypot(point.x - pending.point.x, point.y - pending.point.y) > 3 else { return }
             convertPendingDoubleClickToDrag(pending)
@@ -7150,6 +7165,10 @@ class OverlayView: NSView {
     override func mouseUp(with event: NSEvent) {
         if isRecognizingText { return }
         lastMouseUpAt = event.timestamp
+        if areaDrag != .none {
+            endAreaDrag()
+            return
+        }
         if pendingDoubleClickCopy != nil {
             pendingDoubleClickCopy = nil
             completeDoubleClickCopy()
@@ -9945,6 +9964,8 @@ class OverlayView: NSView {
             if KeyboardShortcutMatcher.matches(event, character: "c", modifiers: .command) {
                 if !selectedAnnotations.isEmpty {
                     copySelectedAnnotations()
+                } else if copyAreaIfActive() {
+                    // Garabatapp: just the marked area.
                 } else if event.timestamp - lastMouseUpAt < Self.injectedCopyWindow {
                     // Another app's synthetic ⌘C right after a drag: swallow it.
                 } else {
@@ -10013,6 +10034,8 @@ class OverlayView: NSView {
             overlayDelegate?.overlayViewDidRequestRestoreLastSelection()
             return
         }
+
+        if handleAreaKey(event) { return }
 
         // Arrow keys nudge the selected annotations: 1 pt, or 10 pt with Shift.
         if (123...126).contains(event.keyCode), state == .selected, textEditView == nil,
@@ -11364,5 +11387,382 @@ private final class PreSelectionPresetButton: NSButton {
         border.stroke()
 
         super.draw(dirtyRect)
+    }
+}
+
+
+// MARK: - Garabatapp: Shottr-style area (Select and Crop tools in the editor)
+
+enum AreaDrag: Equatable {
+    case none, create, move
+    case resize(left: Bool, right: Bool, bottom: Bool, top: Bool)
+}
+
+extension OverlayView {
+
+    /// Editor zoom; overlay text and handles are drawn at a constant screen size.
+    fileprivate var areaZoom: CGFloat { max(0.05, enclosingScrollView?.magnification ?? 1) }
+
+    fileprivate var areaPixelScale: CGFloat {
+        guard let img = screenshotImage, img.size.width > 0,
+              let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return 1 }
+        return CGFloat(cg.width) / img.size.width
+    }
+
+    fileprivate var areaToolActive: Bool {
+        isEditorMode && !beautifyEnabled && (currentTool == .select || currentTool == .crop)
+    }
+
+    fileprivate func areaHit(_ p: NSPoint) -> AreaDrag? {
+        guard let a = areaRect else { return nil }
+        let tol = 6 / areaZoom
+        let inX = p.x >= a.minX - tol && p.x <= a.maxX + tol
+        let inY = p.y >= a.minY - tol && p.y <= a.maxY + tol
+        let l = inY && abs(p.x - a.minX) <= tol
+        let r = inY && abs(p.x - a.maxX) <= tol
+        let b = inX && abs(p.y - a.minY) <= tol
+        let t = inX && abs(p.y - a.maxY) <= tol
+        if l || r || b || t { return .resize(left: l, right: r, bottom: b, top: t) }
+        return a.contains(p) ? .move : nil
+    }
+
+    /// Cursor over the area (editor), or nil to leave the normal cursor.
+    func areaCursor(at viewPoint: NSPoint) -> NSCursor? {
+        guard areaToolActive else { return nil }
+        let p = viewToCanvas(viewPoint)
+        switch areaHit(p) {
+        case .resize(let l, let r, let b, let t)?:
+            if (l || r) && !(b || t) { return .resizeLeftRight }
+            if (b || t) && !(l || r) { return .resizeUpDown }
+            return .crosshair
+        case .move?:
+            if currentTool == .select && pointHitsAnnotationInteraction(p) { return nil }
+            return .openHand
+        default:
+            if currentTool == .select && pointHitsAnnotationInteraction(p) { return nil }
+            return selectionRect.contains(p) ? .crosshair : nil
+        }
+    }
+
+    func beginAreaInteraction(viewPoint: NSPoint) -> Bool {
+        guard areaToolActive, !NSEvent.modifierFlags.contains(.control) else { return false }
+        let p = viewToCanvas(viewPoint)
+        if let hit = areaHit(p), let a = areaRect {
+            if hit == .move, currentTool == .select, pointHitsAnnotationInteraction(p) { return false }
+            areaDrag = hit
+            areaDragStart = p
+            areaDragOrig = a
+            if hit == .move { NSCursor.closedHand.set() }
+            return true
+        }
+        if currentTool == .select && pointHitsAnnotationInteraction(p) {
+            areaRect = nil
+            return false
+        }
+        guard selectionRect.contains(p) else { return false }
+        commitTextFieldIfNeeded()
+        if !selectedAnnotations.isEmpty {
+            selectedAnnotations = []
+            rebuildToolbarLayout()
+        }
+        areaDrag = .create
+        areaDragStart = p
+        areaRect = nil
+        return true
+    }
+
+    fileprivate func snappedToPixels(_ r: NSRect) -> NSRect {
+        let s = areaPixelScale
+        let minX = (r.minX * s).rounded() / s, minY = (r.minY * s).rounded() / s
+        let maxX = (r.maxX * s).rounded() / s, maxY = (r.maxY * s).rounded() / s
+        return NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }
+
+    fileprivate func clampedInsideImage(_ r: NSRect) -> NSRect {
+        let bounds = selectionRect
+        var o = r
+        o.size.width = min(o.width, bounds.width)
+        o.size.height = min(o.height, bounds.height)
+        o.origin.x = max(bounds.minX, min(o.minX, bounds.maxX - o.width))
+        o.origin.y = max(bounds.minY, min(o.minY, bounds.maxY - o.height))
+        return o
+    }
+
+    func updateAreaDrag(viewPoint: NSPoint, shiftHeld: Bool) {
+        let raw = viewToCanvas(viewPoint)
+        let b = selectionRect
+        let p = NSPoint(x: max(b.minX, min(raw.x, b.maxX)), y: max(b.minY, min(raw.y, b.maxY)))
+        var r: NSRect
+        switch areaDrag {
+        case .none:
+            return
+        case .create:
+            var w = p.x - areaDragStart.x, h = p.y - areaDragStart.y
+            if shiftHeld {
+                let side = min(abs(w), abs(h))
+                w = w < 0 ? -side : side
+                h = h < 0 ? -side : side
+            }
+            r = NSRect(x: min(areaDragStart.x, areaDragStart.x + w), y: min(areaDragStart.y, areaDragStart.y + h),
+                       width: abs(w), height: abs(h))
+        case .move:
+            r = clampedInsideImage(areaDragOrig.offsetBy(dx: raw.x - areaDragStart.x, dy: raw.y - areaDragStart.y))
+        case .resize(let l, let rt, let bt, let t):
+            var minX = areaDragOrig.minX, maxX = areaDragOrig.maxX
+            var minY = areaDragOrig.minY, maxY = areaDragOrig.maxY
+            if l { minX = p.x }
+            if rt { maxX = p.x }
+            if bt { minY = p.y }
+            if t { maxY = p.y }
+            r = NSRect(x: min(minX, maxX), y: min(minY, maxY), width: abs(maxX - minX), height: abs(maxY - minY))
+        }
+        areaRect = snappedToPixels(r)
+    }
+
+    func endAreaDrag() {
+        let wasCreate = areaDrag == .create
+        areaDrag = .none
+        if let a = areaRect, a.width < 3 || a.height < 3 {
+            areaRect = nil
+        } else if wasCreate && areaRect == nil {
+            areaRect = nil
+        }
+        needsDisplay = true
+    }
+
+    // MARK: Keys
+
+    func handleAreaKey(_ event: NSEvent) -> Bool {
+        guard isEditorMode, textEditView == nil else { return false }
+        let mods = KeyboardShortcutMatcher.modifiers(in: event)
+
+        // Spotlight: 1–9 set how much the rest is dimmed (10 %–90 %).
+        if mods.isEmpty, areaRect == nil, let sel = selectedAnnotation, sel.tool == .highlight,
+           let ch = event.charactersIgnoringModifiers, ch.count == 1, let n = Int(ch), (1...9).contains(n) {
+            let snapshot = sel.clone()
+            sel.dimOpacity = CGFloat(n) / 10
+            undoStack.append(.propertyChange(annotation: sel, snapshot: snapshot))
+            redoStack.removeAll()
+            UserDefaults.standard.set(Double(n) / 10, forKey: HighlightToolHandler.dimOpacityKey)
+            cachedCompositedImage = nil
+            cachedAnnotationLayer = nil
+            rebuildToolbarLayout()
+            needsDisplay = true
+            return true
+        }
+
+        guard areaToolActive, var area = areaRect else { return false }
+        switch event.keyCode {
+        case 53:  // Esc clears the area first
+            areaRect = nil
+            return true
+        case 36, 76:  // Return / Enter crops
+            cropToArea()
+            return true
+        case 123, 124, 125, 126:
+            guard mods.subtracting([.shift, .command]).isEmpty else { return false }
+            let step = (mods.contains(.shift) ? 10 : 1) / areaPixelScale
+            if mods.contains(.command) {
+                switch event.keyCode {
+                case 123: area.size.width = max(1, area.width - step)
+                case 124: area.size.width += step
+                case 125: area.origin.y -= step; area.size.height += step
+                default: area.origin.y += step; area.size.height = max(1, area.height - step)
+                }
+                area = area.intersection(selectionRect)
+            } else {
+                switch event.keyCode {
+                case 123: area.origin.x -= step
+                case 124: area.origin.x += step
+                case 125: area.origin.y -= step
+                default: area.origin.y += step
+                }
+                area = clampedInsideImage(area)
+            }
+            if area.width >= 1, area.height >= 1 { areaRect = snappedToPixels(area) }
+            return true
+        default:
+            break
+        }
+
+        guard mods.isEmpty, let ch = KeyboardShortcutMatcher.semanticCharacter(for: event),
+              let action = ToolShortcutManager.lookupAction(for: ch) else { return false }
+        switch action {
+        case .adjustSelection:
+            smartAdjustArea()
+            return true
+        case .tool(let tool) where ([.highlight, .rectangle, .ellipse, .pixelate] as [AnnotationTool]).contains(tool):
+            convertArea(to: tool)
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// ⌘C with an area: copy just that part (annotations included).
+    func copyAreaIfActive() -> Bool {
+        guard areaToolActive, let area = areaRect, let full = captureSelectedRegion(),
+              let cg = full.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
+        let sx = CGFloat(cg.width) / selectionRect.width
+        let sy = CGFloat(cg.height) / selectionRect.height
+        let px = CGRect(x: (area.minX - selectionRect.minX) * sx,
+                        y: (selectionRect.maxY - area.maxY) * sy,
+                        width: area.width * sx, height: area.height * sy).integral
+        guard let cropped = cg.cropping(to: px) else { return false }
+        ImageEncoder.copyToClipboard(NSImage(cgImage: cropped, size: area.size))
+        if UserDefaults.standard.object(forKey: "playCopySound") as? Bool ?? true {
+            NSSound(named: "Pop")?.play()
+        }
+        showOverlayError(L("Area copied"), isError: false)
+        return true
+    }
+
+    func cropToArea() {
+        guard let area = areaRect else { return }
+        let toolBefore = currentTool
+        areaRect = nil
+        commitCrop(viewRect: area)
+        currentTool = toolBefore == .crop ? .select : toolBefore
+        rebuildToolbarLayout()
+    }
+
+    func convertArea(to tool: AnnotationTool) {
+        guard let area = areaRect, let handler = toolHandlers[tool],
+              let ann = handler.start(at: NSPoint(x: area.minX, y: area.maxY), canvas: self) else { return }
+        activeAnnotation = ann
+        ann.endPoint = NSPoint(x: area.maxX, y: area.minY)
+        handler.finish(canvas: self)
+        snapGuideX = nil
+        snapGuideY = nil
+        areaRect = nil
+        if let made = annotations.last, made === ann {
+            selectedAnnotation = made
+        }
+        cachedCompositedImage = nil
+        rebuildToolbarLayout()
+        needsDisplay = true
+    }
+
+    /// Shrink each edge past rows/columns of a single color (Shottr's Smart Adjust).
+    func smartAdjustArea() {
+        guard let area = areaRect, let img = screenshotImage,
+              let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
+        let s = CGFloat(cg.width) / selectionRect.width
+        let full = CGRect(x: (area.minX - selectionRect.minX) * s, y: (selectionRect.maxY - area.maxY) * s,
+                          width: area.width * s, height: area.height * s).integral
+        guard let sub = cg.cropping(to: full) else { return }
+        let w = sub.width, h = sub.height
+        guard w > 2, h > 2,
+              let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+        ctx.draw(sub, in: CGRect(x: 0, y: 0, width: w, height: h))
+        guard let raw = ctx.data else { return }
+        let data = raw.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        // Memory row 0 is the top of the image.
+        func px(_ x: Int, _ row: Int) -> (Int, Int, Int) {
+            let i = (row * w + x) * 4
+            return (Int(data[i]), Int(data[i + 1]), Int(data[i + 2]))
+        }
+        func uniform(_ pts: [(Int, Int)]) -> Bool {
+            guard let f = pts.first else { return true }
+            let a = px(f.0, f.1)
+            for q in pts {
+                let b = px(q.0, q.1)
+                if abs(a.0 - b.0) > 10 || abs(a.1 - b.1) > 10 || abs(a.2 - b.2) > 10 { return false }
+            }
+            return true
+        }
+        var left = 0, right = w - 1, topRow = 0, bottomRow = h - 1
+        while left < right && uniform((topRow...bottomRow).map { (left, $0) }) { left += 1 }
+        while right > left && uniform((topRow...bottomRow).map { (right, $0) }) { right -= 1 }
+        while topRow < bottomRow && uniform((left...right).map { ($0, topRow) }) { topRow += 1 }
+        while bottomRow > topRow && uniform((left...right).map { ($0, bottomRow) }) { bottomRow -= 1 }
+        guard right > left, bottomRow > topRow else { return }
+        // Back to canvas points (bottom-left origin).
+        let minX = selectionRect.minX + (full.minX + CGFloat(left)) / s
+        let maxX = selectionRect.minX + (full.minX + CGFloat(right + 1)) / s
+        let maxY = selectionRect.maxY - (full.minY + CGFloat(topRow)) / s
+        let minY = selectionRect.maxY - (full.minY + CGFloat(bottomRow + 1)) / s
+        areaRect = snappedToPixels(NSRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY))
+    }
+
+    // MARK: Drawing
+
+    func drawArea() {
+        guard areaToolActive, let area = areaRect, area.width > 0, area.height > 0 else { return }
+        let k = 1 / areaZoom
+        // Dim outside the area, inside the image.
+        let dim = NSBezierPath(rect: selectionRect)
+        dim.append(NSBezierPath(rect: area))
+        dim.windingRule = .evenOdd
+        NSColor.black.withAlphaComponent(0.35).setFill()
+        dim.fill()
+        // Double border: dark outside, light inside.
+        NSColor.black.withAlphaComponent(0.6).setStroke()
+        let outer = NSBezierPath(rect: area.insetBy(dx: -0.5 * k, dy: -0.5 * k))
+        outer.lineWidth = k
+        outer.stroke()
+        NSColor.white.withAlphaComponent(0.9).setStroke()
+        let inner = NSBezierPath(rect: area.insetBy(dx: 0.5 * k, dy: 0.5 * k))
+        inner.lineWidth = k
+        inner.stroke()
+        // Corner handles.
+        let hs = 6 * k
+        NSColor.white.setFill()
+        for c in [NSPoint(x: area.minX, y: area.minY), NSPoint(x: area.maxX, y: area.minY),
+                  NSPoint(x: area.minX, y: area.maxY), NSPoint(x: area.maxX, y: area.maxY)] {
+            let r = NSRect(x: c.x - hs / 2, y: c.y - hs / 2, width: hs, height: hs)
+            NSBezierPath(rect: r).fill()
+            NSColor.black.withAlphaComponent(0.5).setStroke()
+            let br = NSBezierPath(rect: r)
+            br.lineWidth = k
+            br.stroke()
+        }
+
+        // Size above, hint below (or inside when there is no room).
+        let s = areaPixelScale
+        let size = "\(Int((area.width * s).rounded())) × \(Int((area.height * s).rounded()))"
+        drawAreaPill(size, centerX: area.midX, edgeY: area.maxY, above: true, k: k, emphasized: true)
+        if areaDrag == .none {
+            drawAreaPill(areaHintText(), centerX: area.midX, edgeY: area.minY, above: false, k: k, emphasized: false)
+        }
+    }
+
+    fileprivate func areaHintText() -> String {
+        func key(_ a: ToolShortcutManager.Action) -> String? {
+            let k = ToolShortcutManager.key(for: a)
+            return k.isEmpty ? nil : k.uppercased()
+        }
+        var parts = ["↩ \(L("Crop"))"]
+        if let h = key(.highlight) { parts.append("\(h) \(L("Spotlight"))") }
+        if let r = key(.rectangle) { parts.append("\(r) \(L("Rectangle"))") }
+        if let o = key(.ellipse) { parts.append("\(o) \(L("Ellipse"))") }
+        if let b = key(.censor) { parts.append("\(b) \(L("Censor"))") }
+        if let a = key(.adjustSelection) { parts.append("\(a) \(L("Fit to content"))") }
+        parts.append("⌘C \(L("Copy"))")
+        return parts.joined(separator: "  ·  ")
+    }
+
+    fileprivate func drawAreaPill(_ text: String, centerX: CGFloat, edgeY: CGFloat, above: Bool, k: CGFloat, emphasized: Bool) {
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: emphasized ? NSFont.monospacedDigitSystemFont(ofSize: 11 * k, weight: .semibold)
+                              : NSFont.systemFont(ofSize: 11 * k, weight: .medium),
+            .foregroundColor: NSColor.white,
+        ]
+        let str = text as NSString
+        let ts = str.size(withAttributes: attrs)
+        let padX = 7 * k, padY = 3 * k, gap = 6 * k
+        let w = ts.width + padX * 2, h = ts.height + padY * 2
+        var y = above ? edgeY + gap : edgeY - gap - h
+        // Keep it on the visible document.
+        let vis = visibleRect
+        if above && y + h > vis.maxY { y = edgeY - gap - h }
+        if !above && y < vis.minY { y = edgeY + gap }
+        let x = max(vis.minX + 4 * k, min(centerX - w / 2, vis.maxX - w - 4 * k))
+        let r = NSRect(x: x, y: y, width: w, height: h)
+        NSColor.black.withAlphaComponent(emphasized ? 0.75 : 0.6).setFill()
+        NSBezierPath(roundedRect: r, xRadius: h / 2, yRadius: h / 2).fill()
+        str.draw(at: NSPoint(x: r.minX + padX, y: r.minY + padY), withAttributes: attrs)
     }
 }
