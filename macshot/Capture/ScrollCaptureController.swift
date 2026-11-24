@@ -324,10 +324,11 @@ final class ScrollCaptureController {
                 continue
             }
 
+            // Garabatapp: compare the raw pixel bytes; encoding a TIFF per
+            // frame was most of the time spent waiting for a frame to settle.
             let tiffData: Data? = await withCheckedContinuation { cont in
                 captureQueue.async {
-                    let bitmapRep = NSBitmapImageRep(cgImage: cg)
-                    cont.resume(returning: bitmapRep.tiffRepresentation)
+                    cont.resume(returning: cg.dataProvider?.data.map { $0 as Data })
                 }
             }
             guard !isCancelled else { return nil }
@@ -364,21 +365,17 @@ final class ScrollCaptureController {
 
         activateTargetApp()
 
-        let linesPerTick: Int32
+        // Garabatapp: scroll a share of the visible height per step (pixel
+        // units) instead of a few lines, keeping plenty of overlap to match.
+        let share: CGFloat
         switch autoScrollSpeed {
-        case 1: linesPerTick = 1
-        case 2: linesPerTick = 1
-        case 4: linesPerTick = 2
-        default: linesPerTick = 1
+        case 1: share = 0.15
+        case 2: share = 0.25
+        case 4: share = 0.55
+        default: share = 0.4
         }
-
-        let burstCount: Int
-        switch autoScrollSpeed {
-        case 1: burstCount = 1
-        case 2: burstCount = 2
-        case 4: burstCount = 4
-        default: burstCount = 3
-        }
+        let linesPerTick = Int32(max(40, (captureRect.height * share).rounded()))
+        let burstCount = 1
 
         autoScrollTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 300_000_000)
@@ -392,7 +389,7 @@ final class ScrollCaptureController {
         while isActive && autoScrollActive {
             // Post scroll event(s)
             for _ in 0..<burstCount {
-                if let event = CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 1,
+                if let event = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 1,
                                        wheel1: -linesPerTick, wheel2: 0, wheel3: 0) {
                     // Post at the session tap, not the HID tap. Mouse utilities
                     // such as Mac Mouse Fix and LinearMouse rewrite wheel
@@ -444,7 +441,7 @@ final class ScrollCaptureController {
     /// Returns true if a match was found, false if no shift detected.
     private func captureAndCompare() async -> Bool {
         // Initial delay for scroll animation to begin
-        try? await Task.sleep(nanoseconds: 50_000_000)  // 50ms
+        try? await Task.sleep(nanoseconds: 30_000_000)  // 30ms
 
         // Wait for settlement: poll frames until two consecutive TIFFs match
         var previousTIFF: Data? = nil
@@ -459,10 +456,11 @@ final class ScrollCaptureController {
                 continue
             }
 
+            // Garabatapp: compare the raw pixel bytes; encoding a TIFF per
+            // frame was most of the time spent waiting for a frame to settle.
             let tiffData: Data? = await withCheckedContinuation { cont in
                 captureQueue.async {
-                    let bitmapRep = NSBitmapImageRep(cgImage: cg)
-                    cont.resume(returning: bitmapRep.tiffRepresentation)
+                    cont.resume(returning: cg.dataProvider?.data.map { $0 as Data })
                 }
             }
             guard let currentTIFF = tiffData else {
