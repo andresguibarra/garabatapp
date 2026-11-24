@@ -113,20 +113,6 @@ final class ArrowConnectorsTests: XCTestCase {
         XCTAssertTrue(ArrowConnectors.contains(b, point: link.endPoint, margin: 0.01))
     }
 
-    func testFacingShapesGetAStraightConnector() {
-        // Boxes side by side, one a bit higher: the arrow runs straight across
-        // their shared height instead of slanting between the centers.
-        let a = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
-        let b = rect(NSRect(x: 300, y: 40, width: 100, height: 100))
-        let link = arrow(.zero, .zero)
-        link.connectedStartID = a.connectorID
-        link.connectedEndID = b.connectorID
-        ArrowConnectors.resolve([a, b, link])
-        XCTAssertEqual(link.startPoint.y, link.endPoint.y, accuracy: 0.05)
-        XCTAssertEqual(link.startPoint.x, 102, accuracy: 0.01)
-        XCTAssertEqual(link.endPoint.x, 299, accuracy: 0.01)
-    }
-
     func testOneEndedArrowAimsAtItsFreeEnd() {
         let a = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
         let link = arrow(NSPoint(x: 100, y: 50), NSPoint(x: 50, y: 400))
@@ -200,23 +186,31 @@ final class ArrowConnectorsTests: XCTestCase {
     }
 
     func testHeadWingsStayOffAShallowEdge() {
-        // A wide box hit far from its middle: the ray meets the top edge at a
-        // shallow angle, so the head's wing, not its tip, is what touches.
+        // A wide box aimed at from far to the side: pointing at its center the
+        // head's wing would land on the top edge with the tip in the air, so
+        // the tip moves to the nearest spot (the corner) and touches there.
         let wide = rect(NSRect(x: 0, y: 0, width: 400, height: 30))
         let link = arrow(NSPoint(x: 600, y: 120), .zero)
         link.connectedEndID = wide.connectorID
         ArrowConnectors.resolve([wide, link])
+        XCTAssertTrue(ArrowConnectors.contains(wide, point: link.endPoint, margin: 0.05), "the tip touches")
         let ux = link.startPoint.x - link.endPoint.x, uy = link.startPoint.y - link.endPoint.y
         let len = hypot(ux, uy)
-        let dabs = ArrowConnectors.endPaint(of: link, atStart: false, length: len)
-        var closest = -CGFloat.greatestFiniteMagnitude  // signed distance below the top edge
-        for dab in dabs {
+        for dab in ArrowConnectors.endPaint(of: link, atStart: false, length: len) where dab.back > 0.5 {
             let p = NSPoint(x: link.endPoint.x + ux / len * dab.back - uy / len * dab.side,
                             y: link.endPoint.y + uy / len * dab.back + ux / len * dab.side)
-            XCTAssertFalse(ArrowConnectors.contains(wide, point: p, margin: dab.radius - 0.01))
-            closest = max(closest, wide.boundingRect.maxY + 1 - p.y)
+            XCTAssertFalse(ArrowConnectors.contains(wide, point: p, margin: dab.radius), "wing on the edge at \(p)")
         }
-        XCTAssertEqual(closest, 0, accuracy: 0.05, "a wing touches the top edge, nothing crosses it")
+    }
+
+    func testSteepArrowsStillPointAtTheCenter() {
+        let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
+        let link = arrow(NSPoint(x: 400, y: 200), .zero)
+        link.connectedEndID = box.connectorID
+        ArrowConnectors.resolve([box, link])
+        // On the line from (50,50) to (400,200), touching the right side's paint at x = 101.
+        XCTAssertEqual(link.endPoint.x, 101, accuracy: 0.01)
+        XCTAssertEqual(link.endPoint.y, 50 + 51 * 150 / 350, accuracy: 0.01)
     }
 
     private func textBox(_ r: NSRect, outline: Bool, background: Bool = false) -> Annotation {

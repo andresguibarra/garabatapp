@@ -84,23 +84,20 @@ enum ArrowConnectors {
     /// arrow comes from (the other end, its bend, or the other shape's tip).
     static func attachPoint(of arrow: Annotation, atStart: Bool, on shape: Annotation,
                             toward aim: NSPoint) -> NSPoint? {
+        attach(arrow, atStart: atStart, on: shape, toward: aim)?.point
+    }
+
+    /// `onCenterLine`: the end sits on the line from the shape's center to the aim.
+    static func attach(_ arrow: Annotation, atStart: Bool, on shape: Annotation,
+                       toward aim: NSPoint) -> (point: NSPoint, onCenterLine: Bool)? {
         guard let silhouette = silhouette(of: shape) else { return nil }
         let c = silhouette.center
         var ux = aim.x - c.x, uy = aim.y - c.y
         let distance = hypot(ux, uy)
         if distance < 0.0001 { ux = 1; uy = 0 } else { ux /= distance; uy /= distance }
         let dabs = endPaint(of: arrow, atStart: atStart, length: max(distance, 1))
-        // Usually: the tip goes on the spot of the shape's paint closest to what
-        // the arrow points at, pushed out by how far the paint reaches past the
-        // tip. The tip then touches the shape and, the shape being convex, the
-        // head's wings and the shaft never do, at any angle.
-        let tipReach = dabs.filter { $0.side == 0 }.map { $0.radius - $0.back }.max() ?? 0
-        if let p = silhouette.nearestPoint(to: aim, clearance: tipReach + gap) {
-            return p
-        }
-        // The aim is on or inside the shape (a bend dragged over it): walk out
-        // from the center instead until none of the arrow's paint touches.
-        // The arrow runs from its tip out toward the aim: `back` is +u, `side` is the normal.
+        // Along the center line the arrow runs from its tip out toward the aim:
+        // `back` is +u, `side` is the normal.
         var regions: [CGFloat: (CGPoint) -> Bool] = [:]
         for d in dabs where regions[d.radius + gap] == nil {
             regions[d.radius + gap] = silhouette.region(clearance: d.radius + gap)
@@ -113,6 +110,23 @@ enum ArrowConnectors {
             }
             return true
         }
+        let tipReach = dabs.filter { $0.side == 0 }.map { $0.radius - $0.back }.max() ?? 0
+
+        // 1. Pointing at the center, with the tip (cap, tail) just touching the
+        //    shape's paint, when nothing else of the arrow touches it there.
+        let onLine = silhouette.exitPoint(toward: aim, clearance: tipReach + gap)
+        let t0 = hypot(onLine.x - c.x, onLine.y - c.y)
+        if distance > t0, clear(t0) {
+            return (onLine, true)
+        }
+        // 2. Too shallow for that (a wing would land on the edge first and the
+        //    tip would float): the spot of the paint nearest to the aim. The tip
+        //    touches there and, the shape being convex, the wings never do.
+        if let p = silhouette.nearestPoint(to: aim, clearance: tipReach + gap) {
+            return (p, false)
+        }
+        // 3. The aim is on or inside the shape (a bend dragged over it): walk out
+        //    along the center line until none of the arrow's paint touches.
         let box = silhouette.path.boundingBoxOfPath
         let maxDab = dabs.map { abs($0.back) + abs($0.side) + $0.radius }.max() ?? 0
         var hi = hypot(box.width, box.height) + silhouette.stroke * 2 + maxDab * 2 + 2
@@ -122,7 +136,7 @@ enum ArrowConnectors {
             let mid = (lo + hi) / 2
             if clear(mid) { hi = mid } else { lo = mid }
         }
-        return NSPoint(x: c.x + ux * hi, y: c.y + uy * hi)
+        return (NSPoint(x: c.x + ux * hi, y: c.y + uy * hi), true)
     }
 
     /// Shapes an arrow end can attach to.
@@ -412,16 +426,15 @@ enum ArrowConnectors {
             ?? (multi ? anchors[1] : arrow.controlPoint ?? arrow.endPoint)
         let endAim = from.flatMap { center(of: $0) }
             ?? (multi ? anchors[anchors.count - 2] : arrow.controlPoint ?? arrow.startPoint)
-        var newStart = from.flatMap {
-            attachPoint(of: arrow, atStart: true, on: $0, toward: startAim)
-        } ?? arrow.startPoint
-        var newEnd = to.flatMap {
-            attachPoint(of: arrow, atStart: false, on: $0, toward: endAim)
-        } ?? arrow.endPoint
-        if let from, let to, !multi, arrow.controlPoint == nil {
-            // Straight arrow between two shapes: each tip aims at the other tip, so
-            // the head points along the real line. A few rounds settle on the
-            // shortest connector between the two (straight across when they face).
+        let startFit = from.flatMap { attach(arrow, atStart: true, on: $0, toward: startAim) }
+        let endFit = to.flatMap { attach(arrow, atStart: false, on: $0, toward: endAim) }
+        var newStart = startFit?.point ?? arrow.startPoint
+        var newEnd = endFit?.point ?? arrow.endPoint
+        if let from, let to, !multi, arrow.controlPoint == nil,
+           startFit?.onCenterLine == false || endFit?.onCenterLine == false {
+            // Center to center was too shallow for one end: each tip aims at the
+            // other tip instead, so the head points along the real line. A few
+            // rounds settle it.
             for _ in 0..<4 {
                 newEnd = attachPoint(of: arrow, atStart: false, on: to, toward: newStart) ?? newEnd
                 newStart = attachPoint(of: arrow, atStart: true, on: from, toward: newEnd) ?? newStart
