@@ -1621,6 +1621,7 @@ class OverlayView: NSView {
         } else {
             switch currentTool {
             case .select: NSCursor.arrow.set()
+            case .text: NSCursor.iBeam.set()  // Garabatapp: writing cursor for the text tool
             default: NSCursor.crosshair.set()
             }
         }
@@ -9920,7 +9921,7 @@ class OverlayView: NSView {
                 colorWheel.dismiss()
                 needsDisplay = true
             } else if textEditView != nil {
-                cancelTextEditing()
+                commitTextFieldIfNeeded()  // Garabatapp: Escape keeps the text
             } else if PopoverHelper.isVisible {
                 PopoverHelper.dismiss()
             } else if !selectedAnnotations.isEmpty {
@@ -11016,7 +11017,7 @@ extension OverlayView: NSTextViewDelegate {
             return true
         }
         if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
-            cancelTextEditing()
+            commitTextFieldIfNeeded()  // Garabatapp: Escape keeps the text
             return true
         }
         return false
