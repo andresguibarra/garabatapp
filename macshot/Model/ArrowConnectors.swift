@@ -96,7 +96,7 @@ enum ArrowConnectors {
         outline(of: annotation)?.center
     }
 
-    /// The point `gap` outside the outline, on the ray from the center toward `target`.
+    /// Where the ray from the center toward `target` crosses the outline grown by `gap`.
     static func borderPoint(of outline: Outline, toward target: NSPoint, gap: CGFloat = gap) -> NSPoint {
         let c = outline.center
         var dx = target.x - c.x
@@ -113,7 +113,10 @@ enum ArrowConnectors {
             let cosR = cos(-rotation), sinR = sin(-rotation)
             let ux = dx * cosR - dy * sinR
             let uy = dx * sinR + dy * cosR
-            let hw = max(r.width / 2, 0.0001), hh = max(r.height / 2, 0.0001)
+            // Grow the shape by `gap` and meet its edge, so the gap is measured
+            // across the border (perpendicular), not along a slanted arrow,
+            // which would leave too little room at an angle.
+            let hw = max(r.width / 2 + gap, 0.0001), hh = max(r.height / 2 + gap, 0.0001)
             let t: CGFloat
             if case .ellipse = outline {
                 t = 1 / ((ux * ux) / (hw * hw) + (uy * uy) / (hh * hh)).squareRoot()
@@ -122,8 +125,7 @@ enum ArrowConnectors {
                 let ty = abs(uy) > 0.0001 ? hh / abs(uy) : .greatestFiniteMagnitude
                 t = min(tx, ty)
             }
-            let reach = t + gap
-            return NSPoint(x: c.x + dx * reach, y: c.y + dy * reach)
+            return NSPoint(x: c.x + dx * t, y: c.y + dy * t)
         }
     }
 
