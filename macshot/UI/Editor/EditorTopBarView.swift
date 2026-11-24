@@ -44,6 +44,7 @@ class EditorTopBarView: NSView {
         zoomButton.contentTintColor = ToolbarLayout.iconColor.withAlphaComponent(0.45)
         zoomButton.target = self
         zoomButton.action = #selector(zoomButtonClicked)
+        zoomButton.toolTip = L("Zoom")
 
         // Bottom border
         let border = bottomBorder
