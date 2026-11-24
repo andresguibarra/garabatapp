@@ -11653,27 +11653,20 @@ extension OverlayView {
         context.saveGraphicsState()
         let accent = ToolbarLayout.accentColor
         let z = max(zoomLevel, 0.1)
-        if showTarget, let target = connectorDropTarget, let outline = ArrowConnectors.outline(of: target) {
+        if showTarget, let target = connectorDropTarget, let silhouette = ArrowConnectors.silhouette(of: target) {
+            // Trace the shape's painted edge, a few points out, whatever its type.
             let pad = 5 / z
-            let path: NSBezierPath
-            switch outline {
-            case .circle(let c, let radius):
-                let rr = radius + pad
-                path = NSBezierPath(ovalIn: NSRect(x: c.x - rr, y: c.y - rr, width: rr * 2, height: rr * 2))
-            case .rect(let rect, let rotation), .ellipse(let rect, let rotation):
-                let grown = rect.insetBy(dx: -pad, dy: -pad)
-                if case .ellipse = outline {
-                    path = NSBezierPath(ovalIn: grown)
-                } else {
-                    path = NSBezierPath(roundedRect: grown, xRadius: 6 / z, yRadius: 6 / z)
-                }
-                if rotation != 0 {
-                    var t = AffineTransform(translationByX: rect.midX, byY: rect.midY)
-                    t.rotate(byRadians: rotation)
-                    t.translate(x: -rect.midX, y: -rect.midY)
-                    path.transform(using: t)
-                }
+            let path = NSBezierPath()
+            let steps = 96
+            for i in 0..<steps {
+                let angle = CGFloat(i) / CGFloat(steps) * 2 * .pi
+                let aim = NSPoint(x: silhouette.center.x + cos(angle) * 10_000,
+                                  y: silhouette.center.y + sin(angle) * 10_000)
+                let p = silhouette.exitPoint(toward: aim, clearance: pad)
+                if i == 0 { path.move(to: p) } else { path.line(to: p) }
             }
+            path.close()
+            path.lineJoinStyle = .round
             path.lineWidth = 2 / z
             path.setLineDash([5 / z, 4 / z], count: 2, phase: 0)
             accent.setStroke()
