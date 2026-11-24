@@ -778,14 +778,15 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         quickModePopup.target = self
         quickModePopup.action = #selector(quickModeChanged(_:))
 
-        stack.addArrangedSubview(labeledRow(L("Enter / Quick Capture:"), controls: [quickModePopup]))
+        quickModePopup.toolTip = L("What Enter, ⌘C and ⌘S do in the editor, and what Quick Capture does. ⌘C always copies and ⌘S always saves; this adds the rest.")
+        stack.addArrangedSubview(labeledRow(L("When done:"), controls: [quickModePopup]))
         stack.setCustomSpacing(6, after: stack.arrangedSubviews.last!)
 
         quickCaptureOpenEditorCheckbox = NSButton(checkboxWithTitle: L("Also open in Editor"), target: self, action: #selector(quickCaptureOpenEditorChanged(_:)))
         stack.addArrangedSubview(indented(quickCaptureOpenEditorCheckbox))
         stack.setCustomSpacing(6, after: stack.arrangedSubviews.last!)
 
-        closeEditorAfterCopyCheckbox = NSButton(checkboxWithTitle: L("Close editor after copying"), target: self, action: #selector(closeEditorAfterCopyChanged(_:)))
+        closeEditorAfterCopyCheckbox = NSButton(checkboxWithTitle: L("Close editor when done"), target: self, action: #selector(closeEditorAfterCopyChanged(_:)))
         stack.addArrangedSubview(indented(closeEditorAfterCopyCheckbox))
         stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
 

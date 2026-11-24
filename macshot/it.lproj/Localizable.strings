@@ -914,3 +914,5 @@
 "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
 "These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
 "Search" = "Search";
+"Close editor when done" = "Close editor when done";
+"What Enter, ⌘C and ⌘S do in the editor, and what Quick Capture does. ⌘C always copies and ⌘S always saves; this adds the rest." = "What Enter, ⌘C and ⌘S do in the editor, and what Quick Capture does. ⌘C always copies and ⌘S always saves; this adds the rest.";
