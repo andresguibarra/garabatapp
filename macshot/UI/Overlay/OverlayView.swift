@@ -1519,6 +1519,9 @@ class OverlayView: NSView {
             return
         }
 
+        // Over a tool option: the options row sets its own pointing hand / arrow.
+        if optionsRowHandlesCursor(at: point) { return }
+
         // Over the resolution box: let its own cursor rects (I-beam over fields,
         // arrow over the presets button) decide — don't override here.
         if resolutionBoxRect != .zero && resolutionBoxRect.contains(point) {
@@ -1757,6 +1760,13 @@ class OverlayView: NSView {
     /// Garabatapp: in the editor the toolbars, options row and top bar live in
     /// the window's content view, over this view; the pointer over them must get
     /// a plain arrow, not the active tool's cursor.
+    /// True when the pointer (in this view's coordinates) is over an option in
+    /// the tool options row; the row has already set the cursor and its hover state.
+    func optionsRowHandlesCursor(at point: NSPoint) -> Bool {
+        guard let row = toolOptionsRowView else { return false }
+        return row.handlesCursor(at: point, in: self)
+    }
+
     func pointIsUnderEditorChrome(_ point: NSPoint) -> Bool {
         guard isEditorMode, let parent = chromeParentView, window != nil else { return false }
         let windowPoint = convert(point, to: nil)
@@ -10090,6 +10100,10 @@ class OverlayView: NSView {
     // MARK: - Keyboard
 
     override func flagsChanged(with event: NSEvent) {
+        // Holding ⌥ alone shows the number badges for ⌥1…⌥9 on the tool options.
+        let onlyOption = KeyboardShortcutMatcher.modifiers(in: event) == [.option]
+        toolOptionsRowView?.setShortcutBadgesVisible(
+            onlyOption && state == .selected && textEditView == nil && currentAnnotation == nil)
         // Re-apply shift constraint immediately when Shift is pressed/released during annotation drag
         if currentAnnotation != nil, let lastPoint = lastDragPoint {
             let shiftHeld = event.modifierFlags.contains(.shift)
@@ -10244,6 +10258,12 @@ class OverlayView: NSView {
         }
 
         if handleAreaKey(event) { return }
+
+        // ⌥1…⌥9 pick an option in the tool options row; [ and ] change its main slider.
+        if state == .selected, textEditView == nil, !isRecording,
+           let row = toolOptionsRowView, row.handleOptionShortcut(event) {
+            return
+        }
 
         // Arrow keys nudge the selected annotations: 1 pt, or 10 pt with Shift.
         if (123...126).contains(event.keyCode), state == .selected, textEditView == nil,

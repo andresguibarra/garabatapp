@@ -967,3 +967,6 @@
 "Minimize" = "Minimize";
 "Help" = "Help";
 "on GitHub" = "on GitHub";
+"Dashed" = "파선";
+"Dotted" = "점선";
+"Outline + Fill" = "윤곽선 + 채우기";
