@@ -8621,14 +8621,19 @@ class OverlayView: NSView {
 
     // MARK: - Garabatapp overflow (⋯) menu
 
-    /// Garabatapp: the ⋯ list is a popover (not an NSMenu) so it shows each
-    /// item's shortcut and doesn't put the app in menu tracking, which held
-    /// back the global capture hotkeys while it was open.
     private func showOverflowMenu(_ items: [ToolbarButton], anchor: NSView?, isBottom: Bool) {
-        if PopoverHelper.toggleClosedIfOpen() { return }
         guard let anchor, !items.isEmpty else { return }
-        let picker = ListPickerView()
-        var rows: [ListPickerView.Item] = items.map { button in
+        let menu = NSMenu()
+        for button in items {
+            let item = NSMenuItem(title: button.tooltip, action: #selector(overflowMenuPicked(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = OverflowAction(button.action)
+            item.state = button.isSelected ? .on : .off
+            // Show the item's shortcut at the right, as in any Mac menu.
+            if let key = ToolShortcutManager.tooltipShortcut(for: button.action), key.count == 1 {
+                item.keyEquivalent = key.lowercased()
+                item.keyEquivalentModifierMask = []
+            }
             let symbol: String? = {
                 switch button.sfSymbol {
                 case "_custom.text": return "textformat"
@@ -8636,28 +8641,30 @@ class OverlayView: NSView {
                 default: return button.sfSymbol
                 }
             }()
-            var item = ListPickerView.Item(
-                title: button.tooltip, isSelected: button.isSelected,
-                icon: symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) })
-            item.shortcut = ToolShortcutManager.tooltipShortcut(for: button.action)?.uppercased()
-            return item
-        }
-        rows.append(ListPickerView.Item(title: L("Customize Toolbar…"), isSelected: false,
-                                        icon: NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: nil)))
-        picker.items = rows
-        picker.onSelect = { [weak self] idx in
-            PopoverHelper.dismiss()
-            guard let self else { return }
-            if idx < items.count {
-                self.handleToolbarAction(items[idx].action)
-            } else {
-                self.overflowMenuOpenSettings()
+            if let symbol, let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+                item.image = image
             }
+            menu.addItem(item)
         }
-        let size = picker.preferredSize
-        picker.frame = NSRect(origin: .zero, size: size)
-        PopoverHelper.show(picker, size: size, relativeTo: anchor.bounds, of: anchor,
-                           preferredEdge: isBottom ? .maxY : .minX)
+        menu.addItem(.separator())
+        let edit = NSMenuItem(title: L("Customize Toolbar…"), action: #selector(overflowMenuOpenSettings), keyEquivalent: "")
+        edit.target = self
+        menu.addItem(edit)
+        if isBottom {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: anchor.bounds.height + 4), in: anchor)
+        } else {
+            menu.popUp(positioning: nil, at: NSPoint(x: anchor.bounds.width + 4, y: anchor.bounds.height), in: anchor)
+        }
+    }
+
+    private final class OverflowAction {
+        let action: ToolbarButtonAction
+        init(_ action: ToolbarButtonAction) { self.action = action }
+    }
+
+    @objc private func overflowMenuPicked(_ sender: NSMenuItem) {
+        guard let wrapped = sender.representedObject as? OverflowAction else { return }
+        handleToolbarAction(wrapped.action)
     }
 
     @objc private func overflowMenuOpenSettings() {

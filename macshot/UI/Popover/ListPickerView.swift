@@ -10,8 +10,6 @@ class ListPickerView: NSView {
         var icon: NSImage? = nil
         var isEnabled: Bool = true
         var subtitle: String? = nil
-        /// Garabatapp: key shown right-aligned (e.g. the tool's shortcut).
-        var shortcut: String? = nil
     }
 
     var items: [Item] = [] { didSet { rebuildRows() } }
@@ -42,7 +40,6 @@ class ListPickerView: NSView {
             rv.icon = item.icon
             rv.isEnabled = item.isEnabled
             rv.subtitle = item.subtitle
-            rv.shortcut = item.shortcut
             rv.index = i
             rv.onSelect = { [weak self] idx in self?.onSelect?(idx) }
             addSubview(rv)
@@ -60,11 +57,7 @@ class ListPickerView: NSView {
         let hPad: CGFloat = 20   // horizontal padding
         var maxTextW: CGFloat = 100
         for item in items {
-            var textW = (item.title as NSString).size(withAttributes: [.font: font]).width
-            if item.icon != nil { textW += 22 }
-            if let sc = item.shortcut, !sc.isEmpty {
-                textW += (sc as NSString).size(withAttributes: [.font: font]).width + 28
-            }
+            let textW = (item.title as NSString).size(withAttributes: [.font: font]).width
             maxTextW = max(maxTextW, textW)
         }
         let w = ceil(maxTextW + checkW + hPad)
@@ -122,7 +115,6 @@ private class ListPickerRowView: NSView {
     var icon: NSImage?
     var isEnabled: Bool = true
     var subtitle: String?
-    var shortcut: String?
     var index: Int = 0
     var onSelect: ((Int) -> Void)?
 
@@ -155,45 +147,17 @@ private class ListPickerRowView: NSView {
         let str = title as NSString
         let strSize = str.size(withAttributes: attrs)
 
-        // Garabatapp: optional icon before the title, shortcut at the right.
-        var textX: CGFloat = 24
-        if let icon {
-            let side: CGFloat = 14
-            let iconRect = NSRect(x: textX, y: bounds.midY - side / 2, width: side, height: side)
-            let tinted = NSImage(size: iconRect.size, flipped: false) { r in
-                icon.draw(in: r, from: .zero, operation: .sourceOver, fraction: 1)
-                ToolbarLayout.iconColor.withAlphaComponent(titleAlpha).setFill()
-                r.fill(using: .sourceAtop)
-                return true
-            }
-            tinted.draw(in: iconRect)
-            textX += side + 8
-        }
-        if let shortcut, !shortcut.isEmpty {
-            let scAttrs: [NSAttributedString.Key: Any] = [
-                .font: NSFont.monospacedSystemFont(ofSize: 10.5, weight: .medium),
-                .foregroundColor: ToolbarLayout.iconColor.withAlphaComponent(0.55 * alpha),
-            ]
-            let sc = shortcut as NSString
-            let scSize = sc.size(withAttributes: scAttrs)
-            let keyRect = NSRect(x: bounds.maxX - scSize.width - 18, y: bounds.midY - scSize.height / 2 - 1.5,
-                                 width: scSize.width + 8, height: scSize.height + 3)
-            ToolbarLayout.iconColor.withAlphaComponent(0.1 * alpha).setFill()
-            NSBezierPath(roundedRect: keyRect, xRadius: 4, yRadius: 4).fill()
-            sc.draw(at: NSPoint(x: keyRect.minX + 4, y: keyRect.minY + 1.5), withAttributes: scAttrs)
-        }
-
         if let subtitle = subtitle {
             // Title + subtitle side by side
-            str.draw(at: NSPoint(x: textX, y: bounds.midY - strSize.height / 2), withAttributes: attrs)
+            str.draw(at: NSPoint(x: 24, y: bounds.midY - strSize.height / 2), withAttributes: attrs)
             let subAttrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 9),
                 .foregroundColor: ToolbarLayout.iconColor.withAlphaComponent(0.35 * alpha),
             ]
             let subStr = subtitle as NSString
-            subStr.draw(at: NSPoint(x: textX + strSize.width + 4, y: bounds.midY - strSize.height / 2 + 1), withAttributes: subAttrs)
+            subStr.draw(at: NSPoint(x: 24 + strSize.width + 4, y: bounds.midY - strSize.height / 2 + 1), withAttributes: subAttrs)
         } else {
-            str.draw(at: NSPoint(x: textX, y: bounds.midY - strSize.height / 2), withAttributes: attrs)
+            str.draw(at: NSPoint(x: 24, y: bounds.midY - strSize.height / 2), withAttributes: attrs)
         }
     }
 
