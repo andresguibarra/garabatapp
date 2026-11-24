@@ -180,6 +180,13 @@ class ToolOptionsRowView: NSView {
                 UserDefaults.standard.set(isOn, forKey: "arrowReversed")
                 ov?.needsDisplay = true
             }
+            // Attached to a shape: offer to let go of it.
+            if let ann = editingAnnotation, ann.hasConnector {
+                curX = addSeparator(at: curX)
+                curX = addRedactButton(at: curX, title: L("Detach"), action: #selector(detachArrowClicked),
+                                       font: NSFont.systemFont(ofSize: 11, weight: .medium),
+                                       height: 22, y: (rowHeight - 22) / 2)
+            }
         }
 
         // ── Shape fill style (rectangle, ellipse) ──
@@ -590,6 +597,10 @@ class ToolOptionsRowView: NSView {
         addSubview(seg)
         curX += seg.frame.width + 4
         return curX
+    }
+
+    @objc private func detachArrowClicked() {
+        overlayView?.detachSelectedArrow()
     }
 
     @objc private func piiSegmentClicked(_ sender: NSSegmentedControl) {

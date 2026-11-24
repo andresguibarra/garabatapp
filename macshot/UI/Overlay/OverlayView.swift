@@ -761,8 +761,7 @@ class OverlayView: NSView {
     var connectorDropTarget: Annotation? {
         didSet { if connectorDropTarget !== oldValue { needsDisplay = true } }
     }
-    /// The arrow whose endpoint is being dragged was attached before the drag,
-    /// so releasing that end on a shape attaches it again.
+    /// An arrow endpoint is being dragged: releasing it on a shape attaches it there.
     private var connectorResizeCanAttach = false
     private var cachedOpaqueRect: NSRect?  // cached opaque content bounds of screenshotImage
 
@@ -9752,7 +9751,7 @@ class OverlayView: NSView {
                 // Build cache of non-selected annotations for fast resize rendering
                 cachedAnnotationLayerExcludingSelected = buildAnnotationLayer(excluding: dragLayerExclusions())
                 annotationResizeHandle = handle
-                connectorResizeCanAttach = selected.tool == .arrow && selected.hasConnector
+                connectorResizeCanAttach = selected.tool == .arrow
                 annotationResizeOrigStart = selected.startPoint
                 annotationResizeOrigEnd = selected.endPoint
                 annotationResizeOrigTextOrigin = selected.textDrawRect.origin
@@ -11701,6 +11700,19 @@ extension OverlayView {
         default: return
         }
         resolveArrowConnectors()
+    }
+
+    /// "Detach" in the options row: free both ends of the selected arrow (one undo step).
+    func detachSelectedArrow() {
+        guard let arrow = selectedAnnotation, arrow.tool == .arrow, arrow.hasConnector else { return }
+        let snapshot = arrow.clone()
+        arrow.connectedStartID = nil
+        arrow.connectedEndID = nil
+        undoStack.append(.propertyChange(annotation: arrow, snapshot: snapshot))
+        redoStack.removeAll()
+        cachedCompositedImage = nil
+        toolOptionsRowView?.rebuild(forAnnotation: arrow)
+        needsDisplay = true
     }
 
     /// An arrow dragged on its own leaves the shapes it was attached to (otherwise
