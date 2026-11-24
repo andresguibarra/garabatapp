@@ -121,8 +121,12 @@ enum ArrowConnectors {
         }
         // 1b. Almost: something beside the tip (a thick arrow's flat tail, a wing)
         //     grazes the edge. Back off along the center line if a point is enough.
+        //     A flat end (a thick arrow's tail) has nothing behind its tip, so
+        //     walking out until one of its corners touches never leaves it floating.
+        let flatEnd = dabs.allSatisfy { $0.back <= 0 }
         if distance > t0 {
             var lo = t0, hi = t0 + 1
+            if flatEnd { while !clear(hi) && hi < distance { hi += 1 } }
             if clear(hi) {
                 for _ in 0..<30 {
                     let mid = (lo + hi) / 2
