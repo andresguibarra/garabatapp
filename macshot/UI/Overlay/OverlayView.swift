@@ -1502,6 +1502,9 @@ class OverlayView: NSView {
             return
         }
 
+        // Over a tool option: the options row sets its own pointing hand / arrow.
+        if optionsRowHandlesCursor(at: point) { return }
+
         // Over the resolution box: let its own cursor rects (I-beam over fields,
         // arrow over the presets button) decide — don't override here.
         if resolutionBoxRect != .zero && resolutionBoxRect.contains(point) {
@@ -1740,6 +1743,13 @@ class OverlayView: NSView {
     /// Garabatapp: in the editor the toolbars, options row and top bar live in
     /// the window's content view, over this view; the pointer over them must get
     /// a plain arrow, not the active tool's cursor.
+    /// True when the pointer (in this view's coordinates) is over an option in
+    /// the tool options row; the row has already set the cursor and its hover state.
+    func optionsRowHandlesCursor(at point: NSPoint) -> Bool {
+        guard let row = toolOptionsRowView else { return false }
+        return row.handlesCursor(at: point, in: self)
+    }
+
     func pointIsUnderEditorChrome(_ point: NSPoint) -> Bool {
         guard isEditorMode, let parent = chromeParentView, window != nil else { return false }
         let windowPoint = convert(point, to: nil)

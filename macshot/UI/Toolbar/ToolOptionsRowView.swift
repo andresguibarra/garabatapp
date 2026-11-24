@@ -14,6 +14,9 @@ class ToolOptionsRowView: NSView {
     private let padding: CGFloat = 8
     /// The natural content width calculated during rebuild, before any external resizing.
     private(set) var contentWidth: CGFloat = 200
+    /// Hover feedback over the option under the pointer (see the extension below).
+    fileprivate let hoverHighlight = OptionHoverHighlightView(frame: .zero)
+    fileprivate var hoverTrackingArea: NSTrackingArea?
     // Consume clicks on gaps between controls so they don't fall through to OverlayView.
     // In editor mode, let gap clicks pass through so drawing works over the options area.
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -29,6 +32,11 @@ class ToolOptionsRowView: NSView {
 
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .arrow)
+        // Pointing hand over every clickable option (per enabled segment for
+        // segmented controls) so the row reads as a set of buttons.
+        for target in hoverTargets() where target.clickable {
+            addCursorRect(target.rect, cursor: .pointingHand)
+        }
     }
 
     /// Auto-tint controls to match toolbar accent color.
@@ -37,7 +45,10 @@ class ToolOptionsRowView: NSView {
         super.addSubview(view)
         if let btn = view as? NSButton, btn.tag < 990 { btn.contentTintColor = ToolbarLayout.accentColor }
         if let slider = view as? NSSlider { slider.trackFillColor = ToolbarLayout.accentColor }
-        if let seg = view as? NSSegmentedControl { seg.selectedSegmentBezelColor = ToolbarLayout.accentColor }
+        if let seg = view as? NSSegmentedControl {
+            seg.selectedSegmentBezelColor = ToolbarLayout.accentColor
+            applyDefaultSegmentToolTips(seg)
+        }
     }
 
     override init(frame: NSRect) {
@@ -103,6 +114,8 @@ class ToolOptionsRowView: NSView {
 
     /// Rebuild the options row for the given tool. Call when tool or state changes.
     func rebuild(for tool: AnnotationTool) {
+        // The controls under the pointer change; re-evaluate hover on every exit path.
+        defer { refreshHoverFromCurrentMouse() }
         // Remove old subviews
         subviews.forEach { $0.removeFromSuperview() }
         guard let ov = overlayView else { return }
@@ -2064,6 +2077,180 @@ class ToolOptionsRowView: NSView {
 
     @objc private func textConfirmClicked() {
         overlayView?.commitTextFieldIfNeeded()
+    }
+}
+
+// MARK: - Hover feedback (highlight, pointing-hand cursor, segment tooltips)
+
+/// Non-interactive highlight drawn over the option under the pointer.
+private final class OptionHoverHighlightView: NSView {
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        layer?.cornerRadius = 5
+        isHidden = true
+    }
+    required init?(coder: NSCoder) { fatalError() }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+extension ToolOptionsRowView {
+
+    /// A spot in the row the pointer can be over. Clickable targets get the
+    /// hover highlight and a pointing hand; sliders keep a plain arrow.
+    struct HoverTarget: Equatable {
+        let rect: NSRect
+        let clickable: Bool
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let area = hoverTrackingArea { removeTrackingArea(area) }
+        let area = NSTrackingArea(rect: .zero,
+                                  options: [.mouseEnteredAndExited, .mouseMoved, .cursorUpdate,
+                                            .activeAlways, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverTrackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        _ = updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        _ = updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        _ = updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hideHoverHighlight()
+    }
+
+    /// Called by the canvas views from their own imperative cursor code: when the
+    /// pointer is over one of this row's options, the row sets the cursor and the
+    /// caller must not override it. `point` is in `view`'s coordinates.
+    func handlesCursor(at point: NSPoint, in view: NSView) -> Bool {
+        guard !isHidden, let window, window === view.window else { return false }
+        let local = convert(point, from: view)
+        guard bounds.contains(local) else { return false }
+        return updateHover(at: local)
+    }
+
+    /// Updates the highlight and cursor for a point in this view's coordinates.
+    /// Returns true when the point is over an option (the row owns the cursor).
+    @discardableResult
+    private func updateHover(at point: NSPoint) -> Bool {
+        guard !isHidden, bounds.contains(point),
+              let target = hoverTargets().last(where: { $0.rect.contains(point) }) else {
+            hideHoverHighlight()
+            return false
+        }
+        if target.clickable {
+            showHoverHighlight(in: target.rect)
+            NSCursor.pointingHand.set()
+        } else {
+            hideHoverHighlight()
+            NSCursor.arrow.set()
+        }
+        return true
+    }
+
+    private func refreshHoverFromCurrentMouse() {
+        window?.invalidateCursorRects(for: self)
+        guard let window, !isHidden else { hideHoverHighlight(); return }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        if bounds.contains(point) {
+            updateHover(at: point)
+        } else {
+            hideHoverHighlight()
+        }
+    }
+
+    private func showHoverHighlight(in rect: NSRect) {
+        let highlight = hoverHighlight
+        if highlight.superview !== self || subviews.last !== highlight {
+            highlight.removeFromSuperview()
+            addSubview(highlight, positioned: .above, relativeTo: nil)
+        }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        highlight.frame = rect.insetBy(dx: -2, dy: -2).intersection(bounds)
+        highlight.layer?.backgroundColor = ToolbarLayout.iconColor.withAlphaComponent(0.16).cgColor
+        highlight.layer?.borderColor = ToolbarLayout.iconColor.withAlphaComponent(0.22).cgColor
+        highlight.layer?.borderWidth = 1
+        highlight.isHidden = false
+        CATransaction.commit()
+    }
+
+    private func hideHoverHighlight() {
+        hoverHighlight.isHidden = true
+    }
+
+    /// Every hover spot in the row, in this view's coordinates.
+    func hoverTargets() -> [HoverTarget] {
+        var targets: [HoverTarget] = []
+        for view in subviews where !view.isHidden && !(view is OptionHoverHighlightView) {
+            guard let control = view as? NSControl else { continue }
+            if let field = control as? NSTextField, !field.isEditable { continue }
+            guard control.isEnabled else { continue }
+            switch control {
+            case is NSSlider:
+                targets.append(HoverTarget(rect: control.frame, clickable: false))
+            case let seg as NSSegmentedControl:
+                for (i, rect) in Self.segmentRects(seg).enumerated() where seg.isEnabled(forSegment: i) {
+                    targets.append(HoverTarget(rect: rect, clickable: true))
+                }
+            case is NSTextField:
+                continue
+            default:
+                targets.append(HoverTarget(rect: control.frame, clickable: true))
+            }
+        }
+        return targets
+    }
+
+    /// Segment rects in the segmented control's superview coordinates.
+    static func segmentRects(_ seg: NSSegmentedControl) -> [NSRect] {
+        let count = seg.segmentCount
+        guard count > 0 else { return [] }
+        let frame = seg.frame
+        var widths = (0..<count).map { seg.width(forSegment: $0) }
+        let total = widths.reduce(0, +)
+        if widths.contains(where: { $0 <= 0 }) || total <= 0 {
+            widths = Array(repeating: frame.width / CGFloat(count), count: count)
+        } else {
+            // Explicit widths exclude the bezel's end caps; spread the slack evenly.
+            let scale = frame.width / total
+            widths = widths.map { $0 * scale }
+        }
+        var x = frame.minX
+        return widths.map { w in
+            defer { x += w }
+            return NSRect(x: x, y: frame.minY, width: w, height: frame.height)
+        }
+    }
+
+    /// Native tooltips for icon-only segments, so hovering says what each one does.
+    /// Never replaces a tooltip a builder already set.
+    func applyDefaultSegmentToolTips(_ seg: NSSegmentedControl) {
+        let names: [String]
+        switch seg.action {
+        case #selector(lineStyleChanged(_:)) where seg.segmentCount == 3:
+            names = [L("Solid"), L("Dashed"), L("Dotted")]
+        case #selector(highlightBorderChanged(_:)) where seg.segmentCount == 2:
+            names = [L("Solid"), L("Dashed")]
+        case #selector(shapeFillChanged(_:)) where seg.segmentCount == 3:
+            names = [L("Outline"), L("Outline + Fill"), L("Fill")]
+        default:
+            return
+        }
+        for (i, name) in names.enumerated() where seg.toolTip(forSegment: i) == nil {
+            seg.setToolTip(name, forSegment: i)
+        }
     }
 }
 
