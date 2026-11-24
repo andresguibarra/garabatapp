@@ -8634,13 +8634,14 @@ class OverlayView: NSView {
     private func showOverflowMenu(_ items: [ToolbarButton], anchor: NSView?, isBottom: Bool) {
         guard let anchor, !items.isEmpty else { return }
         let menu = NSMenu()
+        var rows: [OverflowMenuItemView] = []
         for button in items {
             let item = NSMenuItem(title: button.tooltip, action: #selector(overflowMenuPicked(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = OverflowAction(button.action)
-            item.state = button.isSelected ? .on : .off
-            // Show the item's shortcut at the right, as in any Mac menu.
-            if let key = ToolShortcutManager.tooltipShortcut(for: button.action), key.count == 1 {
+            // The key still works while the menu is open.
+            let key = ToolShortcutManager.tooltipShortcut(for: button.action)
+            if let key, key.count == 1 {
                 item.keyEquivalent = key.lowercased()
                 item.keyEquivalentModifierMask = []
             }
@@ -8651,11 +8652,19 @@ class OverlayView: NSView {
                 default: return button.sfSymbol
                 }
             }()
-            if let symbol, let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
-                item.image = image
-            }
+            let action = button.action
+            let row = OverflowMenuItemView(
+                title: button.tooltip,
+                icon: symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) },
+                key: key?.uppercased(), checked: button.isSelected) { [weak self] in
+                    self?.handleToolbarAction(action)
+                }
+            item.view = row
+            rows.append(row)
             menu.addItem(item)
         }
+        let width = rows.map { $0.fittingWidth }.max() ?? 200
+        for row in rows { row.setFrameSize(NSSize(width: width, height: OverflowMenuItemView.rowHeight)) }
         menu.addItem(.separator())
         let edit = NSMenuItem(title: L("Customize Toolbar…"), action: #selector(overflowMenuOpenSettings), keyEquivalent: "")
         edit.target = self
@@ -11919,5 +11928,96 @@ extension OverlayView {
         NSColor.black.withAlphaComponent(emphasized ? 0.75 : 0.6).setFill()
         NSBezierPath(roundedRect: r, xRadius: h / 2, yRadius: h / 2).fill()
         str.draw(at: NSPoint(x: r.minX + padX, y: r.minY + padY), withAttributes: attrs)
+    }
+}
+
+
+// MARK: - Garabatapp: ⋯ menu row with the shortcut drawn as a keycap
+
+final class OverflowMenuItemView: NSView {
+    static let rowHeight: CGFloat = 24
+    private let title: String
+    private let icon: NSImage?
+    private let key: String?
+    private let checked: Bool
+    private let onPick: () -> Void
+
+    private let titleFont = NSFont.menuFont(ofSize: 0)
+    private let keyFont = NSFont.systemFont(ofSize: 11, weight: .semibold)
+
+    init(title: String, icon: NSImage?, key: String?, checked: Bool, onPick: @escaping () -> Void) {
+        self.title = title
+        self.icon = icon
+        self.key = key
+        self.checked = checked
+        self.onPick = onPick
+        super.init(frame: NSRect(x: 0, y: 0, width: 200, height: Self.rowHeight))
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private var keySize: NSSize {
+        guard let key, !key.isEmpty else { return .zero }
+        return (key as NSString).size(withAttributes: [.font: keyFont])
+    }
+
+    var fittingWidth: CGFloat {
+        let titleW = (title as NSString).size(withAttributes: [.font: titleFont]).width
+        let keyW = keySize.width > 0 ? max(keySize.width + 12, 22) + 24 : 0
+        return ceil(44 + titleW + keyW + 16)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let highlighted = enclosingMenuItem?.isHighlighted ?? false
+        if highlighted {
+            NSColor.selectedContentBackgroundColor.setFill()
+            NSBezierPath(roundedRect: bounds.insetBy(dx: 5, dy: 0), xRadius: 4, yRadius: 4).fill()
+        }
+        let fg: NSColor = highlighted ? .white : .labelColor
+
+        if checked {
+            ("✓" as NSString).draw(at: NSPoint(x: 10, y: bounds.midY - 8),
+                                   withAttributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: fg])
+        }
+        if let icon {
+            let side: CGFloat = 15
+            let r = NSRect(x: 24, y: bounds.midY - side / 2, width: side, height: side)
+            let tinted = NSImage(size: r.size, flipped: false) { rect in
+                icon.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+                fg.setFill()
+                rect.fill(using: .sourceAtop)
+                return true
+            }
+            tinted.draw(in: r)
+        }
+        let tAttrs: [NSAttributedString.Key: Any] = [.font: titleFont, .foregroundColor: fg]
+        let ts = (title as NSString).size(withAttributes: tAttrs)
+        (title as NSString).draw(at: NSPoint(x: 46, y: bounds.midY - ts.height / 2), withAttributes: tAttrs)
+
+        guard let key, !key.isEmpty else { return }
+        let ks = keySize
+        let capW = max(ks.width + 12, 22), capH: CGFloat = 18
+        let cap = NSRect(x: bounds.maxX - 16 - capW, y: bounds.midY - capH / 2, width: capW, height: capH)
+        let capPath = NSBezierPath(roundedRect: cap, xRadius: 4, yRadius: 4)
+        (highlighted ? NSColor.white.withAlphaComponent(0.2) : NSColor.labelColor.withAlphaComponent(0.08)).setFill()
+        capPath.fill()
+        (highlighted ? NSColor.white.withAlphaComponent(0.6) : NSColor.labelColor.withAlphaComponent(0.3)).setStroke()
+        let border = NSBezierPath(roundedRect: cap.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
+        border.lineWidth = 1
+        border.stroke()
+        // Bottom edge a touch heavier, like a physical key.
+        let base = NSBezierPath()
+        base.move(to: NSPoint(x: cap.minX + 3, y: cap.minY + 0.75))
+        base.line(to: NSPoint(x: cap.maxX - 3, y: cap.minY + 0.75))
+        base.lineWidth = 1.5
+        base.stroke()
+        (key as NSString).draw(at: NSPoint(x: cap.midX - ks.width / 2, y: cap.midY - ks.height / 2),
+                               withAttributes: [.font: keyFont, .foregroundColor: fg])
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let pick = onPick
+        enclosingMenuItem?.menu?.cancelTracking()
+        DispatchQueue.main.async { pick() }
     }
 }
