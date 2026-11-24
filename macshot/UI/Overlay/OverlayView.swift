@@ -1528,6 +1528,14 @@ class OverlayView: NSView {
         // Over a tool option: the options row sets its own pointing hand / arrow.
         if optionsRowHandlesCursor(at: point) { return }
 
+        // Editor: the tool cursor belongs to the visible canvas only. Over the
+        // title bar, window buttons, other chrome or outside the scroll view, use
+        // the normal arrow (unless a drag that started on the canvas is running).
+        if isEditorMode, NSEvent.pressedMouseButtons == 0, !pointIsInVisibleEditorCanvas(point) {
+            NSCursor.arrow.set()
+            return
+        }
+
         // Over the resolution box: let its own cursor rects (I-beam over fields,
         // arrow over the presets button) decide — don't override here.
         if resolutionBoxRect != .zero && resolutionBoxRect.contains(point) {
@@ -1766,6 +1774,16 @@ class OverlayView: NSView {
     /// Garabatapp: in the editor the toolbars, options row and top bar live in
     /// the window's content view, over this view; the pointer over them must get
     /// a plain arrow, not the active tool's cursor.
+    /// Editor only: is `point` (this view's coordinates) inside the part of the
+    /// document the scroll view actually shows, and inside the window's content?
+    func pointIsInVisibleEditorCanvas(_ point: NSPoint) -> Bool {
+        guard let scroll = enclosingScrollView, let window else { return true }
+        let visible = scroll.contentView.documentVisibleRect
+        guard visible.contains(point) else { return false }
+        let windowPoint = convert(point, to: nil)
+        return window.contentLayoutRect.contains(windowPoint)
+    }
+
     /// True when the pointer (in this view's coordinates) is over an option in
     /// the tool options row; the row has already set the cursor and its hover state.
     func optionsRowHandlesCursor(at point: NSPoint) -> Bool {

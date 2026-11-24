@@ -66,6 +66,25 @@ class EditorView: OverlayView {
         addCursorRect(bounds, cursor: .arrow)
     }
 
+    // Leaving the visible canvas (to the title bar, another window or the
+    // desktop) drops the tool cursor right away.
+    private var canvasExitTrackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let area = canvasExitTrackingArea { removeTrackingArea(area) }
+        let area = NSTrackingArea(rect: .zero,
+                                  options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        canvasExitTrackingArea = area
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        if NSEvent.pressedMouseButtons == 0 { NSCursor.arrow.set() }
+    }
+
     override func mouseMoved(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         // The base also clears drawing/stamp previews once the pointer leaves
@@ -74,6 +93,12 @@ class EditorView: OverlayView {
         super.mouseMoved(with: event)
         // Tool options set their own pointing hand / arrow.
         if optionsRowHandlesCursor(at: point) { return }
+        // Outside the visible canvas (title bar, window buttons, past the scroll
+        // view): always the normal arrow, never the tool's crosshair.
+        if !pointIsInVisibleEditorCanvas(point) {
+            NSCursor.arrow.set()
+            return
+        }
         // Toolbars and bars over the canvas always get a plain arrow.
         if pointIsUnderEditorChrome(point) {
             NSCursor.arrow.set()
