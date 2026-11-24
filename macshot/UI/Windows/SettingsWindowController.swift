@@ -232,16 +232,16 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         sep.translatesAutoresizingMaskIntoConstraints = false
 
         // Footer labels
-        let madeBy = NSTextField(labelWithString: "\(L("Made by")) sw33tLie")
+        let madeBy = NSTextField(labelWithString: "\(L("Made by")) Andres Guibarra")
         madeBy.font = NSFont.systemFont(ofSize: 11)
         madeBy.textColor = .secondaryLabelColor
         madeBy.translatesAutoresizingMaskIntoConstraints = false
 
-        let linkBtn = NSButton(title: "github.com/sw33tLie/macshot", target: self, action: #selector(openGitHub))
+        let linkBtn = NSButton(title: "github.com/andresguibarra/garabatapp", target: self, action: #selector(openGitHub))
         linkBtn.bezelStyle = .inline
         linkBtn.isBordered = false
         linkBtn.font = NSFont.systemFont(ofSize: 11)
-        linkBtn.attributedTitle = NSAttributedString(string: "github.com/sw33tLie/macshot", attributes: [
+        linkBtn.attributedTitle = NSAttributedString(string: "github.com/andresguibarra/garabatapp", attributes: [
             .font: NSFont.systemFont(ofSize: 11),
             .foregroundColor: NSColor.linkColor,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
@@ -1290,6 +1290,17 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
 
     // MARK: - Shortcuts Tab
 
+    /// Garabatapp: rows the Shortcuts search field filters, with their labels.
+    private var shortcutSearchRows: [(row: NSView, label: String)] = []
+
+    @objc private func filterShortcutRows(_ sender: NSSearchField) {
+        let query = sender.stringValue.trimmingCharacters(in: .whitespaces)
+        for item in shortcutSearchRows {
+            item.row.isHidden = !query.isEmpty
+                && item.label.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) == nil
+        }
+    }
+
     private func makeShortcutsTabView() -> NSView {
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
@@ -1304,6 +1315,18 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.edgeInsets = NSEdgeInsets(top: 0, left: 20, bottom: 16, right: 20)
+
+        // Garabatapp: filter shortcuts by name.
+        let search = NSSearchField()
+        search.placeholderString = L("Search shortcuts")
+        search.sendsSearchStringImmediately = true
+        search.target = self
+        search.action = #selector(filterShortcutRows(_:))
+        search.translatesAutoresizingMaskIntoConstraints = false
+        search.widthAnchor.constraint(equalToConstant: 260).isActive = true
+        shortcutSearchRows = []
+        stack.addArrangedSubview(search)
+        stack.setCustomSpacing(14, after: search)
 
         stack.addArrangedSubview(sectionHeader(L("Keyboard Shortcuts")))
         stack.setCustomSpacing(10, after: stack.arrangedSubviews.last!)
@@ -1344,7 +1367,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
             hotkeyFields[slot] = field
             hotkeyButtons[slot] = btn
 
-            stack.addArrangedSubview(labeledRow("\(slot.label):", controls: [field, btn, clearBtn, resetBtn]))
+            let slotRow = labeledRow("\(slot.label):", controls: [field, btn, clearBtn, resetBtn])
+            shortcutSearchRows.append((slotRow, slot.label))
+            stack.addArrangedSubview(slotRow)
             stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
         }
 
@@ -1396,7 +1421,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
 
             commandShortcutFields[action] = field
             commandShortcutButtons[action] = button
-            stack.addArrangedSubview(labeledRow("\(action.label):", controls: [field, button, clearButton, resetButton]))
+            let actionRow = labeledRow("\(action.label):", controls: [field, button, clearButton, resetButton])
+            shortcutSearchRows.append((actionRow, action.label))
+            stack.addArrangedSubview(actionRow)
             stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
         }
 
@@ -3056,7 +3083,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         LanguageManager.shared.currentLanguage = languages[idx].code
     }
     @objc private func openGitHub() {
-        if let url = URL(string: "https://github.com/sw33tLie/macshot") { NSWorkspace.shared.open(url) }
+        if let url = URL(string: "https://github.com/andresguibarra/garabatapp") { NSWorkspace.shared.open(url) }
     }
     @objc private func imageFormatChanged(_ sender: NSPopUpButton) {
         guard let raw = sender.selectedItem?.representedObject as? String,

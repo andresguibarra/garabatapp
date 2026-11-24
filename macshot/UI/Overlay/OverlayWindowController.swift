@@ -875,8 +875,11 @@ extension OverlayWindowController: OverlayViewDelegate {
         let sel = view.selectionRect
 
         // Use stitched cross-screen image if available, otherwise crop from single screen.
+        // Garabatapp: a whole-window snap opens with the window's own image
+        // (transparent corners, nothing on top) instead of a screen crop.
         let croppedImage: NSImage? =
-            overlayDelegate?.overlayCrossScreenImage(self)
+            (view.selectionIsWindowSnap ? view.snappedWindowImage : nil)
+            ?? overlayDelegate?.overlayCrossScreenImage(self)
             ?? {
                 guard let src = view.screenshotImage else { return nil }
                 // Render the crop into a concrete 8-bit bitmap now, so the editor
