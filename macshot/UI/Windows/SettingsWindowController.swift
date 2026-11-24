@@ -13,6 +13,20 @@ private class SettingsWindow: NSWindow {
         }
         return super.performKeyEquivalent(with: event)
     }
+
+    // Garabatapp: Esc closes Settings. A shortcut being recorded catches Esc
+    // first (its key monitor), and a search field with text clears itself.
+    override func cancelOperation(_ sender: Any?) {
+        close()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 53, KeyboardShortcutMatcher.modifiers(in: event).isEmpty {
+            close()
+            return
+        }
+        super.keyDown(with: event)
+    }
 }
 
 class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate {
