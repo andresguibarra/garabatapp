@@ -12098,15 +12098,7 @@ final class OverflowPanelView: NSView {
     init(rows: [OverflowMenuItemView], keys: [String?], separatorBeforeLast: Bool) {
         self.rows = rows
         self.keys = keys
-        let pad: CGFloat = 5
-        defer {
-            setAccessibilityElement(true)
-            setAccessibilityRole(.menu)
-            for r in rows {
-                r.setAccessibilityElement(true)
-                r.setAccessibilityRole(.menuItem)
-            }
-        }, sepH: CGFloat = separatorBeforeLast ? 9 : 0
+        let pad: CGFloat = 5, sepH: CGFloat = separatorBeforeLast ? 9 : 0
         let width = rows.map { $0.fittingWidth }.max() ?? 200
         let h = CGFloat(rows.count) * OverflowMenuItemView.rowHeight + pad * 2 + sepH
         super.init(frame: NSRect(x: 0, y: 0, width: width, height: h))
@@ -12122,6 +12114,12 @@ final class OverflowPanelView: NSView {
             row.frame = NSRect(x: 0, y: y, width: width, height: OverflowMenuItemView.rowHeight)
             row.onHover = { [weak self] in self?.selected = i }
             addSubview(row)
+        }
+        setAccessibilityElement(true)
+        setAccessibilityRole(.menu)
+        for r in rows {
+            r.setAccessibilityElement(true)
+            r.setAccessibilityRole(.menuItem)
         }
     }
 
