@@ -21,13 +21,13 @@ if [ ! -d "$APP" ]; then
 fi
 
 echo "▶ Cerrando la versión que esté abierta…"
-osascript -e "quit app \"$APP_NAME\"" >/dev/null 2>&1 || true
-sleep 1
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
+sleep 1
 
 echo "▶ Instalando en $DEST…"
 rm -rf "$DEST"
 ditto "$APP" "$DEST"
+echo "✓ Copiada a $DEST"
 
 echo "▶ Abriendo $APP_NAME…"
 open "$DEST"
