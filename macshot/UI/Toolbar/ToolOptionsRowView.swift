@@ -19,6 +19,11 @@ class ToolOptionsRowView: NSView {
     fileprivate var hoverTrackingArea: NSTrackingArea?
     /// True while ⌥ is held and the option number badges are showing.
     fileprivate(set) var shortcutBadgesVisible = false
+    /// True while one of the row's sliders is being dragged (closed-hand cursor).
+    fileprivate(set) var isDraggingSlider = false
+    /// Which slider (left to right) [ and ] adjust; ⌥N on a slider changes it.
+    fileprivate var keyboardSliderIndex = 0
+    fileprivate let keyboardSliderRing = OptionHoverHighlightView(frame: .zero)
     // Consume clicks on gaps between controls so they don't fall through to OverlayView.
     // In editor mode, let gap clicks pass through so drawing works over the options area.
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -36,8 +41,8 @@ class ToolOptionsRowView: NSView {
         addCursorRect(bounds, cursor: .arrow)
         // Pointing hand over every clickable option (per enabled segment for
         // segmented controls) so the row reads as a set of buttons.
-        for target in hoverTargets() where target.clickable {
-            addCursorRect(target.rect, cursor: .pointingHand)
+        for target in hoverTargets() {
+            addCursorRect(target.rect, cursor: target.clickable ? .pointingHand : .openHand)
         }
     }
 
@@ -45,6 +50,9 @@ class ToolOptionsRowView: NSView {
     /// Buttons with tag 990+ are excluded (they have custom colors like red/green/white).
     override func addSubview(_ view: NSView) {
         super.addSubview(view)
+        if let slider = view as? NSSlider, slider.toolTip == nil {
+            slider.toolTip = L("[ and ] adjust · ⌥ + number picks which slider")
+        }
         if let btn = view as? NSButton, btn.tag < 990 { btn.contentTintColor = ToolbarLayout.accentColor }
         if let slider = view as? NSSlider { slider.trackFillColor = ToolbarLayout.accentColor }
         if let seg = view as? NSSegmentedControl {
@@ -122,6 +130,7 @@ class ToolOptionsRowView: NSView {
         subviews.forEach { $0.removeFromSuperview() }
         guard let ov = overlayView else { return }
 
+        if currentTool != tool { keyboardSliderIndex = 0 }
         currentTool = tool
         var curX: CGFloat = padding
 
@@ -335,7 +344,7 @@ class ToolOptionsRowView: NSView {
             currentVal = editingAnnotation?.strokeWidth ?? ov.activeStrokeWidthForTool(tool)
         }
         let sliderW: CGFloat = 100
-        let slider = NSSlider(value: Double(currentVal),
+        let slider = OptionSlider(value: Double(currentVal),
                               minValue: tool == .loupe ? 40 : 1, maxValue: tool == .loupe ? 320 : 30,
                               target: self, action: #selector(strokeSliderChanged(_:)))
         slider.frame = NSRect(x: curX, y: (rowHeight - 20) / 2, width: sliderW, height: 20)
@@ -372,7 +381,7 @@ class ToolOptionsRowView: NSView {
 
         let currentVal = editingAnnotation?.loupeMagnification ?? ov.currentLoupeMagnification
         let sliderW: CGFloat = 84
-        let slider = NSSlider(value: Double(currentVal),
+        let slider = OptionSlider(value: Double(currentVal),
                               minValue: 1.1, maxValue: 6.0,
                               target: self, action: #selector(loupeMagnificationChanged(_:)))
         slider.frame = NSRect(x: curX, y: (rowHeight - 20) / 2, width: sliderW, height: 20)
@@ -406,7 +415,7 @@ class ToolOptionsRowView: NSView {
         let stored = UserDefaults.standard.object(forKey: HighlightToolHandler.dimOpacityKey) as? Double
         let currentVal = editingAnnotation?.dimOpacity ?? CGFloat(stored ?? 0.55)
         let sliderW: CGFloat = 84
-        let slider = NSSlider(value: Double(currentVal),
+        let slider = OptionSlider(value: Double(currentVal),
                               minValue: 0.1, maxValue: 0.95,
                               target: self, action: #selector(highlightDimChanged(_:)))
         slider.frame = NSRect(x: curX, y: (rowHeight - 20) / 2, width: sliderW, height: 20)
@@ -840,7 +849,7 @@ class ToolOptionsRowView: NSView {
         curX += label.frame.width + 4
 
         let radiusVal = editingAnnotation?.rectCornerRadius ?? ov.currentRectCornerRadius
-        let slider = NSSlider(value: Double(radiusVal),
+        let slider = OptionSlider(value: Double(radiusVal),
                               minValue: 0, maxValue: 30,
                               target: self, action: #selector(cornerRadiusChanged(_:)))
         slider.frame = NSRect(x: curX, y: (rowHeight - 20) / 2, width: 80, height: 20)
@@ -1216,7 +1225,7 @@ class ToolOptionsRowView: NSView {
             } else {
                 currentSize = ov.currentStampSize
             }
-            let sizeSlider = NSSlider(value: Double(currentSize), minValue: 16, maxValue: 256,
+            let sizeSlider = OptionSlider(value: Double(currentSize), minValue: 16, maxValue: 256,
                                       target: self, action: #selector(stampSizeChanged(_:)))
             sizeSlider.frame = NSRect(x: curX, y: (rowHeight - 20) / 2, width: 80, height: 20)
             sizeSlider.isContinuous = true
@@ -1449,7 +1458,7 @@ class ToolOptionsRowView: NSView {
         addSubview(lbl)
         curX += lbl.frame.width + 3
 
-        let slider = NSSlider(value: Double(value), minValue: Double(min), maxValue: Double(max),
+        let slider = OptionSlider(value: Double(value), minValue: Double(min), maxValue: Double(max),
                               target: self, action: action)
         slider.isEnabled = isEnabled
         slider.frame = NSRect(x: curX, y: (rowHeight - 18) / 2, width: 60, height: 18)
@@ -2107,6 +2116,27 @@ private final class OptionHoverHighlightView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
+/// Slider for the options row: open hand on hover (cursor rects in the row),
+/// closed hand for the whole drag, then back to whatever is under the pointer.
+final class OptionSlider: NSSlider {
+    override func mouseDown(with event: NSEvent) {
+        let row = superview as? ToolOptionsRowView
+        row?.isDraggingSlider = true
+        NSCursor.closedHand.set()
+        super.mouseDown(with: event)  // tracks until the mouse is released
+        row?.isDraggingSlider = false
+        row?.cursorAfterSliderDrag()
+    }
+}
+
+extension ToolOptionsRowView {
+    fileprivate func cursorAfterSliderDrag() {
+        guard let window else { return }
+        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
+        if !updateHover(at: point) { NSCursor.arrow.set() }
+    }
+}
+
 /// Small numbered badge shown over an option while ⌥ is held.
 private final class OptionShortcutBadgeView: NSView {
     private let number: Int
@@ -2138,7 +2168,7 @@ extension ToolOptionsRowView {
     /// a single press can't say which way to step.
     func shortcutTargets() -> [HoverTarget] {
         hoverTargets()
-            .filter { $0.clickable && !($0.control is NSStepper) }
+            .filter { !($0.control is NSStepper) }
             .sorted { $0.rect.minX < $1.rect.minX }
     }
 
@@ -2179,16 +2209,14 @@ extension ToolOptionsRowView {
             return true
         }
 
-        if mods.isEmpty {
-            let decrease = KeyboardShortcutMatcher.matches(event, character: "[", modifiers: [])
-            let increase = KeyboardShortcutMatcher.matches(event, character: "]", modifiers: [])
-            guard decrease || increase,
-                  let slider = subviews.first(where: { !$0.isHidden && $0 is NSSlider }) as? NSSlider,
-                  slider.isEnabled else { return false }
+        if let direction = Self.bracketDirection(for: event) {
+            let sliders = visibleSliders()
+            guard !sliders.isEmpty else { return false }
+            let slider = sliders[min(keyboardSliderIndex, sliders.count - 1)]
+            guard slider.isEnabled else { return true }
             let range = slider.maxValue - slider.minValue
             let step = range >= 20 ? max(1, (range / 20).rounded()) : range / 20
-            let newValue = min(slider.maxValue, max(slider.minValue,
-                                                    slider.doubleValue + (increase ? step : -step)))
+            let newValue = min(slider.maxValue, max(slider.minValue, slider.doubleValue + direction * step))
             guard newValue != slider.doubleValue else { return true }
             slider.doubleValue = newValue
             if let action = slider.action { NSApp.sendAction(action, to: slider.target, from: slider) }
@@ -2197,7 +2225,56 @@ extension ToolOptionsRowView {
         return false
     }
 
+    /// Sliders in the row, left to right. [ and ] drive the one at `keyboardSliderIndex`.
+    fileprivate func visibleSliders() -> [NSSlider] {
+        subviews.compactMap { $0 as? NSSlider }
+            .filter { !$0.isHidden }
+            .sorted { $0.frame.minX < $1.frame.minX }
+    }
+
+    /// -1 for [, +1 for ], nil otherwise. Uses the character the layout actually
+    /// typed, so layouts that need ⌥ or ⇧ for brackets (Spanish, German, …) work,
+    /// plus the physical US bracket keys with no modifiers as a fallback.
+    private static func bracketDirection(for event: NSEvent) -> Double? {
+        let mods = KeyboardShortcutMatcher.modifiers(in: event)
+        guard mods.subtracting([.option, .shift]).isEmpty else { return nil }
+        switch event.characters {
+        case "[": return -1
+        case "]": return 1
+        default: break
+        }
+        guard mods.isEmpty else { return nil }
+        if KeyboardShortcutMatcher.matches(event, character: "[", modifiers: []) { return -1 }
+        if KeyboardShortcutMatcher.matches(event, character: "]", modifiers: []) { return 1 }
+        switch event.keyCode {
+        case 33: return -1
+        case 30: return 1
+        default: return nil
+        }
+    }
+
+    /// Re-draws the ring that marks which slider [ and ] move (only when there are several).
+    fileprivate func layoutKeyboardSliderRing() {
+        let sliders = visibleSliders()
+        guard sliders.count > 1, !isHidden else { keyboardSliderRing.isHidden = true; return }
+        let slider = sliders[min(keyboardSliderIndex, sliders.count - 1)]
+        if keyboardSliderRing.superview !== self {
+            addSubview(keyboardSliderRing, positioned: .below, relativeTo: nil)
+        }
+        keyboardSliderRing.frame = slider.frame.insetBy(dx: -4, dy: -3).intersection(bounds)
+        keyboardSliderRing.layer?.borderColor = ToolbarLayout.accentColor.withAlphaComponent(0.7).cgColor
+        keyboardSliderRing.layer?.borderWidth = 1
+        keyboardSliderRing.layer?.backgroundColor = NSColor.clear.cgColor
+        keyboardSliderRing.isHidden = false
+    }
+
     private func activate(_ target: HoverTarget) {
+        if let slider = target.control as? NSSlider {
+            // ⌥N on a slider picks it as the one [ and ] move.
+            keyboardSliderIndex = visibleSliders().firstIndex(of: slider) ?? 0
+            layoutKeyboardSliderRing()
+            return
+        }
         if let seg = target.control as? NSSegmentedControl, let i = target.segment {
             if seg.trackingMode == .selectAny {
                 seg.setSelected(!seg.isSelected(forSegment: i), forSegment: i)
@@ -2268,6 +2345,11 @@ extension ToolOptionsRowView {
     /// caller must not override it. `point` is in `view`'s coordinates.
     func handlesCursor(at point: NSPoint, in view: NSView) -> Bool {
         guard !isHidden, let window, window === view.window else { return false }
+        // While a slider is being dragged the grab cursor stays, wherever the pointer is.
+        if isDraggingSlider {
+            NSCursor.closedHand.set()
+            return true
+        }
         let local = convert(point, from: view)
         guard bounds.contains(local) else { return false }
         return updateHover(at: local)
@@ -2277,6 +2359,10 @@ extension ToolOptionsRowView {
     /// Returns true when the point is over an option (the row owns the cursor).
     @discardableResult
     private func updateHover(at point: NSPoint) -> Bool {
+        if isDraggingSlider {
+            NSCursor.closedHand.set()
+            return true
+        }
         guard !isHidden, bounds.contains(point),
               let target = hoverTargets().last(where: { $0.rect.contains(point) }) else {
             hideHoverHighlight()
@@ -2287,7 +2373,7 @@ extension ToolOptionsRowView {
             NSCursor.pointingHand.set()
         } else {
             hideHoverHighlight()
-            NSCursor.arrow.set()
+            (isDraggingSlider ? NSCursor.closedHand : NSCursor.openHand).set()
         }
         return true
     }
@@ -2295,6 +2381,7 @@ extension ToolOptionsRowView {
     private func refreshHoverFromCurrentMouse() {
         window?.invalidateCursorRects(for: self)
         if shortcutBadgesVisible { layoutShortcutBadges() }
+        layoutKeyboardSliderRing()
         guard let window, !isHidden else { hideHoverHighlight(); return }
         let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
         if bounds.contains(point) {
