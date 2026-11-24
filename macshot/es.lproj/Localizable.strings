@@ -934,3 +934,5 @@
 "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Hacé clic en un atajo y presioná una combinación con al menos un modificador (⌘, ⌥, ⌃, ⇧). Esc cancela.";
 "These need ⌘ and work in the overlay and the editor." = "Necesitan ⌘ y funcionan en el overlay y en el editor.";
 "Search" = "Buscar";
+"Close editor when done" = "Cerrar el editor al terminar";
+"What Enter, ⌘C and ⌘S do in the editor, and what Quick Capture does. ⌘C always copies and ⌘S always saves; this adds the rest." = "Lo que hacen Enter, ⌘C y ⌘S en el editor, y la Captura rápida. ⌘C siempre copia y ⌘S siempre guarda; esto agrega lo demás.";

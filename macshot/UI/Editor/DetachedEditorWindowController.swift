@@ -698,25 +698,47 @@ extension DetachedEditorWindowController: OverlayViewDelegate {
     func overlayViewRemoteSelectionDidFinish(_ rect: NSRect) {}
     func overlayViewDidCancel() { window?.performClose(nil) }
 
-    func overlayViewDidConfirm() {
+    /// Garabatapp: Enter, ⌘C and ⌘S all finish the capture. Each key always
+    /// does its own action (⌘C copies, ⌘S saves); the "When done" mode adds
+    /// the rest, and "Close editor when done" closes the editor afterwards.
+    private func finish(copy forceCopy: Bool, save forceSave: Bool) {
         guard let save = captureHistorySave() else { return }
-        ImageEncoder.copyToClipboard(save.image)
-        playCopySound()
+        let mode = QuickCaptureMode.current
+        let copy = forceCopy || mode.shouldCopyImage
+        let fileSave = forceSave || mode.shouldSave
+        // The image on the clipboard wins over the file path.
+        let copyPath: Bool? = copy ? false : mode.copyPathOverride
+        if copy { ImageEncoder.copyToClipboard(save.image) }
         autoSaveToHistoryIfNeeded(save)
-        if UserDefaults.standard.bool(forKey: "closeEditorAfterCopy") {
-            window?.close()
+
+        let done: ImageSaveService.Completion = { [weak self] ok in
+            guard let self else { return }
+            guard ok else { return }
+            self.playCopySound()
+            if UserDefaults.standard.bool(forKey: "closeEditorAfterCopy") {
+                self.window?.close()
+            }
+            if copy {
+                (NSApp.delegate as? AppDelegate)?.showFloatingThumbnail(
+                    image: save.image, annotationData: save.annotationData, historyEntryID: self.historyEntryID)
+            }
         }
-        (NSApp.delegate as? AppDelegate)?.showFloatingThumbnail(image: save.image, annotationData: save.annotationData, historyEntryID: historyEntryID)
+
+        guard fileSave else { done(true); return }
+        // Only ⌘S asks where to save (when "Save action" says so); the others
+        // drop the file in the save folder like Quick Capture always did.
+        if forceSave && SaveActionPreference.current == .askWhereToSave {
+            ImageSaveService.showSavePanel(for: save.image, sheetWindow: window,
+                                           copyPathToClipboard: copyPath, completion: done)
+        } else {
+            ImageSaveService.saveToConfiguredFolder(save.image, sheetWindow: window,
+                                                    copyPathToClipboard: copyPath, completion: done)
+        }
     }
 
-    func overlayViewDidRequestSave() {
-        switch SaveActionPreference.current {
-        case .saveToFolder:
-            overlayViewDidRequestFileSave()
-        case .askWhereToSave:
-            overlayViewDidRequestSaveAs()
-        }
-    }
+    func overlayViewDidConfirm() { finish(copy: true, save: false) }
+
+    func overlayViewDidRequestSave() { finish(copy: false, save: true) }
 
     func overlayViewDidRequestSaveAs() {
         guard let save = captureHistorySave() else { return }
@@ -765,24 +787,7 @@ extension DetachedEditorWindowController: OverlayViewDelegate {
         }
     }
 
-    func overlayViewDidRequestQuickSave() {
-        guard let save = captureHistorySave() else { return }
-
-        let mode = QuickCaptureMode.current
-
-        if mode.shouldCopyImage {
-            ImageEncoder.copyToClipboard(save.image)
-        }
-        if mode.shouldSave {
-            ImageSaveService.saveToConfiguredFolder(
-                save.image,
-                sheetWindow: window,
-                copyPathToClipboard: mode.copyPathOverride)
-        }
-        playCopySound()
-        autoSaveToHistoryIfNeeded(save)
-        (NSApp.delegate as? AppDelegate)?.showFloatingThumbnail(image: save.image, annotationData: save.annotationData, historyEntryID: historyEntryID)
-    }
+    func overlayViewDidRequestQuickSave() { finish(copy: false, save: false) }
 
     func overlayViewDidRequestFileSave() {
         guard let save = captureHistorySave() else { return }
