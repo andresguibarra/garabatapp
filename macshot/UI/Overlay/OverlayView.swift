@@ -10053,6 +10053,10 @@ class OverlayView: NSView {
     // MARK: - Keyboard
 
     override func flagsChanged(with event: NSEvent) {
+        // Holding ⌥ alone shows the number badges for ⌥1…⌥9 on the tool options.
+        let onlyOption = KeyboardShortcutMatcher.modifiers(in: event) == [.option]
+        toolOptionsRowView?.setShortcutBadgesVisible(
+            onlyOption && state == .selected && textEditView == nil && currentAnnotation == nil)
         // Re-apply shift constraint immediately when Shift is pressed/released during annotation drag
         if currentAnnotation != nil, let lastPoint = lastDragPoint {
             let shiftHeld = event.modifierFlags.contains(.shift)
@@ -10207,6 +10211,12 @@ class OverlayView: NSView {
         }
 
         if handleAreaKey(event) { return }
+
+        // ⌥1…⌥9 pick an option in the tool options row; [ and ] change its main slider.
+        if state == .selected, textEditView == nil, !isRecording,
+           let row = toolOptionsRowView, row.handleOptionShortcut(event) {
+            return
+        }
 
         // Arrow keys nudge the selected annotations: 1 pt, or 10 pt with Shift.
         if (123...126).contains(event.keyCode), state == .selected, textEditView == nil,

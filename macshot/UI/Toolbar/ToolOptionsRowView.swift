@@ -17,6 +17,8 @@ class ToolOptionsRowView: NSView {
     /// Hover feedback over the option under the pointer (see the extension below).
     fileprivate let hoverHighlight = OptionHoverHighlightView(frame: .zero)
     fileprivate var hoverTrackingArea: NSTrackingArea?
+    /// True while ⌥ is held and the option number badges are showing.
+    fileprivate(set) var shortcutBadgesVisible = false
     // Consume clicks on gaps between controls so they don't fall through to OverlayView.
     // In editor mode, let gap clicks pass through so drawing works over the options area.
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -2094,13 +2096,133 @@ private final class OptionHoverHighlightView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
+/// Small numbered badge shown over an option while ⌥ is held.
+private final class OptionShortcutBadgeView: NSView {
+    private let number: Int
+    init(number: Int, frame: NSRect) {
+        self.number = number
+        super.init(frame: frame)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    override func draw(_ dirtyRect: NSRect) {
+        let rect = bounds.insetBy(dx: 0.5, dy: 0.5)
+        ToolbarLayout.accentColor.setFill()
+        NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .bold),
+            .foregroundColor: NSColor.white,
+        ]
+        let str = NSAttributedString(string: "\(number)", attributes: attrs)
+        let size = str.size()
+        str.draw(at: NSPoint(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2))
+    }
+}
+
+// MARK: - Option shortcuts (⌥1…⌥9 pick an option, [ ] change the main slider)
+
+extension ToolOptionsRowView {
+
+    /// Options reachable with ⌥1…⌥9, left to right. Steppers are left out:
+    /// a single press can't say which way to step.
+    func shortcutTargets() -> [HoverTarget] {
+        hoverTargets()
+            .filter { $0.clickable && !($0.control is NSStepper) }
+            .sorted { $0.rect.minX < $1.rect.minX }
+    }
+
+    /// Show or hide the ⌥ number badges.
+    func setShortcutBadgesVisible(_ visible: Bool) {
+        guard visible != shortcutBadgesVisible else { return }
+        shortcutBadgesVisible = visible
+        if visible { layoutShortcutBadges() } else { removeShortcutBadges() }
+    }
+
+    fileprivate func removeShortcutBadges() {
+        subviews.filter { $0 is OptionShortcutBadgeView }.forEach { $0.removeFromSuperview() }
+    }
+
+    fileprivate func layoutShortcutBadges() {
+        removeShortcutBadges()
+        guard !isHidden else { return }
+        let size: CGFloat = 13
+        for (i, target) in shortcutTargets().prefix(9).enumerated() {
+            var x = target.rect.maxX - size + 3
+            var y = target.rect.maxY - size + 3
+            x = min(max(x, bounds.minX + 1), bounds.maxX - size - 1)
+            y = min(max(y, bounds.minY + 1), bounds.maxY - size - 1)
+            let badge = OptionShortcutBadgeView(number: i + 1, frame: NSRect(x: x, y: y, width: size, height: size))
+            addSubview(badge, positioned: .above, relativeTo: nil)
+        }
+    }
+
+    /// Handles ⌥1…⌥9 and [ / ] for the visible options row. Returns true when consumed.
+    func handleOptionShortcut(_ event: NSEvent) -> Bool {
+        guard !isHidden, window != nil, !subviews.isEmpty else { return false }
+        let mods = KeyboardShortcutMatcher.modifiers(in: event)
+
+        if mods == [.option], let n = Self.digit(for: event), (1...9).contains(n) {
+            let targets = shortcutTargets()
+            guard n <= targets.count else { return true }  // swallow: no stray ⌥-characters
+            activate(targets[n - 1])
+            return true
+        }
+
+        if mods.isEmpty {
+            let decrease = KeyboardShortcutMatcher.matches(event, character: "[", modifiers: [])
+            let increase = KeyboardShortcutMatcher.matches(event, character: "]", modifiers: [])
+            guard decrease || increase,
+                  let slider = subviews.first(where: { !$0.isHidden && $0 is NSSlider }) as? NSSlider,
+                  slider.isEnabled else { return false }
+            let range = slider.maxValue - slider.minValue
+            let step = range >= 20 ? max(1, (range / 20).rounded()) : range / 20
+            let newValue = min(slider.maxValue, max(slider.minValue,
+                                                    slider.doubleValue + (increase ? step : -step)))
+            guard newValue != slider.doubleValue else { return true }
+            slider.doubleValue = newValue
+            if let action = slider.action { NSApp.sendAction(action, to: slider.target, from: slider) }
+            return true
+        }
+        return false
+    }
+
+    private func activate(_ target: HoverTarget) {
+        if let seg = target.control as? NSSegmentedControl, let i = target.segment {
+            if seg.trackingMode == .selectAny {
+                seg.setSelected(!seg.isSelected(forSegment: i), forSegment: i)
+            } else {
+                seg.selectedSegment = i
+            }
+            if let action = seg.action { NSApp.sendAction(action, to: seg.target, from: seg) }
+        } else if let button = target.control as? NSButton {
+            button.performClick(nil)
+        } else if let action = target.control.action {
+            NSApp.sendAction(action, to: target.control.target, from: target.control)
+        }
+    }
+
+    /// 1…9 from the main row or the keypad. Physical digit keys are used as a
+    /// fallback because ⌥ turns digits into symbols, and AZERTY needs Shift for them.
+    private static func digit(for event: NSEvent) -> Int? {
+        if let ch = KeyboardShortcutMatcher.semanticCharacter(for: event), ch.count == 1, let n = Int(ch) {
+            return n
+        }
+        let rowDigits: [UInt16: Int] = [18: 1, 19: 2, 20: 3, 21: 4, 23: 5, 22: 6, 26: 7, 28: 8, 25: 9,
+                                        83: 1, 84: 2, 85: 3, 86: 4, 87: 5, 88: 6, 89: 7, 91: 8, 92: 9]
+        return rowDigits[event.keyCode]
+    }
+}
+
 extension ToolOptionsRowView {
 
     /// A spot in the row the pointer can be over. Clickable targets get the
     /// hover highlight and a pointing hand; sliders keep a plain arrow.
-    struct HoverTarget: Equatable {
+    struct HoverTarget {
         let rect: NSRect
         let clickable: Bool
+        let control: NSControl
+        /// Segment index for a segmented control, nil for any other control.
+        let segment: Int?
     }
 
     override func updateTrackingAreas() {
@@ -2161,6 +2283,7 @@ extension ToolOptionsRowView {
 
     private func refreshHoverFromCurrentMouse() {
         window?.invalidateCursorRects(for: self)
+        if shortcutBadgesVisible { layoutShortcutBadges() }
         guard let window, !isHidden else { hideHoverHighlight(); return }
         let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
         if bounds.contains(point) {
@@ -2193,21 +2316,22 @@ extension ToolOptionsRowView {
     /// Every hover spot in the row, in this view's coordinates.
     func hoverTargets() -> [HoverTarget] {
         var targets: [HoverTarget] = []
-        for view in subviews where !view.isHidden && !(view is OptionHoverHighlightView) {
+        for view in subviews where !view.isHidden && !(view is OptionHoverHighlightView)
+            && !(view is OptionShortcutBadgeView) {
             guard let control = view as? NSControl else { continue }
             if let field = control as? NSTextField, !field.isEditable { continue }
             guard control.isEnabled else { continue }
             switch control {
             case is NSSlider:
-                targets.append(HoverTarget(rect: control.frame, clickable: false))
+                targets.append(HoverTarget(rect: control.frame, clickable: false, control: control, segment: nil))
             case let seg as NSSegmentedControl:
                 for (i, rect) in Self.segmentRects(seg).enumerated() where seg.isEnabled(forSegment: i) {
-                    targets.append(HoverTarget(rect: rect, clickable: true))
+                    targets.append(HoverTarget(rect: rect, clickable: true, control: seg, segment: i))
                 }
             case is NSTextField:
                 continue
             default:
-                targets.append(HoverTarget(rect: control.frame, clickable: true))
+                targets.append(HoverTarget(rect: control.frame, clickable: true, control: control, segment: nil))
             }
         }
         return targets
