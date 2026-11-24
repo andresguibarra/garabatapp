@@ -340,6 +340,13 @@ class OverlayView: NSView {
             if currentTool != .select && currentTool != .crop { areaRect = nil }
             if currentTool != .measure { isAwaitingMeasureReference = false }
             if currentTool != .select { hideEscapeHint() }
+            // Picking Arrow with a shape selected: drop the selection so the shape
+            // shows the "+" connector instead of its handles and options.
+            if currentTool == .arrow && oldValue != .arrow
+                && selectedAnnotations.contains(where: { $0.tool != .arrow }) {
+                selectedAnnotations = []
+                needsDisplay = true
+            }
             // Persist drawing tool choices; skip transient/mode tools
             if OverlayView.shouldRememberLastTool && currentTool != .select && currentTool != .loupe {
                 OverlayView.lastUsedTool = currentTool
