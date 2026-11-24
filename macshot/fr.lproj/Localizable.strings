@@ -927,3 +927,7 @@
 "  When opened in Editor:" = "  À l’ouverture dans l’éditeur :";
 "Capture Active Window" = "Capturer la fenêtre active";
 "Search shortcuts" = "Rechercher des raccourcis";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";

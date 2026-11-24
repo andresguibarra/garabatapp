@@ -929,3 +929,7 @@
 "  When opened in Editor:" = "  在编辑器中打开时:";
 "Capture Active Window" = "捕获活动窗口";
 "Search shortcuts" = "搜索快捷键";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";

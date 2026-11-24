@@ -910,3 +910,7 @@
 "  When opened in Editor:" = "  All’apertura nell’editor:";
 "Capture Active Window" = "Cattura finestra attiva";
 "Search shortcuts" = "Cerca abbreviazioni";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";

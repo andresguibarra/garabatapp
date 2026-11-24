@@ -931,3 +931,7 @@
 "  When opened in Editor:" = "  عند الفتح في المحرر:";
 "Capture Active Window" = "التقاط النافذة النشطة";
 "Search shortcuts" = "البحث في الاختصارات";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";

@@ -1290,15 +1290,97 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
 
     // MARK: - Shortcuts Tab
 
-    /// Garabatapp: rows the Shortcuts search field filters, with their labels.
-    private var shortcutSearchRows: [(row: NSView, label: String)] = []
+    /// Garabatapp: the Shortcuts tab's groups, for the search filter. Each
+    /// group hides with its header when none of its rows match.
+    private var shortcutSearchGroups: [(header: NSView, box: NSView, rows: [(row: ShortcutRowView, label: String)])] = []
 
     @objc private func filterShortcutRows(_ sender: NSSearchField) {
         let query = sender.stringValue.trimmingCharacters(in: .whitespaces)
-        for item in shortcutSearchRows {
-            item.row.isHidden = !query.isEmpty
-                && item.label.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) == nil
+        for group in shortcutSearchGroups {
+            var firstVisible = true
+            for item in group.rows {
+                let hidden = !query.isEmpty
+                    && item.label.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) == nil
+                item.row.isHidden = hidden
+                if !hidden {
+                    item.row.showsSeparator = !firstVisible
+                    firstVisible = false
+                }
+            }
+            group.header.isHidden = firstVisible
+            group.box.isHidden = firstVisible
         }
+    }
+
+    private func shortcutAccessoryButton(symbol: String, tip: String, tag: Int, action: Selector) -> NSButton {
+        let b = NSButton(title: "", target: self, action: action)
+        b.bezelStyle = .inline
+        b.isBordered = false
+        b.image = NSImage(systemSymbolName: symbol, accessibilityDescription: tip)
+        b.contentTintColor = .tertiaryLabelColor
+        b.imagePosition = .imageOnly
+        b.tag = tag
+        b.toolTip = tip
+        return b
+    }
+
+    /// One row: name on the left, the shortcut as a recorder button on the
+    /// right (click it and press keys), clear/reset only while hovered.
+    private func shortcutRow(_ label: String, tag: Int, record: Selector, clear: Selector, reset: Selector)
+        -> (row: ShortcutRowView, field: NSTextField, recorder: NSButton)
+    {
+        let recorder = NSButton(title: "", target: self, action: record)
+        recorder.bezelStyle = .rounded
+        recorder.controlSize = .regular
+        recorder.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+        recorder.tag = tag
+        recorder.toolTip = L("Click and press a key combination")
+        let field = MirroredShortcutField(mirror: recorder)
+        let clearBtn = shortcutAccessoryButton(symbol: "xmark.circle.fill", tip: L("None"), tag: tag, action: clear)
+        let resetBtn = shortcutAccessoryButton(symbol: "arrow.counterclockwise.circle.fill", tip: L("Reset to default"), tag: tag, action: reset)
+        let row = ShortcutRowView(title: label, recorder: recorder, accessories: [resetBtn, clearBtn])
+        return (row, field, recorder)
+    }
+
+    private func shortcutGroupBox(_ rows: [ShortcutRowView]) -> NSView {
+        let box = NSBox()
+        box.boxType = .custom
+        box.cornerRadius = 10
+        box.borderWidth = 1
+        box.borderColor = .separatorColor
+        box.fillColor = NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? NSColor.white.withAlphaComponent(0.05) : NSColor.black.withAlphaComponent(0.03)
+        }
+        box.contentViewMargins = .zero
+        box.translatesAutoresizingMaskIntoConstraints = false
+        let v = NSStackView(views: rows)
+        v.orientation = .vertical
+        v.spacing = 0
+        v.alignment = .leading
+        v.translatesAutoresizingMaskIntoConstraints = false
+        box.contentView?.addSubview(v)
+        if let cv = box.contentView {
+            NSLayoutConstraint.activate([
+                v.topAnchor.constraint(equalTo: cv.topAnchor),
+                v.bottomAnchor.constraint(equalTo: cv.bottomAnchor),
+                v.leadingAnchor.constraint(equalTo: cv.leadingAnchor),
+                v.trailingAnchor.constraint(equalTo: cv.trailingAnchor),
+            ])
+        }
+        for (i, r) in rows.enumerated() {
+            r.showsSeparator = i > 0
+            r.widthAnchor.constraint(equalTo: v.widthAnchor).isActive = true
+        }
+        return box
+    }
+
+    private func shortcutNote(_ text: String) -> NSTextField {
+        let note = NSTextField(wrappingLabelWithString: text)
+        note.font = NSFont.systemFont(ofSize: 11)
+        note.textColor = .secondaryLabelColor
+        note.translatesAutoresizingMaskIntoConstraints = false
+        return note
     }
 
     private func makeShortcutsTabView() -> NSView {
@@ -1314,175 +1396,84 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.alignment = .leading
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.edgeInsets = NSEdgeInsets(top: 0, left: 20, bottom: 16, right: 20)
+        stack.edgeInsets = NSEdgeInsets(top: 4, left: 20, bottom: 16, right: 20)
+        shortcutSearchGroups = []
 
-        // Garabatapp: filter shortcuts by name.
-        let search = NSSearchField()
-        search.placeholderString = L("Search shortcuts")
+        func fullWidth(_ v: NSView) {
+            v.translatesAutoresizingMaskIntoConstraints = false
+            v.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -40).isActive = true
+        }
+
+        let search = QuietSearchField()
+        search.placeholderString = L("Search")
         search.sendsSearchStringImmediately = true
         search.target = self
         search.action = #selector(filterShortcutRows(_:))
-        search.translatesAutoresizingMaskIntoConstraints = false
-        search.widthAnchor.constraint(equalToConstant: 260).isActive = true
-        shortcutSearchRows = []
         stack.addArrangedSubview(search)
-        stack.setCustomSpacing(14, after: search)
+        fullWidth(search)
+        stack.setCustomSpacing(18, after: search)
 
-        stack.addArrangedSubview(sectionHeader(L("Keyboard Shortcuts")))
-        stack.setCustomSpacing(10, after: stack.arrangedSubviews.last!)
+        func addGroup(_ title: String, _ rows: [(row: ShortcutRowView, label: String)], before: NSView? = nil, note: String) {
+            let header = sectionHeader(title)
+            stack.addArrangedSubview(header)
+            stack.setCustomSpacing(8, after: header)
+            if let before {
+                stack.addArrangedSubview(before)
+                stack.setCustomSpacing(10, after: before)
+            }
+            let box = shortcutGroupBox(rows.map { $0.row })
+            stack.addArrangedSubview(box)
+            fullWidth(box)
+            stack.setCustomSpacing(6, after: box)
+            let n = shortcutNote(note)
+            stack.addArrangedSubview(n)
+            fullWidth(n)
+            stack.setCustomSpacing(22, after: n)
+            shortcutSearchGroups.append((header, box, rows))
+        }
 
+        // ── Global hotkeys ──────────────────────────────────
+        var hotkeyRows: [(row: ShortcutRowView, label: String)] = []
         for slot in HotkeyManager.HotkeySlot.allCases {
-            let field = NSTextField()
-            field.isEditable = false
-            field.isSelectable = false
-            field.alignment = .center
-            field.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            field.widthAnchor.constraint(equalToConstant: 80).isActive = true
-            field.stringValue = HotkeyManager.displayString(for: slot)
-
-            let btn = NSButton(title: L("Set"), target: self, action: #selector(recordShortcut(_:)))
-            btn.bezelStyle = .rounded
-            btn.tag = slot.rawValue
-
-            let clearBtn = NSButton(title: "", target: self, action: #selector(clearShortcut(_:)))
-            clearBtn.bezelStyle = .inline
-            clearBtn.isBordered = false
-            clearBtn.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: L("None"))
-            clearBtn.contentTintColor = .secondaryLabelColor
-            clearBtn.imagePosition = .imageOnly
-            clearBtn.tag = slot.rawValue
-            clearBtn.toolTip = L("None")
-            clearBtn.widthAnchor.constraint(equalToConstant: 20).isActive = true
-
-            let resetBtn = NSButton(title: "", target: self, action: #selector(resetShortcut(_:)))
-            resetBtn.bezelStyle = .inline
-            resetBtn.isBordered = false
-            resetBtn.image = NSImage(systemSymbolName: "arrow.counterclockwise.circle.fill", accessibilityDescription: L("Reset to default"))
-            resetBtn.contentTintColor = .secondaryLabelColor
-            resetBtn.imagePosition = .imageOnly
-            resetBtn.tag = slot.rawValue
-            resetBtn.toolTip = L("Reset to default")
-            resetBtn.widthAnchor.constraint(equalToConstant: 20).isActive = true
-
-            hotkeyFields[slot] = field
-            hotkeyButtons[slot] = btn
-
-            let slotRow = labeledRow("\(slot.label):", controls: [field, btn, clearBtn, resetBtn])
-            shortcutSearchRows.append((slotRow, slot.label))
-            stack.addArrangedSubview(slotRow)
-            stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
+            let r = shortcutRow(slot.label, tag: slot.rawValue, record: #selector(recordShortcut(_:)),
+                                clear: #selector(clearShortcut(_:)), reset: #selector(resetShortcut(_:)))
+            r.field.stringValue = HotkeyManager.displayString(for: slot)
+            hotkeyFields[slot] = r.field
+            hotkeyButtons[slot] = r.recorder
+            hotkeyRows.append((r.row, slot.label))
         }
+        addGroup(L("Keyboard Shortcuts"), hotkeyRows,
+                 note: L("Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels."))
 
-        stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
-
-        let note = NSTextField(wrappingLabelWithString: L("Click \"Set\" and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧) to set a shortcut."))
-        note.font = NSFont.systemFont(ofSize: 10)
-        note.textColor = .secondaryLabelColor
-        stack.addArrangedSubview(indented(note))
-
-        // ── Undo / Redo command shortcuts ───────────────────
-        stack.setCustomSpacing(20, after: stack.arrangedSubviews.last!)
-        stack.addArrangedSubview(sectionHeader("\(L("Undo")) / \(L("Redo"))"))
-        stack.setCustomSpacing(10, after: stack.arrangedSubviews.last!)
-
-        for action in EditorCommandShortcutManager.Action.allCases {
-            let index = EditorCommandShortcutManager.Action.allCases.firstIndex(of: action)!
-            let field = NSTextField()
-            field.isEditable = false
-            field.isSelectable = false
-            field.alignment = .center
-            field.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            field.widthAnchor.constraint(equalToConstant: 100).isActive = true
-            field.stringValue = EditorCommandShortcutManager.displayString(for: action)
-
-            let button = NSButton(title: L("Set"), target: self, action: #selector(recordCommandShortcut(_:)))
-            button.bezelStyle = .rounded
-            button.tag = index
-
-            let clearButton = NSButton(title: "", target: self, action: #selector(clearCommandShortcut(_:)))
-            clearButton.bezelStyle = .inline
-            clearButton.isBordered = false
-            clearButton.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: L("None"))
-            clearButton.contentTintColor = .secondaryLabelColor
-            clearButton.imagePosition = .imageOnly
-            clearButton.tag = index
-            clearButton.toolTip = L("None")
-            clearButton.widthAnchor.constraint(equalToConstant: 20).isActive = true
-
-            let resetButton = NSButton(title: "", target: self, action: #selector(resetCommandShortcut(_:)))
-            resetButton.bezelStyle = .inline
-            resetButton.isBordered = false
-            resetButton.image = NSImage(systemSymbolName: "arrow.counterclockwise.circle.fill", accessibilityDescription: L("Reset to default"))
-            resetButton.contentTintColor = .secondaryLabelColor
-            resetButton.imagePosition = .imageOnly
-            resetButton.tag = index
-            resetButton.toolTip = L("Reset to default")
-            resetButton.widthAnchor.constraint(equalToConstant: 20).isActive = true
-
-            commandShortcutFields[action] = field
-            commandShortcutButtons[action] = button
-            let actionRow = labeledRow("\(action.label):", controls: [field, button, clearButton, resetButton])
-            shortcutSearchRows.append((actionRow, action.label))
-            stack.addArrangedSubview(actionRow)
-            stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
+        // ── Undo / Redo ─────────────────────────────────────
+        var commandRows: [(row: ShortcutRowView, label: String)] = []
+        for (index, action) in EditorCommandShortcutManager.Action.allCases.enumerated() {
+            let r = shortcutRow(action.label, tag: index, record: #selector(recordCommandShortcut(_:)),
+                                clear: #selector(clearCommandShortcut(_:)), reset: #selector(resetCommandShortcut(_:)))
+            r.field.stringValue = EditorCommandShortcutManager.displayString(for: action)
+            commandShortcutFields[action] = r.field
+            commandShortcutButtons[action] = r.recorder
+            commandRows.append((r.row, action.label))
         }
+        addGroup("\(L("Undo")) / \(L("Redo"))", commandRows,
+                 note: L("These need ⌘ and work in the overlay and the editor."))
 
-        // ── Overlay / Editor Tool Shortcuts ──────────────────
-        stack.setCustomSpacing(20, after: stack.arrangedSubviews.last!)
-        stack.addArrangedSubview(sectionHeader(L("Overlay / Editor Shortcuts")))
-        stack.setCustomSpacing(10, after: stack.arrangedSubviews.last!)
-
+        // ── Overlay / editor tools ──────────────────────────
         showToolShortcutsInTooltipsCheckbox = NSButton(
             checkboxWithTitle: L("Show shortcuts in tooltips"),
             target: self,
             action: #selector(showToolShortcutsInTooltipsChanged(_:)))
-        stack.addArrangedSubview(indented(showToolShortcutsInTooltipsCheckbox))
-        stack.setCustomSpacing(12, after: stack.arrangedSubviews.last!)
-
-        for action in ToolShortcutManager.Action.allCases {
-            let field = NSTextField()
-            field.isEditable = false
-            field.isSelectable = false
-            field.alignment = .center
-            field.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            field.widthAnchor.constraint(equalToConstant: 80).isActive = true
-            field.stringValue = ToolShortcutManager.displayString(for: action)
-
-            let btn = NSButton(title: L("Set"), target: self, action: #selector(recordToolShortcut(_:)))
-            btn.bezelStyle = .rounded
-            btn.tag = ToolShortcutManager.Action.allCases.firstIndex(of: action)!
-
-            let clearBtn = NSButton(title: "", target: self, action: #selector(clearToolShortcut(_:)))
-            clearBtn.bezelStyle = .inline
-            clearBtn.isBordered = false
-            clearBtn.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: L("None"))
-            clearBtn.contentTintColor = .secondaryLabelColor
-            clearBtn.imagePosition = .imageOnly
-            clearBtn.tag = ToolShortcutManager.Action.allCases.firstIndex(of: action)!
-            clearBtn.toolTip = L("None")
-            clearBtn.widthAnchor.constraint(equalToConstant: 20).isActive = true
-
-            let resetBtn = NSButton(title: "", target: self, action: #selector(resetToolShortcut(_:)))
-            resetBtn.bezelStyle = .inline
-            resetBtn.isBordered = false
-            resetBtn.image = NSImage(systemSymbolName: "arrow.counterclockwise.circle.fill", accessibilityDescription: L("Reset to default"))
-            resetBtn.contentTintColor = .secondaryLabelColor
-            resetBtn.imagePosition = .imageOnly
-            resetBtn.tag = ToolShortcutManager.Action.allCases.firstIndex(of: action)!
-            resetBtn.toolTip = L("Reset to default")
-            resetBtn.widthAnchor.constraint(equalToConstant: 20).isActive = true
-
-            toolShortcutFields[action] = field
-            toolShortcutButtons[action] = btn
-
-            stack.addArrangedSubview(labeledRow("\(action.label):", controls: [field, btn, clearBtn, resetBtn]))
-            stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
+        var toolRows: [(row: ShortcutRowView, label: String)] = []
+        for (index, action) in ToolShortcutManager.Action.allCases.enumerated() {
+            let r = shortcutRow(action.label, tag: index, record: #selector(recordToolShortcut(_:)),
+                                clear: #selector(clearToolShortcut(_:)), reset: #selector(resetToolShortcut(_:)))
+            r.field.stringValue = ToolShortcutManager.displayString(for: action)
+            toolShortcutFields[action] = r.field
+            toolShortcutButtons[action] = r.recorder
+            toolRows.append((r.row, action.label))
         }
-
-        let toolNote = NSTextField(wrappingLabelWithString: L("Press a single key to assign it as the shortcut for that tool. These work when the overlay or editor is active."))
-        toolNote.font = NSFont.systemFont(ofSize: 10)
-        toolNote.textColor = .secondaryLabelColor
-        stack.addArrangedSubview(indented(toolNote))
+        addGroup(L("Overlay / Editor Shortcuts"), toolRows, before: showToolShortcutsInTooltipsCheckbox,
+                 note: L("Press a single key to assign it as the shortcut for that tool. These work when the overlay or editor is active."))
 
         // Spacer to push content to top
         let spacer = NSView()
@@ -1568,7 +1559,6 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
     private func stopShortcutRecording() {
         let wasRecording = recordingSlot != nil
         if let slot = recordingSlot {
-            hotkeyButtons[slot]?.title = L("Set")
             hotkeyFields[slot]?.stringValue = HotkeyManager.displayString(for: slot)
         }
         recordingSlot = nil
@@ -1644,7 +1634,6 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         let wasRecording = recordingCommandAction != nil
         if let action = recordingCommandAction {
             commandShortcutFields[action]?.stringValue = EditorCommandShortcutManager.displayString(for: action)
-            commandShortcutButtons[action]?.title = L("Set")
         }
         recordingCommandAction = nil
         if let monitor = localMonitor { NSEvent.removeMonitor(monitor); localMonitor = nil }
@@ -1716,7 +1705,6 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
     private func stopToolShortcutRecording() {
         if let action = recordingToolAction {
             toolShortcutFields[action]?.stringValue = ToolShortcutManager.displayString(for: action)
-            toolShortcutButtons[action]?.title = L("Set")
         }
         recordingToolAction = nil
         if let m = localMonitor { NSEvent.removeMonitor(m); localMonitor = nil }
@@ -3922,5 +3910,110 @@ private final class OpaqueColorWell: NSColorWell {
             NSColorPanel.shared.showsAlpha = showed
             panelShowedAlpha = nil
         }
+    }
+}
+
+
+// MARK: - Garabatapp shortcut rows
+
+/// Holds a shortcut's display text for the existing recorder code and shows
+/// it on the row's recorder button.
+final class MirroredShortcutField: NSTextField {
+    private weak var mirror: NSButton?
+
+    init(mirror: NSButton) {
+        self.mirror = mirror
+        super.init(frame: .zero)
+        isEditable = false
+        isSelectable = false
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var stringValue: String {
+        didSet { mirror?.title = stringValue }
+    }
+}
+
+/// Search field that doesn't grab focus (and its ring) when the tab appears.
+final class QuietSearchField: NSSearchField {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let window = self.window else { return }
+            if let editor = self.currentEditor(), window.firstResponder === editor {
+                window.makeFirstResponder(nil)
+            }
+        }
+    }
+}
+
+/// A System Settings–style row: title left, recorder right, accessory buttons
+/// that appear on hover, and a hairline above every row but the first.
+final class ShortcutRowView: NSView {
+    private let accessories: [NSView]
+    private var tracking: NSTrackingArea?
+    var showsSeparator = false { didSet { needsDisplay = true } }
+
+    init(title: String, recorder: NSButton, accessories: [NSView]) {
+        self.accessories = accessories
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+
+        let label = NSTextField(labelWithString: title)
+        label.font = NSFont.systemFont(ofSize: 13)
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let trailing = NSStackView(views: accessories + [recorder])
+        trailing.orientation = .horizontal
+        trailing.spacing = 6
+        trailing.alignment = .centerY
+
+        for v in [label, trailing] as [NSView] {
+            v.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(v)
+        }
+        for a in accessories { a.alphaValue = 0 }
+        recorder.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            trailing.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            trailing.centerYAnchor.constraint(equalTo: centerYAnchor),
+            trailing.leadingAnchor.constraint(greaterThanOrEqualTo: label.trailingAnchor, constant: 8),
+            recorder.widthAnchor.constraint(equalToConstant: 110),
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let tracking { removeTrackingArea(tracking) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        tracking = area
+    }
+
+    private func setAccessoriesVisible(_ visible: Bool) {
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.12
+            for a in accessories { a.animator().alphaValue = visible ? 1 : 0 }
+        }
+    }
+
+    override func mouseEntered(with event: NSEvent) { setAccessoriesVisible(true) }
+    override func mouseExited(with event: NSEvent) { setAccessoriesVisible(false) }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard showsSeparator else { return }
+        NSColor.separatorColor.setFill()
+        let y = isFlipped ? 0 : bounds.maxY - 1
+        NSRect(x: 12, y: y, width: bounds.width - 12, height: 1).fill()
     }
 }

@@ -929,3 +929,7 @@
 "  When opened in Editor:" = "  La deschiderea în editor:";
 "Capture Active Window" = "Capturează fereastra activă";
 "Search shortcuts" = "Caută scurtături";
+"Click and press a key combination" = "Click and press a key combination";
+"Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels." = "Click a shortcut and press a key combination with at least one modifier (⌘, ⌥, ⌃, ⇧). Esc cancels.";
+"These need ⌘ and work in the overlay and the editor." = "These need ⌘ and work in the overlay and the editor.";
+"Search" = "Search";
