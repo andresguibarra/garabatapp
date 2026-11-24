@@ -9926,6 +9926,8 @@ class OverlayView: NSView {
             } else if !selectedAnnotations.isEmpty {
                 selectedAnnotations = []
                 needsDisplay = true
+            } else if releaseArmedToolOnEscape() {
+                // First Escape only puts the drawing tool down; the next one closes.
             } else {
                 overlayDelegate?.overlayViewDidCancel()
             }
@@ -10124,6 +10126,20 @@ class OverlayView: NSView {
         selectToolForNewAnnotationsInMoveMode()
         cachedCompositedImage = nil
         needsDisplay = true
+    }
+
+    /// Escape with a drawing tool armed puts the tool down (switches to Select)
+    /// instead of closing the capture, so a stray Escape never throws away the
+    /// screenshot. Returns false when there is no tool to release, and the
+    /// caller closes as before. The remembered tool is untouched: Select is
+    /// never persisted as the last used tool.
+    private func releaseArmedToolOnEscape() -> Bool {
+        guard state == .selected || isEditorMode else { return false }
+        guard !startsInSelectionMoveMode, currentTool != .select else { return false }
+        currentTool = .select
+        rebuildToolbarLayout()
+        needsDisplay = true
+        return true
     }
 
     /// A capture still in move mode has no tool, so pasted or duplicated
