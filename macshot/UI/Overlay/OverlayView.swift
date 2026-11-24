@@ -312,6 +312,9 @@ class OverlayView: NSView {
     /// Snapshot of the preference for the current capture (see `state`).
     private var moveModeEnabledForCapture = OverlayView.startCapturesInMoveModeSetting
     private var hasChosenCaptureTool = false
+    /// The user picked a tool in this capture (toolbar or shortcut). Until then,
+    /// and with nothing drawn, Escape closes right away.
+    private var userPickedToolThisCapture = false
     private var startsInSelectionMoveMode: Bool {
         moveModeEnabledForCapture && !hasChosenCaptureTool
             && !isEditorMode && !isRecording && !isScrollCapturing
@@ -8758,6 +8761,7 @@ class OverlayView: NSView {
     func handleToolbarAction(_ action: ToolbarButtonAction, mousePoint: NSPoint = .zero) {
         switch action {
         case .tool(let tool):
+            userPickedToolThisCapture = true
             commitTextFieldIfNeeded()
             showBeautifyInOptionsRow = false  // switch back to tool options
             currentTool = tool
@@ -10143,6 +10147,9 @@ class OverlayView: NSView {
     private func releaseArmedToolOnEscape() -> Bool {
         guard state == .selected || isEditorMode else { return false }
         guard !startsInSelectionMoveMode, currentTool != .select else { return false }
+        // A fresh capture (nothing drawn, no tool picked yet) closes on the
+        // first Escape: only the remembered tool is armed, nothing to protect.
+        guard userPickedToolThisCapture || !annotations.isEmpty || !undoStack.isEmpty else { return false }
         currentTool = .select
         rebuildToolbarLayout()
         needsDisplay = true
@@ -10943,6 +10950,7 @@ class OverlayView: NSView {
         currentAnnotation = nil
         currentTool = OverlayView.initialTool
         hasChosenCaptureTool = false
+        userPickedToolThisCapture = false
         isDraggingSelection = false
         numberCounter = 0
         showToolbars = false
