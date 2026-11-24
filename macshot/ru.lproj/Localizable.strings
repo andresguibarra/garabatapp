@@ -927,3 +927,4 @@
 "Return to stack when editor closes" = "Вернуть в стопку после закрытия редактора";
 "  Click on preview:" = "  Клик по превью:";
 "  When opened in Editor:" = "  При открытии в редакторе:";
+"Press Esc again to close" = "Нажмите Esc ещё раз, чтобы закрыть";

@@ -923,3 +923,4 @@
 "Return to stack when editor closes" = "Tillbaka till stapeln när redigeraren stängs";
 "  Click on preview:" = "  Klick på förhandsvisning:";
 "  When opened in Editor:" = "  När den öppnas i redigeraren:";
+"Press Esc again to close" = "Tryck på Esc igen för att stänga";

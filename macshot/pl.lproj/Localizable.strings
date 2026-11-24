@@ -925,3 +925,4 @@
 "Return to stack when editor closes" = "Przywróć do stosu po zamknięciu edytora";
 "  Click on preview:" = "  Kliknięcie podglądu:";
 "  When opened in Editor:" = "  Po otwarciu w edytorze:";
+"Press Esc again to close" = "Naciśnij ponownie Esc, aby zamknąć";

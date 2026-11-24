@@ -927,3 +927,4 @@
 "Return to stack when editor closes" = "편집기를 닫으면 스택으로 복귀";
 "  Click on preview:" = "  미리보기 클릭 시:";
 "  When opened in Editor:" = "  편집기에서 열 때:";
+"Press Esc again to close" = "닫으려면 Esc를 한 번 더 누르세요";
