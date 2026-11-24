@@ -943,3 +943,7 @@
 "Customize Toolbar…" = "Personalizar barra…";
 "Fit to content" = "Ajustar al contenido";
 "Area copied" = "Área copiada";
+"Ask" = "Preguntar";
+"Save to history" = "Guardar en el historial";
+"On close:" = "Al cerrar:";
+"What happens to a capture with unsaved changes when you close the editor (Esc, ⌘W, the red button)." = "Qué pasa con una captura con cambios sin guardar al cerrar el editor (Esc, ⌘W, el botón rojo).";
