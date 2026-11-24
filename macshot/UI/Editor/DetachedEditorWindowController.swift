@@ -755,6 +755,31 @@ extension DetachedEditorWindowController: OverlayViewDelegate {
         }
     }
 
+    // MARK: - Garabatapp: main menu commands (reach here via the window's delegate)
+
+    @objc func garaMenuSave(_ sender: Any?) { overlayViewDidRequestSave() }
+    @objc func garaMenuSaveAs(_ sender: Any?) { overlayViewDidRequestSaveAs() }
+    @objc func garaMenuCopyImage(_ sender: Any?) { overlayViewDidConfirm() }
+    @objc func garaMenuPin(_ sender: Any?) { overlayViewDidRequestPin() }
+    @objc func garaMenuOCR(_ sender: Any?) { overlayViewDidRequestOCR() }
+    @objc func garaMenuShare(_ sender: Any?) { overlayView?.handleToolbarAction(.share) }
+    @objc func garaMenuAddCapture(_ sender: Any?) { overlayViewDidRequestAddCapture() }
+    #if !OFFLINE
+    @objc func garaMenuUpload(_ sender: Any?) { overlayViewDidRequestUpload() }
+    #endif
+    @objc func garaMenuTool(_ sender: NSMenuItem) {
+        guard let tool = AnnotationTool(rawValue: sender.tag) else { return }
+        overlayView?.handleToolbarAction(.tool(tool))
+    }
+    @objc func garaMenuInvert(_ sender: Any?) { overlayView?.handleToolbarAction(.invertColors) }
+    @objc func garaMenuRemoveBackground(_ sender: Any?) { overlayView?.handleToolbarAction(.removeBackground) }
+    @objc func garaMenuAdjust(_ sender: Any?) { overlayView?.handleToolbarAction(.effects) }
+    @objc func garaMenuBeautify(_ sender: Any?) { overlayView?.handleToolbarAction(.beautify) }
+    @objc func garaMenuZoomIn(_ sender: Any?) { topBar?.zoomInAction() }
+    @objc func garaMenuZoomOut(_ sender: Any?) { topBar?.zoomOutAction() }
+    @objc func garaMenuZoomFit(_ sender: Any?) { topBar?.fitCanvasAction() }
+    @objc func garaMenuZoomActual(_ sender: Any?) { topBar?.zoomToActualSize() }
+
     func overlayViewDidConfirm() { finish(copy: true, save: false) }
 
     func overlayViewDidRequestSave() { finish(copy: false, save: true) }

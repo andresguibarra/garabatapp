@@ -205,6 +205,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     private var thumbnailControllers: [FloatingThumbnailController] = []
     private var ocrController: OCRResultController?
     private var historyMenu: NSMenu?
+    /// Garabatapp: History in the app's main menu (same contents).
+    private var mainHistoryMenu: NSMenu?
     private var historyOverlayController: HistoryOverlayController?
     private var isCapturing = false
     private var delayCountdownWindow: NSWindow?
@@ -681,58 +683,181 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     private func setupMainMenu() {
         let mainMenu = NSMenu()
-        let appMenuItem = NSMenuItem()
-        mainMenu.addItem(appMenuItem)
+        let appName = BuildVariant.displayName
 
-        let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About Garabatapp", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
-        appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit Garabatapp", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        appMenuItem.submenu = appMenu
+        func item(_ title: String, _ action: Selector?, _ key: String = "",
+                  _ mods: NSEvent.ModifierFlags = [.command], target: AnyObject? = nil,
+                  symbol: String? = nil) -> NSMenuItem {
+            let i = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            i.keyEquivalentModifierMask = mods
+            i.target = target
+            if let symbol { i.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
+            return i
+        }
+        @discardableResult
+        func top(_ title: String, _ items: [NSMenuItem]) -> NSMenuItem {
+            let t = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+            let m = NSMenu(title: title)
+            items.forEach(m.addItem)
+            t.submenu = m
+            mainMenu.addItem(t)
+            return t
+        }
+        /// Single-key tool shortcuts are shown, not bound: the editor handles
+        /// them, so typing in a text box never switches tools.
+        func toolItem(_ tool: AnnotationTool, _ title: String, _ action: ToolShortcutManager.Action?) -> NSMenuItem {
+            let i = NSMenuItem(title: title, action: #selector(DetachedEditorWindowController.garaMenuTool(_:)), keyEquivalent: "")
+            i.tag = tool.rawValue
+            if let action {
+                let k = ToolShortcutManager.key(for: action).trimmingCharacters(in: .whitespaces)
+                if !k.isEmpty {
+                    let ps = NSMutableParagraphStyle()
+                    ps.tabStops = [NSTextTab(textAlignment: .right, location: 200)]
+                    let s = NSMutableAttributedString(string: title + "\t",
+                        attributes: [.font: NSFont.menuFont(ofSize: 0), .paragraphStyle: ps])
+                    s.append(NSAttributedString(string: k.uppercased(), attributes: [
+                        .font: NSFont.menuFont(ofSize: 0), .paragraphStyle: ps,
+                        .foregroundColor: NSColor.secondaryLabelColor]))
+                    i.attributedTitle = s
+                }
+            }
+            return i
+        }
 
-        let fileMenuItem = NSMenuItem()
-        mainMenu.addItem(fileMenuItem)
+        // App
+        top(appName, [
+            item("\(L("About")) \(appName)", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
+            .separator(),
+            item(L("Settings..."), #selector(openSettings), ",", target: self),
+            item(L("Check for Updates..."), #selector(checkForUpdates), target: self),
+            .separator(),
+            item("\(L("Hide")) \(appName)", #selector(NSApplication.hide(_:)), "h"),
+            item(L("Hide Others"), #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
+            item(L("Show All"), #selector(NSApplication.unhideAllApplications(_:))),
+            .separator(),
+            item("\(L("Quit")) \(appName)", #selector(NSApplication.terminate(_:)), "q"),
+        ])
 
-        let fileMenu = NSMenu(title: "File")
-        // Standard Close Window (Cmd+W) — routes to NSWindow.performClose(_:) via the
-        // responder chain, so it closes whichever window is key (editor, settings, etc.)
-        // without any window-specific handling.
-        let openItem = NSMenuItem(title: L("Open..."), action: #selector(openImageFromMenu), keyEquivalent: "o")
-        openItem.target = self
-        fileMenu.addItem(openItem)
-        fileMenu.addItem(NSMenuItem.separator())
-        fileMenu.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
-        // Sent up the responder chain; only an editor window's delegate answers.
-        let saveProjectItem = NSMenuItem(title: L("Save Project"),
-            action: #selector(DetachedEditorWindowController.saveMacshotProject(_:)), keyEquivalent: "s")
-        saveProjectItem.keyEquivalentModifierMask = [.command, .shift]
-        fileMenu.addItem(saveProjectItem)
-        let saveProjectAsItem = NSMenuItem(title: L("Save Project As..."),
-            action: #selector(DetachedEditorWindowController.saveMacshotProjectAs(_:)), keyEquivalent: "s")
-        saveProjectAsItem.keyEquivalentModifierMask = [.command, .shift, .option]
-        fileMenu.addItem(saveProjectAsItem)
-        fileMenuItem.submenu = fileMenu
+        // File
+        let openItem = item(L("Open..."), #selector(openImageFromMenu), "o", target: self)
+        let clipItem = item(L("Open from Clipboard"), #selector(openImageFromClipboard), target: self)
+        HotkeyManager.applyMenuShortcut(for: .openFromClipboard, to: clipItem)
+        let saveProject = item(L("Save Project"), #selector(DetachedEditorWindowController.saveMacshotProject(_:)), "s", [.command, .shift])
+        let saveProjectAs = item(L("Save Project As..."), #selector(DetachedEditorWindowController.saveMacshotProjectAs(_:)), "s", [.command, .shift, .option])
+        var fileItems: [NSMenuItem] = [
+            openItem, clipItem,
+            item(L("Add Capture"), #selector(DetachedEditorWindowController.garaMenuAddCapture(_:))),
+            .separator(),
+            item(L("Save"), #selector(DetachedEditorWindowController.garaMenuSave(_:)), "s"),
+            item(L("Save As..."), #selector(DetachedEditorWindowController.garaMenuSaveAs(_:))),
+            item(L("Copy Image"), #selector(DetachedEditorWindowController.garaMenuCopyImage(_:))),
+            item(L("Pin"), #selector(DetachedEditorWindowController.garaMenuPin(_:))),
+            item(L("Share"), #selector(DetachedEditorWindowController.garaMenuShare(_:))),
+        ]
+        #if !OFFLINE
+        fileItems.append(item(L("Upload"), #selector(DetachedEditorWindowController.garaMenuUpload(_:))))
+        #endif
+        fileItems += [
+            item(L("OCR & QR"), #selector(DetachedEditorWindowController.garaMenuOCR(_:))),
+            .separator(),
+            saveProject, saveProjectAs,
+            .separator(),
+            item(L("Close Window"), #selector(NSWindow.performClose(_:)), "w"),
+        ]
+        top(L("File"), fileItems)
 
-        let editMenuItem = NSMenuItem()
-        mainMenu.addItem(editMenuItem)
-
-        let editMenu = NSMenu(title: "Edit")
+        // Edit
         let undoItem = NSMenuItem(title: L("Undo"), action: Selector(("undo:")), keyEquivalent: "")
         EditorCommandShortcutManager.applyPrimaryMenuShortcut(for: .undo, to: undoItem)
-        editMenu.addItem(undoItem)
         let redoItem = NSMenuItem(title: L("Redo"), action: Selector(("redo:")), keyEquivalent: "")
         EditorCommandShortcutManager.applyPrimaryMenuShortcut(for: .redo, to: redoItem)
-        editMenu.addItem(redoItem)
-        editMenu.addItem(NSMenuItem.separator())
-        editMenu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "Delete", action: #selector(NSText.delete(_:)), keyEquivalent: "")
-        editMenu.addItem(NSMenuItem.separator())
-        editMenu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
-        editMenuItem.submenu = editMenu
+        var editItems: [NSMenuItem] = [
+            undoItem, redoItem, .separator(),
+            item(L("Cut"), #selector(NSText.cut(_:)), "x"),
+            item(L("Copy"), #selector(NSText.copy(_:)), "c"),
+            item(L("Paste"), #selector(NSText.paste(_:)), "v"),
+            item(L("Delete"), #selector(NSText.delete(_:))),
+            item(L("Select All"), #selector(NSText.selectAll(_:)), "a"),
+            .separator(),
+            toolItem(.crop, L("Crop"), nil),
+            item(L("Invert Colors"), #selector(DetachedEditorWindowController.garaMenuInvert(_:))),
+        ]
+        if #available(macOS 14.0, *) {
+            editItems.append(item(L("Remove Background"), #selector(DetachedEditorWindowController.garaMenuRemoveBackground(_:))))
+        }
+        editItems += [
+            item(L("Adjust (Image Effects)"), #selector(DetachedEditorWindowController.garaMenuAdjust(_:))),
+            item(L("Beautify"), #selector(DetachedEditorWindowController.garaMenuBeautify(_:))),
+        ]
+        top(L("Edit"), editItems)
+
+        // Capture
+        var captureItems: [NSMenuItem] = CaptureMenuItemID.orderedItems().map { makeCaptureMenuItem($0) }
+        let activeWindow = item(L("Capture Active Window"), #selector(captureActiveWindowFromHotkey), target: self,
+                                symbol: "macwindow")
+        HotkeyManager.applyMenuShortcut(for: .captureActiveWindow, to: activeWindow)
+        captureItems.append(activeWindow)
+        captureItems.append(.separator())
+        let rec = item(L("Record Area"), #selector(recordArea), target: self, symbol: "record.circle")
+        HotkeyManager.applyMenuShortcut(for: .recordArea, to: rec)
+        let recScreen = item(L("Record Screen"), #selector(recordFullScreen), target: self, symbol: "menubar.dock.rectangle")
+        HotkeyManager.applyMenuShortcut(for: .recordScreen, to: recScreen)
+        let recGIF = item("\(L("Record")) \(L("GIF"))", #selector(recordGIF), target: self, symbol: "photo.stack")
+        HotkeyManager.applyMenuShortcut(for: .recordGIF, to: recGIF)
+        captureItems += [rec, recScreen, recGIF]
+        top(L("Capture"), captureItems)
+
+        // Draw
+        top(L("Draw"), [
+            toolItem(.select, L("Select & Move"), .select),
+            toolItem(.arrow, L("Arrow"), .arrow),
+            toolItem(.line, L("Line"), .line),
+            toolItem(.rectangle, L("Rectangle"), .rectangle),
+            toolItem(.ellipse, L("Ellipse"), .ellipse),
+            toolItem(.pencil, L("Pencil"), .pencil),
+            toolItem(.marker, L("Marker"), .marker),
+            toolItem(.text, L("Text"), .text),
+            toolItem(.number, L("Number / Counter"), .number),
+            toolItem(.pixelate, L("Censor"), .censor),
+            toolItem(.highlight, L("Highlight (Spotlight)"), .highlight),
+            toolItem(.loupe, L("Magnify (Loupe)"), .loupe),
+            toolItem(.stamp, L("Stamp / Emoji"), .stamp),
+            toolItem(.colorSampler, L("Color Picker"), .colorSampler),
+            toolItem(.measure, L("Measure"), .measure),
+        ])
+
+        // View
+        top(L("View"), [
+            item(L("Zoom In"), #selector(DetachedEditorWindowController.garaMenuZoomIn(_:)), "="),
+            item(L("Zoom Out"), #selector(DetachedEditorWindowController.garaMenuZoomOut(_:)), "-"),
+            item(L("Zoom to Fit"), #selector(DetachedEditorWindowController.garaMenuZoomFit(_:)), "9"),
+            item(L("Actual Size"), #selector(DetachedEditorWindowController.garaMenuZoomActual(_:)), "0"),
+        ])
+
+        // History
+        let historyTop = top(L("History"), [])
+        historyTop.submenu?.delegate = self
+        mainHistoryMenu = historyTop.submenu
+
+        // Window
+        let windowTop = top(L("Window"), [
+            item(L("Minimize"), #selector(NSWindow.performMiniaturize(_:)), "m"),
+            item(L("Zoom"), #selector(NSWindow.performZoom(_:))),
+        ])
+        NSApp.windowsMenu = windowTop.submenu
+
+        // Help
+        top(L("Help"), [
+            item("\(appName) \(L("on GitHub"))", #selector(openGarabatappRepo), target: self),
+        ])
 
         NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func openGarabatappRepo() {
+        if let url = URL(string: "https://github.com/andresguibarra/garabatapp") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     // MARK: - Status Bar
@@ -2848,6 +2973,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             settingsController?.onHotkeyChanged = { [weak self] in
                 self?.registerHotkey()
                 self?.rebuildStatusBarMenu()
+                self?.setupMainMenu()  // Capture menu shows the hotkeys
             }
             settingsController?.onEditorCommandShortcutChanged = { [weak self] in
                 self?.setupMainMenu()
@@ -3954,7 +4080,7 @@ extension AppDelegate: NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         // Only rebuild the history submenu, not the main status bar menu
-        guard menu === historyMenu else { return }
+        guard menu === historyMenu || menu === mainHistoryMenu else { return }
 
         menu.removeAllItems()
 
