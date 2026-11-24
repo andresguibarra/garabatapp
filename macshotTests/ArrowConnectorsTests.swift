@@ -69,15 +69,17 @@ final class ArrowConnectorsTests: XCTestCase {
         link.connectedStartID = a.connectorID
         link.connectedEndID = b.connectorID
 
+        let startGap = ArrowConnectors.clearance(arrow: link, atStart: true, shape: a)
+        let endGap = ArrowConnectors.clearance(arrow: link, atStart: false, shape: b)
         XCTAssertTrue(ArrowConnectors.resolve([a, b, link]))
-        assertPoint(link.startPoint, 100 + ArrowConnectors.gap, 50)
-        assertPoint(link.endPoint, 300 - ArrowConnectors.gap, 50)
+        assertPoint(link.startPoint, 100 + startGap, 50)
+        assertPoint(link.endPoint, 300 - endGap, 50)
         XCTAssertFalse(ArrowConnectors.resolve([a, b, link]), "resolving again changes nothing")
 
         b.move(dx: 0, dy: 200)
         XCTAssertTrue(ArrowConnectors.resolve([a, b, link]))
         // From a's center (50,50) toward b's center (350,250): exits through a's right edge.
-        XCTAssertEqual(link.startPoint.x, 100 + ArrowConnectors.gap * 300 / hypot(300, 200), accuracy: 0.01)
+        XCTAssertEqual(link.startPoint.x, 100 + startGap * 300 / hypot(300, 200), accuracy: 0.01)
         XCTAssertGreaterThan(link.endPoint.y, link.startPoint.y)
     }
 
@@ -86,7 +88,7 @@ final class ArrowConnectorsTests: XCTestCase {
         let link = arrow(NSPoint(x: 100, y: 50), NSPoint(x: 50, y: 400))
         link.connectedStartID = a.connectorID
         ArrowConnectors.resolve([a, link])
-        assertPoint(link.startPoint, 50, 100 + ArrowConnectors.gap)
+        assertPoint(link.startPoint, 50, 100 + ArrowConnectors.clearance(arrow: link, atStart: true, shape: a))
         assertPoint(link.endPoint, 50, 400)
     }
 
@@ -132,5 +134,23 @@ final class ArrowConnectorsTests: XCTestCase {
         let data = try XCTUnwrap(AnnotationSerializer.encode([a, link]))
         let decoded = try XCTUnwrap(AnnotationSerializer.decode(data))
         XCTAssertEqual(decoded[1].connectedStartID, decoded[0].connectorID)
+    }
+
+    func testClearanceKeepsThickStrokesFromOverlapping() {
+        let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
+        box.strokeWidth = 10
+        let link = arrow(.zero, NSPoint(x: 300, y: 50))
+        link.strokeWidth = 12
+        // Rect paint reaches 5 past its edge, the arrow's round cap 6 past its point.
+        XCTAssertEqual(ArrowConnectors.clearance(arrow: link, atStart: true, shape: box), 5 + 6 + ArrowConnectors.gap)
+
+        link.arrowStyle = .tail
+        XCTAssertEqual(ArrowConnectors.endExtent(of: link, atStart: true), 24, "tail circle radius")
+        XCTAssertEqual(ArrowConnectors.endExtent(of: link, atStart: false), 6)
+        link.arrowReversed = true
+        XCTAssertEqual(ArrowConnectors.endExtent(of: link, atStart: false), 24, "reversed: the tail is at the end")
+
+        box.rectFillStyle = .fill
+        XCTAssertEqual(ArrowConnectors.edgeExtent(of: box), 0, "a fill-only shape has no stroke outside its edge")
     }
 }

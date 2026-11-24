@@ -9,13 +9,48 @@ import Cocoa
 /// undoing or reloading a shape carries its arrows along without any extra
 /// undo bookkeeping. Each attached end sits on the shape's outline, on the line
 /// toward whatever the arrow points at (the other shape's center, the bend
-/// point, or the free end), `gap` points outside the border.
+/// point, or the free end), far enough out that the arrow's cap or head and the
+/// shape's stroke don't overlap (`clearance`).
 ///
 /// Pure geometry: no view state, so it is unit tested directly.
 enum ArrowConnectors {
 
-    /// Distance between an attached end and the shape's border.
-    static let gap: CGFloat = 4
+    /// Visible space between an attached arrow end and the shape's drawn edge.
+    static let gap: CGFloat = 3
+
+    /// How far a shape's paint reaches outside its geometric outline: half its
+    /// stroke (strokes are centered on the outline), its outline ring, the text
+    /// background pill.
+    static func edgeExtent(of shape: Annotation) -> CGFloat {
+        let ring: CGFloat = shape.outlineColor != nil ? 3 : 0
+        switch shape.tool {
+        case .rectangle, .ellipse:
+            let stroke = shape.rectFillStyle == .fill ? 0 : shape.strokeWidth / 2
+            return stroke + ring
+        case .filledRectangle, .number:
+            return ring
+        case .text:
+            return shape.textBgColor != nil ? 4 : 0
+        default:
+            return 0
+        }
+    }
+
+    /// How far the arrow's paint reaches past its start or end point: the round
+    /// cap or stroked head tip, the tail circle, the outline ring.
+    static func endExtent(of arrow: Annotation, atStart: Bool) -> CGFloat {
+        let ring: CGFloat = arrow.outlineColor != nil ? 3 : 0
+        // The tail circle sits on the drawn first point (the end when reversed).
+        let isTail = arrow.arrowStyle == .tail && atStart != arrow.arrowReversed
+        let reach = isTail ? max(4, arrow.strokeWidth * 2) : arrow.strokeWidth / 2
+        return reach + ring
+    }
+
+    /// Distance from a shape's outline to where an attached arrow end goes, so the
+    /// two drawings meet with a small clean gap instead of overlapping.
+    static func clearance(arrow: Annotation, atStart: Bool, shape: Annotation) -> CGFloat {
+        edgeExtent(of: shape) + endExtent(of: arrow, atStart: atStart) + gap
+    }
 
     /// Shapes an arrow end can attach to.
     static func isConnectable(_ annotation: Annotation) -> Bool {
@@ -159,8 +194,12 @@ enum ArrowConnectors {
             ?? (multi ? anchors[1] : arrow.controlPoint ?? arrow.endPoint)
         let endAim = from.flatMap { center(of: $0) }
             ?? (multi ? anchors[anchors.count - 2] : arrow.controlPoint ?? arrow.startPoint)
-        let newStart = from.flatMap { borderPoint(of: $0, toward: startAim) } ?? arrow.startPoint
-        let newEnd = to.flatMap { borderPoint(of: $0, toward: endAim) } ?? arrow.endPoint
+        let newStart = from.flatMap {
+            borderPoint(of: $0, toward: startAim, gap: clearance(arrow: arrow, atStart: true, shape: $0))
+        } ?? arrow.startPoint
+        let newEnd = to.flatMap {
+            borderPoint(of: $0, toward: endAim, gap: clearance(arrow: arrow, atStart: false, shape: $0))
+        } ?? arrow.endPoint
 
         func moved(_ a: NSPoint, _ b: NSPoint) -> Bool { abs(a.x - b.x) > 0.01 || abs(a.y - b.y) > 0.01 }
         guard moved(newStart, arrow.startPoint) || moved(newEnd, arrow.endPoint) else { return false }
