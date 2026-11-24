@@ -947,3 +947,5 @@
 "Save to history" = "Guardar en el historial";
 "On close:" = "Al cerrar:";
 "What happens to a capture with unsaved changes when you close the editor (Esc, ⌘W, the red button)." = "Qué pasa con una captura con cambios sin guardar al cerrar el editor (Esc, ⌘W, el botón rojo).";
+"Default tool:" = "Herramienta inicial:";
+"Tool a capture starts with. With \"Remember last selected tool\" on, it's used only until you pick one." = "Herramienta con la que arranca una captura. Con \"Remember last selected tool\" activado, se usa solo hasta que elijas otra.";
