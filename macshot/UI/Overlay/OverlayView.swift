@@ -8637,7 +8637,7 @@ class OverlayView: NSView {
     }
 
     @objc private func overflowMenuOpenSettings() {
-        (NSApp.delegate as? AppDelegate)?.openSettings(tab: "tools")
+        (NSApp.delegate as? AppDelegate)?.openSettingsTab("tools")
     }
 
     private func showKeystrokeModeMenu(anchorView: NSView) {
