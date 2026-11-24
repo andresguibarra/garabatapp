@@ -119,6 +119,18 @@ enum ArrowConnectors {
         if distance > t0, clear(t0) {
             return (onLine, true)
         }
+        // 1b. Almost: something beside the tip (a thick arrow's flat tail, a wing)
+        //     grazes the edge. Back off along the center line if a point is enough.
+        if distance > t0 {
+            var lo = t0, hi = t0 + 1
+            if clear(hi) {
+                for _ in 0..<30 {
+                    let mid = (lo + hi) / 2
+                    if clear(mid) { hi = mid } else { lo = mid }
+                }
+                return (NSPoint(x: c.x + ux * hi, y: c.y + uy * hi), true)
+            }
+        }
         // 2. Too shallow for that (a wing would land on the edge first and the
         //    tip would float): the spot of the paint nearest to the aim. The tip
         //    touches there and, the shape being convex, the wings never do.
