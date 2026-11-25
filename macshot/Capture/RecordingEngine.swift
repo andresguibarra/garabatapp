@@ -29,6 +29,9 @@ final class RecordingEngine: NSObject {
     // MARK: - SCStream
 
     private var stream: SCStream?
+    /// Set while a take follows a window: the live configuration whose
+    /// destination rect is re-centered when the window is resized.
+    private var followConfiguration: (config: SCStreamConfiguration, mapping: WindowFitMapping, windowSize: CGSize)?
     private var streamStartAttempted = false
     private var streamOutput: RecordingStreamOutput?
 
@@ -95,7 +98,8 @@ final class RecordingEngine: NSObject {
     /// Optional overrides take precedence over UserDefaults for this session.
     /// `appName` fills the filename template's `{app}` token.
     func startRecording(rect: NSRect, screen: NSScreen, fpsOverride: Int? = nil, excludeWindowNumbers: [CGWindowID] = [],
-                        editablePointer: Bool = false, cameraWindowID: CGWindowID? = nil, appName: String? = nil) {
+                        editablePointer: Bool = false, cameraWindowID: CGWindowID? = nil, appName: String? = nil,
+                        followedWindowID: CGWindowID? = nil, followedWindow: TrackedWindowFrame? = nil) {
         guard state == .idle else { return }
         var configuration: RecordingConfiguration
         do {
@@ -114,6 +118,11 @@ final class RecordingEngine: NSObject {
             configuration.hidesCursor = editablePointer
             configuration.overlaysInTelemetry = editablePointer
             configuration.cameraWindowID = cameraWindowID
+            configuration.followedWindowID = followedWindowID
+            configuration.followedWindow = followedWindowID == nil ? nil : followedWindow
+            if configuration.followedWindowID != nil, let frame = followedWindow?.current {
+                configuration.pointerRegion = frame
+            }
         } catch {
             guard lifecycle.begin() != nil else { return }
             stopRecording(error: error)
@@ -164,6 +173,17 @@ final class RecordingEngine: NSObject {
             guard self.lifecycle.isPreparing(sessionID) else { return }
             await self.beginCapture(configuration: configuration, sessionID: sessionID)
         }
+    }
+
+    /// The followed window changed size: keep its scaled content centered
+    /// in the video (ScreenCaptureKit alone pins it to the top-left corner).
+    func followedWindowDidResize(to size: CGSize) {
+        guard var follow = followConfiguration, follow.windowSize != size, let stream else { return }
+        follow.windowSize = size
+        followConfiguration = follow
+        follow.config.destinationRect = follow.mapping.destinationRect(
+            forWindowSize: size, pixelSize: CGSize(width: follow.config.width, height: follow.config.height))
+        stream.updateConfiguration(follow.config) { _ in }
     }
 
     func pauseRecording() {
@@ -257,7 +277,13 @@ final class RecordingEngine: NSObject {
             let excludeWindows = excludeIDs.compactMap { wid in
                 content.windows.first(where: { CGWindowID($0.windowID) == wid })
             }
-            let filter = SCContentFilter(display: display, excludingWindows: excludeWindows)
+            // A take that follows a window captures only that window, wherever
+            // it goes; ScreenCaptureKit scales it to fit the starting size.
+            let followedSCWindow = configuration.followedWindowID.flatMap { wid in
+                content.windows.first(where: { CGWindowID($0.windowID) == wid })
+            }
+            let filter = followedSCWindow.map { SCContentFilter(desktopIndependentWindow: $0) }
+                ?? SCContentFilter(display: display, excludingWindows: excludeWindows)
             let config = SCStreamConfiguration()
             config.width = configuration.pixelWidth
             config.height = configuration.pixelHeight
@@ -265,7 +291,15 @@ final class RecordingEngine: NSObject {
             // Editable takes keep the pointer out of the pixels: the editor
             // redraws it sharply from recorded pointer data.
             config.showsCursor = !configuration.hidesCursor
-            config.sourceRect = configuration.sourceRect
+            if followedSCWindow == nil {
+                config.sourceRect = configuration.sourceRect
+            } else {
+                config.backgroundColor = CGColor.black
+                if #available(macOS 14.0, *) {
+                    config.ignoreShadowsSingleWindow = true
+                    config.preservesAspectRatio = true
+                }
+            }
             config.pixelFormat = kCVPixelFormatType_32BGRA
             config.scalesToFit = true
             // Force sRGB at capture time. Without this ScreenCaptureKit delivers
@@ -285,6 +319,9 @@ final class RecordingEngine: NSObject {
 
             let pixelW = config.width
             let pixelH = config.height
+            if followedSCWindow != nil, let start = configuration.followedWindow?.current.size {
+                followConfiguration = (config, WindowFitMapping(outputSize: start), start)
+            }
 
             let stored: RecordingSessionStore = try await withCheckedThrowingContinuation { continuation in
                 recordingQueue.async {
@@ -314,12 +351,13 @@ final class RecordingEngine: NSObject {
                     pixelSize: CGSize(width: pixelW, height: pixelH), frameRate: configuration.frameRate,
                     cursorHiddenInVideo: configuration.hidesCursor, overlaysInTelemetry: configuration.overlaysInTelemetry)
                 cursorTelemetry = try? CursorTelemetryRecorder(
-                    url: stored.directoryURL.appendingPathComponent(CursorTelemetry.filename), region: region, header: header)
+                    url: stored.directoryURL.appendingPathComponent(CursorTelemetry.filename), region: region, header: header,
+                    followedWindow: followedSCWindow == nil ? nil : configuration.followedWindow)
             }
             let telemetry = cursorTelemetry
             let camera = cameraRecorder
             camera?.open(directory: stored.directoryURL)
-            if let camera, let cameraWindow = configuration.cameraWindowID {
+            if let camera, let cameraWindow = configuration.cameraWindowID, followedSCWindow == nil {
                 // If the separate camera file fails, capture the webcam in the
                 // screen video again so the take never loses it.
                 let fallbackWindows = excludeWindows.filter { CGWindowID($0.windowID) != cameraWindow }
@@ -423,6 +461,7 @@ final class RecordingEngine: NSObject {
                 catch { captureError = captureError ?? error }
             }
             self.stream = nil
+            followConfiguration = nil
         }
         streamStartAttempted = false
         streamOutput = nil

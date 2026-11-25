@@ -119,6 +119,13 @@ class OverlayWindowController {
         return capturedAppName
     }
 
+    /// Window a recording should follow: the snapped window, while the
+    /// selection is still exactly that window. Call before `dismiss()`.
+    func followableWindowID() -> CGWindowID? {
+        guard let view = overlayView, view.selectionIsWindowSnap else { return nil }
+        return view.snappedWindowID ?? view.hoveredSnapWindowID
+    }
+
     private static func ownerName(ofWindow windowID: CGWindowID) -> String? {
         guard let info = CGWindowListCopyWindowInfo([.optionIncludingWindow], windowID) as? [[String: Any]] else {
             return nil
