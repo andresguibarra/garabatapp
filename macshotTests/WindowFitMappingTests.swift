@@ -41,4 +41,13 @@ final class WindowFitMappingTests: XCTestCase {
         let content = mapping.contentRect(forWindowSize: CGSize(width: 400, height: 300))
         XCTAssertEqual(content, CGRect(x: 0, y: 0, width: 1, height: 1))
     }
+
+    func testDestinationRectCentersInWholePixels() {
+        let rect = mapping.destinationRect(forWindowSize: CGSize(width: 1600, height: 600),
+                                           pixelSize: CGSize(width: 1600, height: 1200))
+        XCTAssertEqual(rect, CGRect(x: 0, y: 300, width: 1600, height: 600))
+        let tall = mapping.destinationRect(forWindowSize: CGSize(width: 400, height: 600),
+                                           pixelSize: CGSize(width: 1600, height: 1200))
+        XCTAssertEqual(tall, CGRect(x: 400, y: 0, width: 800, height: 1200))
+    }
 }

@@ -3575,6 +3575,7 @@ extension AppDelegate: OverlayWindowControllerDelegate {
             tracker.onChange = { [weak self] frame in
                 guard let self else { return }
                 self.recordingScreenRect = frame
+                self.recordingEngine?.followedWindowDidResize(to: frame.size)
                 let center = NSPoint(x: frame.midX, y: frame.midY)
                 let screen = NSScreen.screens.first(where: { $0.frame.contains(center) }) ?? self.recordingScreen
                 // Only the window is captured, so the border can move to

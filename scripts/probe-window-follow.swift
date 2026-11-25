@@ -65,6 +65,13 @@ struct Probe {
         ]
         for (name, rect) in steps {
             win.setFrame(rect, display: true); win.contentView?.needsDisplay = true
+            // Same re-centering RecordingEngine.followedWindowDidResize does.
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            if let size = WindowFollowTracker.bounds(of: wid)?.size {
+                cfg.destinationRect = mapping.destinationRect(forWindowSize: size,
+                    pixelSize: CGSize(width: cfg.width, height: cfg.height))
+                try? await stream.updateConfiguration(cfg)
+            }
             try? await Task.sleep(nanoseconds: 900_000_000)
             sink.lock.lock(); let pb = sink.latest; sink.lock.unlock()
             guard let pb else { print("FAIL \(name): no frame"); failures += 1; continue }

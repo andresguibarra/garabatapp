@@ -29,6 +29,9 @@ final class RecordingEngine: NSObject {
     // MARK: - SCStream
 
     private var stream: SCStream?
+    /// Set while a take follows a window: the live configuration whose
+    /// destination rect is re-centered when the window is resized.
+    private var followConfiguration: (config: SCStreamConfiguration, mapping: WindowFitMapping, windowSize: CGSize)?
     private var streamStartAttempted = false
     private var streamOutput: RecordingStreamOutput?
 
@@ -172,6 +175,17 @@ final class RecordingEngine: NSObject {
         }
     }
 
+    /// The followed window changed size: keep its scaled content centered
+    /// in the video (ScreenCaptureKit alone pins it to the top-left corner).
+    func followedWindowDidResize(to size: CGSize) {
+        guard var follow = followConfiguration, follow.windowSize != size, let stream else { return }
+        follow.windowSize = size
+        followConfiguration = follow
+        follow.config.destinationRect = follow.mapping.destinationRect(
+            forWindowSize: size, pixelSize: CGSize(width: follow.config.width, height: follow.config.height))
+        stream.updateConfiguration(follow.config) { _ in }
+    }
+
     func pauseRecording() {
         guard lifecycle.pause() else { return }
         recordingClock.pause(at: ProcessInfo.processInfo.systemUptime)
@@ -305,6 +319,9 @@ final class RecordingEngine: NSObject {
 
             let pixelW = config.width
             let pixelH = config.height
+            if followedSCWindow != nil, let start = configuration.followedWindow?.current.size {
+                followConfiguration = (config, WindowFitMapping(outputSize: start), start)
+            }
 
             let stored: RecordingSessionStore = try await withCheckedThrowingContinuation { continuation in
                 recordingQueue.async {
@@ -444,6 +461,7 @@ final class RecordingEngine: NSObject {
                 catch { captureError = captureError ?? error }
             }
             self.stream = nil
+            followConfiguration = nil
         }
         streamStartAttempted = false
         streamOutput = nil

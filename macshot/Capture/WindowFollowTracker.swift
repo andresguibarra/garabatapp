@@ -24,6 +24,19 @@ nonisolated struct WindowFitMapping: Sendable {
         return CGRect(x: (1 - width) / 2, y: (1 - height) / 2, width: width, height: height)
     }
 
+    /// Where the window's content is drawn in a video of `pixelSize`, in
+    /// pixels (top-left origin), rounded to whole pixels. ScreenCaptureKit
+    /// pins scaled content to the top-left corner on its own, so the stream's
+    /// `destinationRect` is set to this to center it.
+    func destinationRect(forWindowSize windowSize: CGSize, pixelSize: CGSize) -> CGRect {
+        let content = contentRect(forWindowSize: windowSize)
+        let width = (content.width * pixelSize.width).rounded()
+        let height = (content.height * pixelSize.height).rounded()
+        return CGRect(x: ((pixelSize.width - width) / 2).rounded(.down),
+                      y: ((pixelSize.height - height) / 2).rounded(.down),
+                      width: width, height: height)
+    }
+
     /// Normalized video position of a global point (Core Graphics coordinates)
     /// while the window covers `windowFrame` (Core Graphics coordinates).
     func normalized(_ point: CGPoint, windowFrame: CGRect) -> CGPoint {
