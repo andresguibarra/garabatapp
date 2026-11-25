@@ -373,17 +373,14 @@ final class TopBarHoverButton: NSButton {
 final class TopBarTooltipView: NSView {
     private static weak var current: TopBarTooltipView?
     private weak var owner: NSView?
-    private var text = ""
-    private static let font = NSFont.systemFont(ofSize: 11, weight: .medium)
-    private static let pad: CGFloat = 6
+    private var tooltip: ShortcutTooltip?
 
     static func show(_ text: String, below button: NSView) {
         guard let content = button.window?.contentView else { return }
         current?.removeFromSuperview()
-        let attrs: [NSAttributedString.Key: Any] = [.font: font]
-        let size = (text as NSString).size(withAttributes: attrs)
-        let w = ceil(size.width) + pad * 2
-        let h = ceil(size.height) + pad
+        let tooltip = ShortcutTooltip(parsing: text)
+        let w = tooltip.size.width
+        let h = tooltip.size.height
         let btnRect = button.convert(button.bounds, to: content)
         var x = btnRect.midX - w / 2
         x = max(content.bounds.minX + 4, min(x, content.bounds.maxX - w - 4))
@@ -391,7 +388,7 @@ final class TopBarTooltipView: NSView {
         var y = btnRect.minY - h - 6
         if content.isFlipped { y = btnRect.maxY + 6 }
         let tip = TopBarTooltipView(frame: NSRect(x: x, y: y, width: w, height: h))
-        tip.text = text
+        tip.tooltip = tooltip
         tip.owner = button
         content.addSubview(tip, positioned: .above, relativeTo: nil)
         current = tip
@@ -406,16 +403,6 @@ final class TopBarTooltipView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     override func draw(_ dirtyRect: NSRect) {
-        ToolbarLayout.bgColor.setFill()
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
-        path.fill()
-        ToolbarLayout.iconColor.withAlphaComponent(0.18).setStroke()
-        path.lineWidth = 1
-        path.stroke()
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: Self.font,
-            .foregroundColor: ToolbarLayout.iconColor,
-        ]
-        (text as NSString).draw(at: NSPoint(x: Self.pad, y: Self.pad / 2), withAttributes: attrs)
+        tooltip?.draw(in: bounds, background: ToolbarLayout.bgColor, foreground: ToolbarLayout.iconColor)
     }
 }

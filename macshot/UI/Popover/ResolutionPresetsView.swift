@@ -165,7 +165,7 @@ final class ResolutionPresetsView: NSView {
                 accessibilityDescription: L("Auto-adjust selection"))
             button.imagePosition = .imageLeading
             if let shortcut = autoAdjustShortcut, !shortcut.isEmpty {
-                button.toolTip = "\(L("Auto-adjust selection")) (\(shortcut))"
+                button.toolTip = "\(L("Auto-adjust selection")) (\(shortcut.uppercased()))"
             }
             button.frame = NSRect(x: 12, y: 7, width: width - 24, height: 24)
             addSubview(button)
