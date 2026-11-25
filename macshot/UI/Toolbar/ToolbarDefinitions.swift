@@ -49,7 +49,7 @@ enum ToolbarButtonAction {
 
 struct ToolbarButton {
     let action: ToolbarButtonAction
-    let sfSymbol: String?
+    var sfSymbol: String?
     let tooltip: String
     var isSelected: Bool = false
     var tintColor: NSColor = ToolbarLayout.iconColor
@@ -58,6 +58,9 @@ struct ToolbarButton {
     var hasContextMenu: Bool = false  // draw small corner triangle to indicate right-click options
     /// Garabatapp: hidden in Settings — lives in the ⋯ menu instead of the strip.
     var isOverflow: Bool = false
+    /// Garabatapp: the ⋯ button standing in for an active hidden tool draws a
+    /// small ▾ beside that tool's icon, so it still reads as a menu.
+    var showsMenuChevron: Bool = false
 }
 
 enum ToolbarCustomAction: Int {
@@ -503,15 +506,26 @@ class ToolbarLayout {
         return withMoreButton(buttons, action: .moreBottom)
     }
 
-    /// Garabatapp: appends the ⋯ button when something is hidden. It shows as
-    /// selected while a hidden tool is the active one.
+    /// Garabatapp: appends the ⋯ button when something is hidden.
     static func withMoreButton(_ buttons: [ToolbarButton], action: ToolbarButtonAction) -> [ToolbarButton] {
         let hidden = buttons.filter { $0.isOverflow }
         guard !hidden.isEmpty else { return buttons }
+        return buttons + [moreButton(action: action, hidden: hidden)]
+    }
+
+    /// Garabatapp: the ⋯ button for `hidden`. While one of the hidden items is
+    /// selected it takes that item's icon (plus a ▾) and shows as selected, so
+    /// the active tool stays visible even though it lives in the menu.
+    static func moreButton(action: ToolbarButtonAction, hidden: [ToolbarButton]) -> ToolbarButton {
         var more = ToolbarButton(action: action, sfSymbol: "ellipsis", tooltip: L("More"))
-        more.isSelected = hidden.contains { $0.isSelected }
         more.hasContextMenu = false
-        return buttons + [more]
+        if let active = hidden.first(where: { $0.isSelected }), active.sfSymbol != nil {
+            more.sfSymbol = active.sfSymbol
+            more.isSelected = true
+            more.showsMenuChevron = true
+            more.selectedTintColor = active.selectedTintColor
+        }
+        return more
     }
 
     // Right toolbar items (output actions + cancel + delay)
