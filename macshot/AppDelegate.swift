@@ -1093,6 +1093,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             }
             delayItem.submenu = delaySubmenu
             return delayItem
+        case .captureActiveWindow: return actionItem(#selector(captureActiveWindowFromHotkey))
         case .recordArea: return actionItem(#selector(recordArea))
         case .recordGIF: return actionItem(#selector(recordGIF))
         case .recordScreen: return actionItem(#selector(recordFullScreen))
