@@ -26,10 +26,19 @@ enum LineStyle: Int, CaseIterable {
     case solid = 0
     case dashed = 1
     case dotted = 2
+    case sketch = 3  // hand-drawn marker look (rect, ellipse, line, arrow); see SketchGeometry
+
+    /// Tools whose line-style picker offers `.sketch`.
+    static func styles(for tool: AnnotationTool) -> [LineStyle] {
+        switch tool {
+        case .rectangle, .ellipse, .line, .arrow: return allCases
+        default: return [.solid, .dashed, .dotted]
+        }
+    }
 
     func apply(to path: NSBezierPath) {
         switch self {
-        case .solid: break
+        case .solid, .sketch: break
         case .dashed:
             let pattern: [CGFloat] = [path.lineWidth * 3, path.lineWidth * 2]
             path.setLineDash(pattern, count: 2, phase: 0)
@@ -46,7 +55,7 @@ enum LineStyle: Int, CaseIterable {
     func applyFitted(to path: NSBezierPath, pathLength: CGFloat) {
         guard pathLength > 0 else { apply(to: path); return }
         switch self {
-        case .solid: break
+        case .solid, .sketch: break
         case .dashed:
             let dashLen = path.lineWidth * 3
             let gapLen = path.lineWidth * 2
@@ -874,6 +883,10 @@ class Annotation {
     }
 
     private func drawStraightLine() {
+        if lineStyle == .sketch {
+            drawSketchLine(endHead: false, startHead: false)
+            return
+        }
         // Multi-anchor: smooth Catmull-Rom spline
         if hasMultiAnchor {
             let pts = waypoints
@@ -927,9 +940,9 @@ class Annotation {
             drawThickArrow()
             return
         }
-        // Sketchy style is hand-drawn — also a different shape pipeline
-        if arrowStyle == .sketchy {
-            drawSketchyArrow()
+        // Hand-drawn: the sketchy arrow style, or any arrow with the sketch line style.
+        if arrowStyle == .sketchy || lineStyle == .sketch {
+            drawSketchLine(endHead: true, startHead: arrowStyle == .double)
             return
         }
 
@@ -1245,218 +1258,6 @@ class Annotation {
         path.fill()
     }
 
-    /// Hand-drawn arrow style. The shaft follows the user's actual line/curve,
-    /// with deterministic wobble and pressure variation. The head is an open
-    /// chevron separated slightly from the shaft so it feels drawn by hand.
-    private func drawSketchyArrow() {
-        let pts = arrowReversed ? waypoints.reversed() : waypoints
-        guard pts.count >= 2 else { return }
-        let firstPt = pts.first!
-        let lastPt = pts.last!
-
-        let totalLen = hasMultiAnchor
-            ? Self.smoothPathLength(pts)
-            : (controlPoint != nil
-                ? Self.approxBezierLength(from: firstPt, cp1: controlPoint!, cp2: controlPoint!, to: lastPt)
-                : hypot(lastPt.x - firstPt.x, lastPt.y - firstPt.y))
-        guard totalLen > 4 else { return }
-
-        func sampleBase(at t: CGFloat) -> (point: NSPoint, tangent: CGVector) {
-            let t = max(0, min(1, t))
-            if hasMultiAnchor {
-                let totalSegments = CGFloat(pts.count - 1)
-                let segF = t * totalSegments
-                let seg = min(Int(segF), pts.count - 2)
-                let lt = segF - CGFloat(seg)
-                let p0 = seg > 0 ? pts[seg - 1] : pts[seg]
-                let p1 = pts[seg]
-                let p2 = pts[seg + 1]
-                let p3 = seg + 2 < pts.count ? pts[seg + 2] : pts[seg + 1]
-                let cp1 = NSPoint(x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6)
-                let cp2 = NSPoint(x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6)
-                let u = 1 - lt
-                let x = u*u*u*p1.x + 3*u*u*lt*cp1.x + 3*u*lt*lt*cp2.x + lt*lt*lt*p2.x
-                let y = u*u*u*p1.y + 3*u*u*lt*cp1.y + 3*u*lt*lt*cp2.y + lt*lt*lt*p2.y
-                let tx = 3*u*u*(cp1.x - p1.x) + 6*u*lt*(cp2.x - cp1.x) + 3*lt*lt*(p2.x - cp2.x)
-                let ty = 3*u*u*(cp1.y - p1.y) + 6*u*lt*(cp2.y - cp1.y) + 3*lt*lt*(p2.y - cp2.y)
-                return (NSPoint(x: x, y: y), CGVector(dx: tx, dy: ty))
-            }
-            if let cp = controlPoint {
-                let u = 1 - t
-                let x = u*u*firstPt.x + 2*u*t*cp.x + t*t*lastPt.x
-                let y = u*u*firstPt.y + 2*u*t*cp.y + t*t*lastPt.y
-                let tx = 2*u*(cp.x - firstPt.x) + 2*t*(lastPt.x - cp.x)
-                let ty = 2*u*(cp.y - firstPt.y) + 2*t*(lastPt.y - cp.y)
-                return (NSPoint(x: x, y: y), CGVector(dx: tx, dy: ty))
-            }
-            return (
-                NSPoint(
-                    x: firstPt.x + (lastPt.x - firstPt.x) * t,
-                    y: firstPt.y + (lastPt.y - firstPt.y) * t),
-                CGVector(dx: lastPt.x - firstPt.x, dy: lastPt.y - firstPt.y)
-            )
-        }
-
-        var rng = SketchyRNG(seed: randomSeed)
-        let wobblePhaseA = rng.cgFloat(in: 0...(2 * .pi))
-        let wobblePhaseB = rng.cgFloat(in: 0...(2 * .pi))
-        let pressurePhase = rng.cgFloat(in: 0...(2 * .pi))
-        let wobbleAmp = min(max(strokeWidth * 0.18, 0.45), 1.8)
-        let baseWidth = max(1.2, strokeWidth)
-        let headLen = min(max(baseWidth * 4.3, 13), totalLen * 0.27)
-        let headGap = min(max(baseWidth * 0.28, 1.5), max(2, totalLen * 0.025))
-        let shaftEndLen = max(0, totalLen - headLen - headGap)
-        let headBaseLen = max(0, totalLen - headLen)
-        let steps = max(12, min(140, Int(totalLen / 6)))
-
-        func point(atDistance distance: CGFloat) -> (point: NSPoint, tangent: CGVector) {
-            sampleBase(at: totalLen > 0 ? distance / totalLen : 0)
-        }
-
-        func sketchPoint(distance: CGFloat, pass: Int) -> NSPoint {
-            let sampled = point(atDistance: distance)
-            let tangentLen = max(hypot(sampled.tangent.dx, sampled.tangent.dy), 0.001)
-            let nx = -sampled.tangent.dy / tangentLen
-            let ny = sampled.tangent.dx / tangentLen
-            let progress = totalLen > 0 ? distance / totalLen : 0
-            let taper = pow(sin(progress * .pi), 0.85)
-            let wobble =
-                sin(progress * 8.5 + wobblePhaseA + CGFloat(pass) * 0.63) * wobbleAmp +
-                sin(progress * 19.0 + wobblePhaseB + CGFloat(pass) * 1.19) * wobbleAmp * 0.24
-            return NSPoint(
-                x: sampled.point.x + nx * wobble * taper,
-                y: sampled.point.y + ny * wobble * taper)
-        }
-
-        func strokeSketchLine(color strokeColor: NSColor, extraWidth: CGFloat, pass: Int) {
-            guard shaftEndLen > 2 else { return }
-            strokeColor.setStroke()
-            var prev = sketchPoint(distance: 0, pass: pass)
-            for i in 1...steps {
-                let progress = CGFloat(i) / CGFloat(steps)
-                let distance = shaftEndLen * progress
-                let cur = sketchPoint(distance: distance, pass: pass)
-                let endTaper = 0.92 + 0.08 * sin(progress * .pi)
-                let widthVariation = endTaper * (0.91 + 0.16 * sin(progress * 2.15 * .pi + pressurePhase))
-                let segment = NSBezierPath()
-                segment.lineWidth = baseWidth * widthVariation + extraWidth
-                segment.lineCapStyle = .round
-                segment.lineJoinStyle = .round
-                segment.move(to: prev)
-                segment.line(to: cur)
-                segment.stroke()
-                prev = cur
-            }
-        }
-
-        if let oc = outlineColor {
-            strokeSketchLine(color: oc, extraWidth: 6, pass: 0)
-        }
-        strokeSketchLine(color: color, extraWidth: 0, pass: 0)
-
-        // Sample the shaft tangent at the nose so the head aligns with the line direction.
-        let headDirSample = point(atDistance: totalLen)
-        let tangentLen = max(hypot(headDirSample.tangent.dx, headDirSample.tangent.dy), 0.001)
-        let dir = CGVector(dx: headDirSample.tangent.dx / tangentLen, dy: headDirSample.tangent.dy / tangentLen)
-        let normal = CGVector(dx: -dir.dy, dy: dir.dx)
-        // Nose tends to overshoot the shaft end a little, like a quick pen flick.
-        let noseExtend = rng.cgFloat(in: (headLen * 0.04)...(headLen * 0.14))
-        let noseLateral = rng.cgFloat(in: -headLen * 0.05...headLen * 0.05)
-        let nose = NSPoint(
-            x: lastPt.x + dir.dx * noseExtend + normal.dx * noseLateral,
-            y: lastPt.y + dir.dy * noseExtend + normal.dy * noseLateral)
-
-        // Two chevron legs, deliberately uneven in length, angle, and base spread.
-        // A typical real-life sketched chevron has noticeably different legs.
-        let baseSpread = max(baseWidth * 2.6, 8)
-        let leftLen = headLen * rng.cgFloat(in: 0.92...1.18)
-        let rightLen = headLen * rng.cgFloat(in: 0.78...1.08)
-        let leftSpread = baseSpread * rng.cgFloat(in: 0.95...1.25)
-        let rightSpread = baseSpread * rng.cgFloat(in: 0.85...1.15)
-        // Each leg can tilt a bit off the perfect mirror — adds asymmetry.
-        let leftAngleSkew = rng.cgFloat(in: -0.18...0.18)
-        let rightAngleSkew = rng.cgFloat(in: -0.18...0.18)
-        // The two leg endpoints, splayed off the back of the nose with skew.
-        let leftBase = NSPoint(
-            x: nose.x - dir.dx * leftLen + normal.dx * leftSpread
-                + dir.dx * leftAngleSkew * leftSpread,
-            y: nose.y - dir.dy * leftLen + normal.dy * leftSpread
-                + dir.dy * leftAngleSkew * leftSpread)
-        let rightBase = NSPoint(
-            x: nose.x - dir.dx * rightLen - normal.dx * rightSpread
-                + dir.dx * rightAngleSkew * rightSpread,
-            y: nose.y - dir.dy * rightLen - normal.dy * rightSpread
-                + dir.dy * rightAngleSkew * rightSpread)
-        // Bow magnitude scales with leg length so it's actually visible. Sign is
-        // independent per leg so they don't mirror each other.
-        let leftBow = rng.cgFloat(in: 0.10...0.22) * leftLen
-            * (rng.next() & 1 == 0 ? 1 : -1)
-        let rightBow = rng.cgFloat(in: 0.10...0.22) * rightLen
-            * (rng.next() & 1 == 0 ? 1 : -1)
-        // Bow position along the leg (0.5 = midpoint, biased so the curve peaks
-        // slightly off-center for a more natural stroke).
-        let leftBowPos = rng.cgFloat(in: 0.40...0.62)
-        let rightBowPos = rng.cgFloat(in: 0.40...0.62)
-        // Tiny tangential nudge on the bow control to break the perfect arc shape.
-        let leftBowTan = rng.cgFloat(in: -0.08...0.08) * leftLen
-        let rightBowTan = rng.cgFloat(in: -0.08...0.08) * rightLen
-
-        func drawHeadChevron(color strokeColor: NSColor, width: CGFloat) {
-            strokeColor.setStroke()
-            // Left leg: quadratic bezier with a noticeably-bowed mid control.
-            let lmx = nose.x + (leftBase.x - nose.x) * leftBowPos
-            let lmy = nose.y + (leftBase.y - nose.y) * leftBowPos
-            let leftCtrl = NSPoint(
-                x: lmx + normal.dx * leftBow + dir.dx * leftBowTan,
-                y: lmy + normal.dy * leftBow + dir.dy * leftBowTan)
-            let leftPath = NSBezierPath()
-            leftPath.lineWidth = width
-            leftPath.lineCapStyle = .round
-            leftPath.lineJoinStyle = .round
-            leftPath.move(to: nose)
-            leftPath.curve(to: leftBase, controlPoint1: leftCtrl, controlPoint2: leftCtrl)
-            leftPath.stroke()
-            // Right leg: same idea, independent bow direction.
-            let rmx = nose.x + (rightBase.x - nose.x) * rightBowPos
-            let rmy = nose.y + (rightBase.y - nose.y) * rightBowPos
-            let rightCtrl = NSPoint(
-                x: rmx + normal.dx * rightBow + dir.dx * rightBowTan,
-                y: rmy + normal.dy * rightBow + dir.dy * rightBowTan)
-            let rightPath = NSBezierPath()
-            rightPath.lineWidth = width
-            rightPath.lineCapStyle = .round
-            rightPath.lineJoinStyle = .round
-            rightPath.move(to: nose)
-            rightPath.curve(to: rightBase, controlPoint1: rightCtrl, controlPoint2: rightCtrl)
-            rightPath.stroke()
-        }
-
-        if let oc = outlineColor {
-            drawHeadChevron(color: oc, width: baseWidth + 6)
-        }
-        drawHeadChevron(color: color, width: baseWidth)
-    }
-
-    /// Tiny deterministic PRNG (xorshift32) so sketchy arrows look the same
-    /// across redraws while still varying between instances.
-    private struct SketchyRNG {
-        var state: UInt32
-        init(seed: UInt32) { self.state = seed }
-        mutating func next() -> UInt32 {
-            var x = state
-            x ^= x << 13
-            x ^= x >> 17
-            x ^= x << 5
-            state = x
-            return x
-        }
-        mutating func cgFloat(in range: ClosedRange<CGFloat>) -> CGFloat {
-            let n = CGFloat(next()) / CGFloat(UInt32.max)
-            return range.lowerBound + n * (range.upperBound - range.lowerBound)
-        }
-        mutating func bool() -> Bool { next() & 1 == 0 }
-    }
-
     private func drawRectangle(forceFilled: Bool = false) {
         let rect = boundingRect
         guard rect.width > 0, rect.height > 0 else { return }
@@ -1464,7 +1265,7 @@ class Annotation {
         let style = forceFilled ? RectFillStyle.fill : rectFillStyle
 
         // When outline is active, force solid style (dashed/dotted disabled in UI)
-        let effectiveLineStyle = outlineColor != nil ? .solid : lineStyle
+        let effectiveLineStyle = outlineColor != nil && lineStyle != .sketch ? .solid : lineStyle
 
         let rectPerimeter: CGFloat = {
             let r = min(cornerRadius, min(rect.width, rect.height) / 2)
@@ -1487,6 +1288,7 @@ class Annotation {
             let fillAlpha = color.alphaComponent * 0.5
             color.withAlphaComponent(fillAlpha).setFill()
             NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius).fill()
+            if effectiveLineStyle == .sketch { drawSketchShapeStroke(rect: rect, oval: false); return }
             let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
             path.lineWidth = strokeWidth
             path.lineJoinStyle = cornerRadius > 0 ? .round : .miter
@@ -1502,7 +1304,9 @@ class Annotation {
             path.stroke()
 
         case .stroke:
-            if cornerRadius < 1 && (effectiveLineStyle == .dotted || effectiveLineStyle == .dashed) {
+            if effectiveLineStyle == .sketch {
+                drawSketchShapeStroke(rect: rect, oval: false)
+            } else if cornerRadius < 1 && (effectiveLineStyle == .dotted || effectiveLineStyle == .dashed) {
                 if effectiveLineStyle == .dotted {
                     drawDottedRectPerSide(rect: rect)
                 } else {
@@ -1611,7 +1415,7 @@ class Annotation {
         guard rect.width > 0, rect.height > 0 else { return }
 
         // When outline is active, force solid style (dashed/dotted disabled in UI)
-        let effectiveLineStyle = outlineColor != nil ? .solid : lineStyle
+        let effectiveLineStyle = outlineColor != nil && lineStyle != .sketch ? .solid : lineStyle
 
         let ellipsePerimeter: CGFloat = {
             let a = rect.width / 2, b = rect.height / 2
@@ -1633,6 +1437,7 @@ class Annotation {
             let fillAlpha = color.alphaComponent * 0.5
             color.withAlphaComponent(fillAlpha).setFill()
             NSBezierPath(ovalIn: rect).fill()
+            if effectiveLineStyle == .sketch { drawSketchShapeStroke(rect: rect, oval: true); return }
             let path = NSBezierPath(ovalIn: rect)
             path.lineWidth = strokeWidth
             if effectiveLineStyle != .solid {
@@ -1647,6 +1452,7 @@ class Annotation {
             path.stroke()
 
         case .stroke:
+            if effectiveLineStyle == .sketch { drawSketchShapeStroke(rect: rect, oval: true); return }
             let path = NSBezierPath(ovalIn: rect)
             path.lineWidth = strokeWidth
             if effectiveLineStyle != .solid {
@@ -1660,6 +1466,88 @@ class Annotation {
             color.setStroke()
             path.stroke()
         }
+    }
+
+    // MARK: - Hand-drawn (sketch line style)
+
+    /// Stroke of a rectangle or ellipse drawn as with a marker (fill stays smooth).
+    private func drawSketchShapeStroke(rect: NSRect, oval: Bool) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        let r = SketchGeometry.randoms(seed: randomSeed)
+        let width = SketchGeometry.shapeLineWidth(strokeWidth, rect: rect)
+        let path = oval
+            ? SketchGeometry.ellipsePath(in: rect, randoms: r)
+            : SketchGeometry.rectPath(in: rect, lineWidth: width, randoms: r)
+        ctx.saveGState()
+        // Round ends: marker strokes, and overshooting rectangle sides don't leave square stubs.
+        ctx.setLineCap(.round)
+        ctx.setLineJoin(.round)
+        if let oc = outlineColor {
+            ctx.addPath(path)
+            ctx.setLineWidth(width + 6)
+            ctx.setStrokeColor(oc.cgColor)
+            ctx.strokePath()
+        }
+        ctx.addPath(path)
+        ctx.setLineWidth(width)
+        ctx.setStrokeColor(color.cgColor)
+        ctx.strokePath()
+        ctx.restoreGState()
+    }
+
+    /// Centerline of a line/arrow (start → end, honoring reverse and bends) as a polyline.
+    private func sketchCenterline() -> [CGPoint] {
+        let pts = arrowReversed && tool == .arrow ? waypoints.reversed() : waypoints
+        guard pts.count >= 2 else { return pts }
+        let path: NSBezierPath
+        if hasMultiAnchor {
+            path = Self.smoothPath(through: pts)
+        } else {
+            path = NSBezierPath()
+            path.move(to: pts[0])
+            if let cp = controlPoint {
+                path.curve(to: pts[pts.count - 1], controlPoint1: cp, controlPoint2: cp)
+            } else {
+                path.line(to: pts[pts.count - 1])
+            }
+        }
+        if !hasMultiAnchor && controlPoint == nil { return [pts[0], pts[pts.count - 1]] }
+        let oldFlatness = NSBezierPath.defaultFlatness
+        NSBezierPath.defaultFlatness = 0.3
+        let flat = path.flattened
+        NSBezierPath.defaultFlatness = oldFlatness
+        var out: [CGPoint] = []
+        var buf = [NSPoint](repeating: .zero, count: 3)
+        for i in 0..<flat.elementCount {
+            let kind = flat.element(at: i, associatedPoints: &buf)
+            if kind == .moveTo || kind == .lineTo, out.last != buf[0] { out.append(buf[0]) }
+        }
+        return out.count >= 2 ? out : [pts[0], pts[pts.count - 1]]
+    }
+
+    /// Hand-drawn line or arrow: a filled variable-width body plus open heads.
+    private func drawSketchLine(endHead: Bool, startHead: Bool) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        let line = sketchCenterline()
+        guard line.count >= 2 else { return }
+        let path = SketchGeometry.strokePath(centerline: line, strokeWidth: strokeWidth,
+                                             randoms: SketchGeometry.randoms(seed: randomSeed),
+                                             endHead: endHead, startHead: startHead)
+        ctx.saveGState()
+        if let oc = outlineColor {
+            ctx.addPath(path)
+            ctx.setLineWidth(6)
+            ctx.setLineJoin(.round)
+            ctx.setStrokeColor(oc.cgColor)
+            ctx.strokePath()
+            ctx.addPath(path)
+            ctx.setFillColor(oc.cgColor)
+            ctx.fillPath(using: .winding)
+        }
+        ctx.addPath(path)
+        ctx.setFillColor(color.cgColor)
+        ctx.fillPath(using: .winding)
+        ctx.restoreGState()
     }
 
     private func drawText() {

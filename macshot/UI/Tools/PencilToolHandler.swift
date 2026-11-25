@@ -35,7 +35,7 @@ final class PencilToolHandler: AnnotationToolHandler {
         if canvas.pencilPressureEnabled {
             annotation.pressures = [canvas.currentPressure]
         }
-        annotation.lineStyle = canvas.currentLineStyle
+        annotation.lineStyle = canvas.currentLineStyle == .sketch ? .solid : canvas.currentLineStyle
         return annotation
     }
 

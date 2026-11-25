@@ -10447,6 +10447,23 @@ class OverlayView: NSView {
             return
         }
 
+        // ⌘R redraws the selected hand-drawn shapes with a new stroke (one undo step each).
+        if state == .selected, textEditView == nil, !selectedAnnotations.isEmpty,
+           KeyboardShortcutMatcher.matches(event, character: "r", modifiers: [.command]) {
+            let sketched = selectedAnnotations.filter {
+                $0.lineStyle == .sketch || ($0.tool == .arrow && $0.arrowStyle == .sketchy)
+            }
+            if !sketched.isEmpty {
+                for ann in sketched {
+                    let snapshot = ann.clone()
+                    ann.randomSeed = UInt32.random(in: 1...UInt32.max)
+                    pushPropertyChangeUndo(annotation: ann, snapshot: snapshot)
+                }
+                needsDisplay = true
+                return
+            }
+        }
+
         // Arrow keys nudge the selected annotations: 1 pt, or 10 pt with Shift.
         if (123...126).contains(event.keyCode), state == .selected, textEditView == nil,
            !selectedAnnotations.isEmpty, !isDraggingAnnotation, !isResizingAnnotation, !isRotatingAnnotation,
