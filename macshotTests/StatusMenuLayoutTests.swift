@@ -175,4 +175,45 @@ final class StatusMenuLayoutEditorTests: XCTestCase {
         let settings = editor.menuLayout.menu.firstIndex(of: .item(.settings))!
         XCTAssertFalse(editor.move(from: (.menu, settings), to: .more))
     }
+
+    func testHoverButtonsHideMoveAndRestore() {
+        let editor = makeEditor()
+        let video = StatusMenuLayout.default.menu.firstIndex(of: .item(.openVideo))!
+        // Menu row: More, Hide.
+        let menuButtons = editor.hoverActions(zone: .menu, index: video)
+        XCTAssertEqual(menuButtons.map(\.zone), [.more, .hidden])
+        XCTAssertTrue(editor.simulateClick(at: NSPoint(x: menuButtons[1].frame.midX, y: menuButtons[1].frame.midY)))
+        XCTAssertEqual(editor.menuLayout.hidden, [.item(.openVideo)])
+
+        // Hidden row: Show in Menu, More.
+        let hiddenButtons = editor.hoverActions(zone: .hidden, index: 0)
+        XCTAssertEqual(hiddenButtons.map(\.zone), [.menu, .more])
+        XCTAssertTrue(editor.simulateClick(at: NSPoint(x: hiddenButtons[1].frame.midX, y: hiddenButtons[1].frame.midY)))
+        XCTAssertEqual(editor.menuLayout.more, [.item(.openVideo)])
+
+        // More row: back to the menu.
+        let moreButtons = editor.hoverActions(zone: .more, index: 0)
+        XCTAssertEqual(moreButtons.map(\.zone), [.menu, .hidden])
+        XCTAssertTrue(editor.simulateClick(at: NSPoint(x: moreButtons[0].frame.midX, y: moreButtons[0].frame.midY)))
+        XCTAssertEqual(editor.menuLayout.zone(of: .openVideo), .menu)
+    }
+
+    func testLockedRowsHaveNoHoverButtonsAndSeparatorsCanBeRemoved() {
+        let editor = makeEditor()
+        let quit = StatusMenuLayout.default.menu.firstIndex(of: .item(.quit))!
+        XCTAssertTrue(editor.hoverActions(zone: .menu, index: quit).isEmpty)
+        let separator = StatusMenuLayout.default.menu.firstIndex(of: .separator)!
+        let buttons = editor.hoverActions(zone: .menu, index: separator)
+        XCTAssertEqual(buttons.map(\.zone), [.hidden])
+        let before = editor.menuLayout.menu.filter { $0 == .separator }.count
+        editor.simulateClick(at: NSPoint(x: buttons[0].frame.midX, y: buttons[0].frame.midY))
+        XCTAssertEqual(editor.menuLayout.menu.filter { $0 == .separator }.count, before - 1)
+    }
+
+    func testClickingARowOutsideItsButtonsDoesNothing() {
+        let editor = makeEditor()
+        let row = editor.rowFrame(zone: .menu, index: 0)!
+        XCTAssertFalse(editor.simulateClick(at: NSPoint(x: row.minX + 40, y: row.midY)))
+        XCTAssertEqual(editor.menuLayout, .default)
+    }
 }
