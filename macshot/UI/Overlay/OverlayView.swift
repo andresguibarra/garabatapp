@@ -796,6 +796,8 @@ class OverlayView: NSView {
     private var cachedFillColor: NSColor?
     /// Garabatapp: Shottr-style area (editor, Select and Crop tools), canvas coords.
     var areaRect: NSRect? { didSet { if areaRect != oldValue { needsDisplay = true } } }
+    /// Pixels of the current screenshot for ⌘-click region snapping, built on first use.
+    var regionFillCache: (image: ObjectIdentifier, fill: RegionFill)?
     fileprivate var areaDrag: AreaDrag = .none
     fileprivate var areaDragStart: NSPoint = .zero
     fileprivate var areaDragOrig: NSRect = .zero
@@ -12021,6 +12023,19 @@ extension OverlayView {
     func beginAreaInteraction(viewPoint: NSPoint) -> Bool {
         guard areaToolActive, !NSEvent.modifierFlags.contains(.control) else { return false }
         let p = viewToCanvas(viewPoint)
+        // ⌘-click: snap the area to the region of continuous colour under the pointer.
+        if NSEvent.modifierFlags.contains(.command), selectionRect.contains(p),
+           !(currentTool == .select && pointHitsAnnotationInteraction(p)),
+           let snapped = regionAreaRect(at: p) {
+            commitTextFieldIfNeeded()
+            if !selectedAnnotations.isEmpty {
+                selectedAnnotations = []
+                rebuildToolbarLayout()
+            }
+            areaDrag = .none
+            areaRect = snapped
+            return true
+        }
         if let hit = areaHit(p), let a = areaRect {
             if hit == .move, currentTool == .select, pointHitsAnnotationInteraction(p) { return false }
             areaDrag = hit
@@ -12223,6 +12238,29 @@ extension OverlayView {
     }
 
     /// Shrink each edge past rows/columns of a single color (Shottr's Smart Adjust).
+    /// The bounding box (canvas coords) of the continuous-colour region under
+    /// `p`, or nil when it is too small to be a useful area.
+    func regionAreaRect(at p: NSPoint) -> NSRect? {
+        guard let img = screenshotImage, selectionRect.width > 0,
+              let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let fill: RegionFill
+        if let cache = regionFillCache, cache.image == ObjectIdentifier(img) {
+            fill = cache.fill
+        } else {
+            guard let built = RegionFill(image: cg) else { return nil }
+            regionFillCache = (ObjectIdentifier(img), built)
+            fill = built
+        }
+        let s = CGFloat(cg.width) / selectionRect.width
+        let x = Int(((p.x - selectionRect.minX) * s).rounded(.down))
+        let row = Int(((selectionRect.maxY - p.y) * s).rounded(.down))
+        guard let box = fill.bounds(x: min(x, cg.width - 1), row: min(row, cg.height - 1)) else { return nil }
+        let r = NSRect(x: selectionRect.minX + box.minX / s, y: selectionRect.maxY - box.maxY / s,
+                       width: box.width / s, height: box.height / s)
+        guard r.width >= 3, r.height >= 3 else { return nil }
+        return snappedToPixels(r)
+    }
+
     func smartAdjustArea() {
         guard let area = areaRect, let img = screenshotImage,
               let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
