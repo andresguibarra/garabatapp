@@ -103,8 +103,9 @@ final class MP4WriterSession: @unchecked Sendable {
         // take somewhere else and moves it here only when finishing, so a
         // crash mid-recording would leave nothing at all. Fast start is applied
         // to exports instead (#452).
-        let settings = VideoEncodingSettings.outputSettings(
-            width: width, height: height, fps: fps, codec: .h264, quality: .high)
+        let settings = VideoEncodingSettings.screenContentSettings(width: width, height: height, fps: fps) {
+            VideoEncodingSettings.outputSettings(width: width, height: height, fps: fps, codec: .h264, quality: .high)
+        }
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
         input.mediaTimeScale = VideoFrameCadence.captureTimeScale
         input.expectsMediaDataInRealTime = true

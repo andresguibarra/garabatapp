@@ -986,3 +986,6 @@
 "Use a single editor window" = "Use a single editor window";
 "A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";
 "Hand-drawn" = "Gambar tangan";
+"Audio" = "Audio";
+"Exporting audio…" = "Mengekspor audio…";
+"This video has no audio" = "Video ini tidak memiliki audio";

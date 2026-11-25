@@ -87,7 +87,7 @@ final class S3Uploader {
 
     func uploadVideo(url: URL, progress: (@MainActor @Sendable (Double) -> Void)? = nil,
                      completion: @escaping (Result<String, Error>) -> Void) {
-        let types = ["gif": "image/gif", "mp4": "video/mp4", "mov": "video/quicktime", "webm": "video/webm"]
+        let types = ["gif": "image/gif", "mp4": "video/mp4", "mov": "video/quicktime", "webm": "video/webm", "m4a": "audio/mp4"]
         upload(payload: .file(url), filename: url.lastPathComponent,
                contentType: types[url.pathExtension.lowercased()] ?? "application/octet-stream",
                progress: progress, completion: completion)

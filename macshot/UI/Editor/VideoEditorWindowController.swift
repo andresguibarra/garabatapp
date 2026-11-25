@@ -820,7 +820,7 @@ extension VideoEditorWindowController {
         case "timeline-zoom": timeline.zoom(by: CGFloat(number(0)), around: timeline.x(for: playback.currentSourceTime))
         case "export":
             var settings = exportSettings
-            settings.format = args.first == "gif" ? .gif : .mp4
+            settings.format = VideoExportSettings.Format(rawValue: args.first ?? "") ?? .mp4
             if args.count > 2, let quality = VideoQuality(rawValue: args[2]) { settings.quality = quality }
             exportSettings = settings
             let url = URL(fileURLWithPath: args.count > 1 ? args[1] : NSTemporaryDirectory() + "/probe-export.mp4")
@@ -940,7 +940,8 @@ extension VideoEditorWindowController {
                     try await GIFExporter.export(request, cancellation: c, progress: p)
                 }, completion: { result in print("export-finished \(url.path) \(result)") })
             } else {
-                let job = try exporter.mp4Job(settings, outputURL: url)
+                let job = settings.format == .audio ? try exporter.audioJob(outputURL: url)
+                    : try exporter.mp4Job(settings, outputURL: url)
                 startExport(status: "MP4", title: url.lastPathComponent, operation: { _, p in
                     try await job.export(to: url) { p($0) }
                 }, completion: { result in print("export-finished \(url.path) \(result)") })
