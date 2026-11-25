@@ -229,6 +229,17 @@ class HotkeyManager {
         hotKeyRefs.removeAll()
     }
 
+    /// Whether the slot's stored binding is one `register` would accept.
+    static func isEnabled(_ slot: HotkeySlot) -> Bool {
+        let (keyCode, modifiers) = readHotkey(for: slot)
+        return modifiers != 0 || isFunctionKey(keyCode)
+    }
+
+    /// Run a slot's action as if its hotkey had been pressed.
+    func trigger(_ slot: HotkeySlot) {
+        callbacks[slot]?()
+    }
+
     /// Re-register every slot that has a callback, from the stored bindings.
     func resume() {
         isSuspended = false
