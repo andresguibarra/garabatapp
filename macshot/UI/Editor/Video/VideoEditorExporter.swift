@@ -103,7 +103,17 @@ final class VideoEditorExporter {
         let includeAudio = !document.project.muted
         let prepared = try prepare(settings, includeAudio: includeAudio)
         let lease = document.source.lease
+        let canvas = prepared.composition.renderSize
+        // Full quality keeps every pixel and frame but encodes screen content
+        // at constant quality, so it is not several times larger than needed.
+        var highSettings: [String: Any]?
         if settings.quality == .high {
+            let fps = SafeNumerics.frameRate(Float(1 / document.frameDuration.seconds))
+            let (width, height) = VideoEncodingSettings.evenDimensions(width: canvas.width, height: canvas.height)
+            highSettings = VideoEncodingSettings.screenContentSettings(width: width, height: height, fps: fps) { [:] }
+            if highSettings?.isEmpty == true { highSettings = nil }
+        }
+        if settings.quality == .high, highSettings == nil {
             guard let session = AVAssetExportSession(asset: prepared.processed.composition,
                                                      presetName: AVAssetExportPresetHighestQuality) else {
                 throw ExportError.invalidSetup
@@ -116,15 +126,20 @@ final class VideoEditorExporter {
             if !includeAudio { session.audioMix = nil }
             return VideoExportJob(session: session, sourceLease: lease)
         }
-        let canvas = prepared.composition.renderSize
-        guard let plan = encodingPlan(settings, canvas: canvas, project: prepared.project) else {
-            throw ExportError.invalidSetup
+        let videoSettings: [String: Any]
+        if let highSettings {
+            videoSettings = highSettings
+        } else {
+            guard let plan = encodingPlan(settings, canvas: canvas, project: prepared.project) else {
+                throw ExportError.invalidSetup
+            }
+            videoSettings = plan.outputSettings
         }
         var request = VideoTranscoder.Request(
             asset: prepared.processed.composition, videoTrack: prepared.processed.videoTrack,
             audioTracks: includeAudio ? prepared.processed.audioTracks : [], composition: prepared.composition,
             timeRange: CMTimeRange(start: .zero, duration: prepared.processed.composition.duration),
-            outputURL: outputURL, videoSettings: plan.outputSettings, decodedSize: nil,
+            outputURL: outputURL, videoSettings: videoSettings, decodedSize: nil,
             outputTransform: .identity, sourceFrameDuration: document.frameDuration)
         request.additionalVideoTracks = prepared.processed.cameraTrack.map { [$0] } ?? []
         return VideoExportJob(request: request, sourceLease: lease)
