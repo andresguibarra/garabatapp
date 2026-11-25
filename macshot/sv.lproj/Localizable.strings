@@ -968,3 +968,16 @@
 "Outline + Fill" = "Kontur + fyllning";
 "Detach" = "Lossa";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ och ] justerar · ⌥ + siffra väljer reglage";
+"Menu Bar Menu" = "Menyradsmeny";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Dra objekt för att ändra ordning eller flytta dem mellan avsnitt. Inställningar och Avsluta stannar alltid i menyn.";
+"In the Menu" = "I menyn";
+"Under More" = "Under Mer";
+"Hidden" = "Dolda";
+"Separator" = "Avgränsare";
+"Add Separator" = "Lägg till avgränsare";
+"Drop items here to keep them under More." = "Släpp objekt här för att ha dem under Mer.";
+"Drop items here to hide them." = "Släpp objekt här för att dölja dem.";
+"Show in Menu" = "Visa i menyn";
+"Move to More" = "Flytta till Mer";
+"Remove Separator" = "Ta bort avgränsare";
+"Settings and Quit always stay in the menu." = "Inställningar och Avsluta stannar alltid i menyn.";

@@ -953,3 +953,16 @@
 "Outline + Fill" = "Contorno + riempimento";
 "Detach" = "Stacca";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ e ] regolano · ⌥ + numero sceglie il cursore";
+"Menu Bar Menu" = "Menu della barra dei menu";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Trascina gli elementi per riordinarli o spostarli tra le sezioni. Impostazioni ed Esci restano sempre nel menu.";
+"In the Menu" = "Nel menu";
+"Under More" = "In Altro";
+"Hidden" = "Nascosti";
+"Separator" = "Separatore";
+"Add Separator" = "Aggiungi separatore";
+"Drop items here to keep them under More." = "Trascina qui gli elementi da tenere in Altro.";
+"Drop items here to hide them." = "Trascina qui gli elementi da nascondere.";
+"Show in Menu" = "Mostra nel menu";
+"Move to More" = "Sposta in Altro";
+"Remove Separator" = "Rimuovi separatore";
+"Settings and Quit always stay in the menu." = "Impostazioni ed Esci restano sempre nel menu.";

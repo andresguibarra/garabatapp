@@ -970,3 +970,16 @@
 "Outline + Fill" = "枠線 + 塗り";
 "Detach" = "切り離す";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ と ] で調整 · ⌥ + 数字でスライダーを選択";
+"Menu Bar Menu" = "メニューバーのメニュー";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "項目をドラッグして並べ替えたり、セクション間で移動したりできます。設定と終了は常にメニューに表示されます。";
+"In the Menu" = "メニュー内";
+"Under More" = "「その他」内";
+"Hidden" = "非表示";
+"Separator" = "区切り線";
+"Add Separator" = "区切り線を追加";
+"Drop items here to keep them under More." = "「その他」に入れる項目をここにドロップ";
+"Drop items here to hide them." = "非表示にする項目をここにドロップ";
+"Show in Menu" = "メニューに表示";
+"Move to More" = "「その他」へ移動";
+"Remove Separator" = "区切り線を削除";
+"Settings and Quit always stay in the menu." = "設定と終了は常にメニューに表示されます。";

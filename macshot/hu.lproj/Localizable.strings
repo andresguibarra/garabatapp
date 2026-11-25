@@ -972,3 +972,16 @@
 "Outline + Fill" = "Körvonal + kitöltés";
 "Detach" = "Leválaszt";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ és ] állít · ⌥ + szám választja a csúszkát";
+"Menu Bar Menu" = "Menüsor menüje";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Húzd az elemeket az átrendezéshez vagy a szakaszok közötti áthelyezéshez. A Beállítások és a Kilépés mindig a menüben marad.";
+"In the Menu" = "A menüben";
+"Under More" = "A Továbbiak alatt";
+"Hidden" = "Rejtett";
+"Separator" = "Elválasztó";
+"Add Separator" = "Elválasztó hozzáadása";
+"Drop items here to keep them under More." = "Ide húzd azokat, amiket a Továbbiak alatt szeretnél.";
+"Drop items here to hide them." = "Ide húzd azokat, amiket el szeretnél rejteni.";
+"Show in Menu" = "Megjelenítés a menüben";
+"Move to More" = "Áthelyezés a Továbbiakba";
+"Remove Separator" = "Elválasztó eltávolítása";
+"Settings and Quit always stay in the menu." = "A Beállítások és a Kilépés mindig a menüben marad.";

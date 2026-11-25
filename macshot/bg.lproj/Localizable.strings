@@ -972,3 +972,16 @@
 "Outline + Fill" = "Контур + запълване";
 "Detach" = "Откачи";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ и ] регулират · ⌥ + число избира плъзгача";
+"Menu Bar Menu" = "Меню в лентата с менюта";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Плъзгайте елементите, за да ги пренаредите или преместите между разделите. Настройки и Изход винаги остават в менюто.";
+"In the Menu" = "В менюто";
+"Under More" = "В „Още“";
+"Hidden" = "Скрити";
+"Separator" = "Разделител";
+"Add Separator" = "Добави разделител";
+"Drop items here to keep them under More." = "Пуснете тук елементите, които искате в „Още“.";
+"Drop items here to hide them." = "Пуснете тук елементите, които искате да скриете.";
+"Show in Menu" = "Покажи в менюто";
+"Move to More" = "Премести в „Още“";
+"Remove Separator" = "Премахни разделителя";
+"Settings and Quit always stay in the menu." = "Настройки и Изход винаги остават в менюто.";

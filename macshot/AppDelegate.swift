@@ -58,27 +58,10 @@ enum CaptureMenuItemID: String, CaseIterable {
         }
     }
 
+    /// The capture actions in the order the user arranged the menu bar menu
+    /// (menu, then More, then hidden). The app's Capture menu follows it too.
     static func orderedItems(defaults: UserDefaults = .standard) -> [CaptureMenuItemID] {
-        let saved = defaults.stringArray(forKey: userDefaultsKey) ?? []
-        var result: [CaptureMenuItemID] = []
-        for rawValue in saved {
-            guard let item = CaptureMenuItemID(rawValue: rawValue), !result.contains(item) else { continue }
-            result.append(item)
-        }
-        for item in defaultOrder where !result.contains(item) {
-            result.append(item)
-        }
-        return result
-    }
-
-    static func saveOrder(_ items: [CaptureMenuItemID], defaults: UserDefaults = .standard) {
-        let sanitized = items.filter { defaultOrder.contains($0) }
-        let completed = sanitized + defaultOrder.filter { !sanitized.contains($0) }
-        defaults.set(completed.map(\.rawValue), forKey: userDefaultsKey)
-    }
-
-    static func resetOrder(defaults: UserDefaults = .standard) {
-        defaults.removeObject(forKey: userDefaultsKey)
+        StatusMenuLayout.load(defaults: defaults).allItems.compactMap(\.captureMenuItemID)
     }
 }
 
@@ -1023,126 +1006,50 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         }
     }
 
+    /// Builds the status item menu from the user's `StatusMenuLayout`
+    /// (Settings → Capture → Menu Bar Menu): items in the menu, items under
+    /// "More", hidden items left out. Hidden items keep their global shortcuts.
     private func rebuildStatusBarMenu() {
         let menu = NSMenu()
         menu.autoenablesItems = false
+        historyMenu = nil
 
-        for itemID in CaptureMenuItemID.orderedItems() {
-            menu.addItem(makeCaptureMenuItem(itemID))
+        let layout = StatusMenuLayout.load()
+        let moreEntries = StatusMenuLayout.displayEntries(layout.more, moreIsEmpty: false)
+        var built: [StatusMenuItemID: NSMenuItem] = [:]
+
+        func add(_ entries: [StatusMenuEntry], to target: NSMenu) {
+            for entry in entries {
+                switch entry {
+                case .separator:
+                    target.addItem(.separator())
+                case .item(.more):
+                    let moreItem = NSMenuItem(title: StatusMenuItemID.more.title, action: nil, keyEquivalent: "")
+                    moreItem.image = NSImage(systemSymbolName: StatusMenuItemID.more.symbolName, accessibilityDescription: nil)
+                    moreItem.keepImageVisible()
+                    let submenu = NSMenu()
+                    submenu.autoenablesItems = false
+                    add(moreEntries, to: submenu)
+                    moreItem.submenu = submenu
+                    target.addItem(moreItem)
+                case .item(let id):
+                    let item = makeStatusMenuItem(id)
+                    built[id] = item
+                    target.addItem(item)
+                }
+            }
         }
-
-        // Capture Delay submenu
-        let delayItem = NSMenuItem(title: L("Capture Delay"), action: nil, keyEquivalent: "")
-        delayItem.image = NSImage(systemSymbolName: "timer", accessibilityDescription: nil)
-        delayItem.keepImageVisible()
-        let delaySubmenu = NSMenu()
-        delaySubmenu.autoenablesItems = false
-        let currentDelay = UserDefaults.standard.integer(forKey: "captureDelaySeconds")
-        for seconds in [0, 3, 5, 10, 30] {
-            let title = seconds == 0 ? L("None") : String(format: L("%d seconds"), seconds)
-            let item = NSMenuItem(title: title, action: #selector(setDelaySeconds(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = seconds
-            item.state = seconds == currentDelay ? .on : .off
-            delaySubmenu.addItem(item)
-        }
-        delayItem.submenu = delaySubmenu
-        menu.addItem(delayItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let recordAreaItem = NSMenuItem(title: L("Record Area"), action: #selector(recordArea), keyEquivalent: "")
-        recordAreaItem.target = self
-        recordAreaItem.image = NSImage(systemSymbolName: "record.circle", accessibilityDescription: nil)
-        recordAreaItem.keepImageVisible()
-        HotkeyManager.applyMenuShortcut(for: .recordArea, to: recordAreaItem)
-        menu.addItem(recordAreaItem)
-
-        let recordGIFItem = NSMenuItem(title: "\(L("Record")) \(L("GIF"))", action: #selector(recordGIF), keyEquivalent: "")
-        recordGIFItem.target = self
-        recordGIFItem.image = NSImage(systemSymbolName: "photo.stack", accessibilityDescription: nil)
-        recordGIFItem.keepImageVisible()
-        HotkeyManager.applyMenuShortcut(for: .recordGIF, to: recordGIFItem)
-        menu.addItem(recordGIFItem)
-
-        let recordScreenItem = NSMenuItem(title: L("Record Screen"), action: #selector(recordFullScreen), keyEquivalent: "")
-        recordScreenItem.target = self
-        recordScreenItem.image = NSImage(systemSymbolName: "menubar.dock.rectangle", accessibilityDescription: nil)
-        recordScreenItem.keepImageVisible()
-        HotkeyManager.applyMenuShortcut(for: .recordScreen, to: recordScreenItem)
-        menu.addItem(recordScreenItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Recent Captures submenu
-        let historyItem = NSMenuItem(title: L("Recent Captures"), action: nil, keyEquivalent: "")
-        historyItem.image = NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: nil)
-        let historySubmenu = NSMenu()
-        historySubmenu.delegate = self
-        historyItem.submenu = historySubmenu
-        self.historyMenu = historySubmenu
-        menu.addItem(historyItem)
-
-        let historyOverlayItem = NSMenuItem(title: L("Show History Panel"), action: #selector(showHistoryOverlay), keyEquivalent: "")
-        historyOverlayItem.target = self
-        historyOverlayItem.image = NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: nil)
-        HotkeyManager.applyMenuShortcut(for: .historyOverlay, to: historyOverlayItem)
-        menu.addItem(historyOverlayItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let openImageItem = NSMenuItem(title: L("Open Image..."), action: #selector(openImageFromMenu), keyEquivalent: "")
-        openImageItem.target = self
-        openImageItem.image = NSImage(systemSymbolName: "photo.on.rectangle.angled", accessibilityDescription: nil)
-        menu.addItem(openImageItem)
-
-        let openVideoItem = NSMenuItem(title: L("Open Video..."), action: #selector(openVideoFromMenu), keyEquivalent: "")
-        openVideoItem.target = self
-        openVideoItem.image = NSImage(systemSymbolName: "film", accessibilityDescription: nil)
-        menu.addItem(openVideoItem)
-
-        let recordingsItem = NSMenuItem(title: L("Show Recordings in Finder"),
-            action: #selector(showRecordingsInFinder), keyEquivalent: "")
-        recordingsItem.target = self
-        recordingsItem.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
-        menu.addItem(recordingsItem)
-
-        let pasteImageItem = NSMenuItem(title: L("Open from Clipboard"), action: #selector(openImageFromClipboard), keyEquivalent: "")
-        pasteImageItem.target = self
-        pasteImageItem.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil)
-        HotkeyManager.applyMenuShortcut(for: .openFromClipboard, to: pasteImageItem)
-        menu.addItem(pasteImageItem)
-
-        let pinClipboardTitle = L("Pin from Clipboard")
-        let pinClipboardItem = NSMenuItem(title: pinClipboardTitle, action: #selector(pinFromClipboard), keyEquivalent: "")
-        pinClipboardItem.target = self
-        pinClipboardItem.image = NSImage(systemSymbolName: "pin.fill", accessibilityDescription: pinClipboardTitle)
-        HotkeyManager.applyMenuShortcut(for: .pinFromClipboard, to: pinClipboardItem)
-        menu.addItem(pinClipboardItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let prefsItem = NSMenuItem(title: L("Settings..."), action: #selector(openSettings), keyEquivalent: ",")
-        prefsItem.target = self
-        prefsItem.image = NSImage(systemSymbolName: "gear", accessibilityDescription: nil)
-        menu.addItem(prefsItem)
-
-        let updateItem = NSMenuItem(title: L("Check for Updates..."), action: #selector(checkForUpdates), keyEquivalent: "")
-        updateItem.target = self
-        updateItem.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
-        menu.addItem(updateItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let quitItem = NSMenuItem(title: L("Quit macshot"), action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
+        add(StatusMenuLayout.displayEntries(layout.menu, moreIsEmpty: moreEntries.isEmpty), to: menu)
 
         // While the menu is open, ⌘V opens the clipboard image and ⌘O opens a
         // file, unless the user gave those items a global shortcut of their own
         // or another item already claims the chord.
-        Self.applyDefaultMenuKeyEquivalent("v", to: pasteImageItem, in: menu)
-        Self.applyDefaultMenuKeyEquivalent("o", to: openImageItem, in: menu)
+        if let pasteImageItem = built[.openFromClipboard] {
+            Self.applyDefaultMenuKeyEquivalent("v", to: pasteImageItem, in: pasteImageItem.menu ?? menu)
+        }
+        if let openImageItem = built[.openImage] {
+            Self.applyDefaultMenuKeyEquivalent("o", to: openImageItem, in: openImageItem.menu ?? menu)
+        }
 
         addHiddenHotkeyItems(to: menu)
 
@@ -1153,6 +1060,68 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // menu up from the button action instead (see `applyNormalStatusBarIcon`).
         if #unavailable(macOS 27.0), recordingEngine == nil {
             statusItem?.menu = menu
+        }
+    }
+
+    private func makeStatusMenuItem(_ id: StatusMenuItemID) -> NSMenuItem {
+        if let captureID = id.captureMenuItemID {
+            return makeCaptureMenuItem(captureID)
+        }
+        func actionItem(_ action: Selector, keepImage: Bool = true) -> NSMenuItem {
+            let item = NSMenuItem(title: id.title, action: action, keyEquivalent: "")
+            item.target = self
+            item.image = NSImage(systemSymbolName: id.symbolName, accessibilityDescription: id.title)
+            if keepImage { item.keepImageVisible() }
+            if let slot = id.hotkeySlot { HotkeyManager.applyMenuShortcut(for: slot, to: item) }
+            return item
+        }
+        switch id {
+        case .captureDelay:
+            let delayItem = NSMenuItem(title: id.title, action: nil, keyEquivalent: "")
+            delayItem.image = NSImage(systemSymbolName: id.symbolName, accessibilityDescription: nil)
+            delayItem.keepImageVisible()
+            let delaySubmenu = NSMenu()
+            delaySubmenu.autoenablesItems = false
+            let currentDelay = UserDefaults.standard.integer(forKey: "captureDelaySeconds")
+            for seconds in [0, 3, 5, 10, 30] {
+                let title = seconds == 0 ? L("None") : String(format: L("%d seconds"), seconds)
+                let item = NSMenuItem(title: title, action: #selector(setDelaySeconds(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = seconds
+                item.state = seconds == currentDelay ? .on : .off
+                delaySubmenu.addItem(item)
+            }
+            delayItem.submenu = delaySubmenu
+            return delayItem
+        case .recordArea: return actionItem(#selector(recordArea))
+        case .recordGIF: return actionItem(#selector(recordGIF))
+        case .recordScreen: return actionItem(#selector(recordFullScreen))
+        case .recentCaptures:
+            let historyItem = NSMenuItem(title: id.title, action: nil, keyEquivalent: "")
+            historyItem.image = NSImage(systemSymbolName: id.symbolName, accessibilityDescription: nil)
+            let historySubmenu = NSMenu()
+            historySubmenu.delegate = self
+            historyItem.submenu = historySubmenu
+            historyMenu = historySubmenu
+            return historyItem
+        case .historyPanel: return actionItem(#selector(showHistoryOverlay), keepImage: false)
+        case .openImage: return actionItem(#selector(openImageFromMenu), keepImage: false)
+        case .openVideo: return actionItem(#selector(openVideoFromMenu), keepImage: false)
+        case .showRecordings: return actionItem(#selector(showRecordingsInFinder), keepImage: false)
+        case .openFromClipboard: return actionItem(#selector(openImageFromClipboard), keepImage: false)
+        case .pinFromClipboard: return actionItem(#selector(pinFromClipboard), keepImage: false)
+        case .settings:
+            let item = actionItem(#selector(openSettings), keepImage: false)
+            item.keyEquivalent = ","
+            return item
+        case .checkForUpdates: return actionItem(#selector(checkForUpdates), keepImage: false)
+        case .quit:
+            let item = NSMenuItem(title: id.title, action: #selector(quitApp), keyEquivalent: "q")
+            item.target = self
+            return item
+        case .more, .captureArea, .captureScreen, .captureOCR, .quickCapture, .captureLastArea, .scrollCapture:
+            // Capture actions are handled above; "More" is built by the caller.
+            return NSMenuItem(title: id.title, action: nil, keyEquivalent: "")
         }
     }
 
