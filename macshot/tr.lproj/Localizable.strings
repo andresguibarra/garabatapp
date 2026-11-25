@@ -987,3 +987,5 @@
 "Move to More" = "Daha Fazla'ya taşı";
 "Remove Separator" = "Ayırıcıyı kaldır";
 "Settings and Quit always stay in the menu." = "Ayarlar ve Çık her zaman menüde kalır.";
+"Use a single editor window" = "Use a single editor window";
+"A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";

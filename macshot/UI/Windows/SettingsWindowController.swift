@@ -819,6 +819,13 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.addArrangedSubview(labeledRow(L("On close:"), controls: [closePopup]))
         stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
 
+        // Garabatapp: a new capture replaces the open editor instead of opening another window.
+        let singleEditorCheckbox = NSButton(checkboxWithTitle: L("Use a single editor window"), target: self, action: #selector(singleEditorWindowChanged(_:)))
+        singleEditorCheckbox.state = DetachedEditorWindowController.usesSingleEditorWindow ? .on : .off
+        singleEditorCheckbox.toolTip = L("A new capture opens in the editor that is already open. What it showed stays in history with its annotations.")
+        stack.addArrangedSubview(indented(singleEditorCheckbox))
+        stack.setCustomSpacing(8, after: stack.arrangedSubviews.last!)
+
         // Where pins from the capture overlay open
         pinPlacementPopup = NSPopUpButton()
         for placement in PinPlacement.allCases {
@@ -3015,6 +3022,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
     }
     @objc private func defaultToolChanged(_ sender: NSPopUpButton) {
         UserDefaults.standard.set(sender.selectedTag(), forKey: OverlayView.defaultToolKey)
+    }
+    @objc private func singleEditorWindowChanged(_ sender: NSButton) {
+        UserDefaults.standard.set(sender.state == .on, forKey: DetachedEditorWindowController.singleEditorWindowKey)
     }
     @objc private func editorCloseActionChanged(_ sender: NSPopUpButton) {
         UserDefaults.standard.set(sender.indexOfSelectedItem, forKey: "editorCloseAction")
