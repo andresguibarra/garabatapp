@@ -543,6 +543,41 @@ class ScreenCaptureManager {
         }
     }
 
+    // MARK: - Single display capture (Garabatapp)
+
+    /// Captures one whole display with no overlay, for "Capture Screen" going
+    /// straight to the editor. Honors the "Capture mouse cursor" setting on
+    /// macOS 14+; older systems fall back to CGDisplayCreateImage.
+    static func captureScreen(_ screen: NSScreen) async -> CGImage? {
+        let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+        func captureViaDisplay() -> CGImage? {
+            guard let displayID else { return nil }
+            return CGDisplayCreateImage(displayID)
+        }
+
+        if #available(macOS 14.0, *) {
+            guard
+                let content = try? await SCShareableContent.excludingDesktopWindows(
+                    false, onScreenWindowsOnly: true),
+                let display = content.displays.first(where: { $0.displayID == displayID })
+            else { return captureViaDisplay() }
+
+            let filter = SCContentFilter(display: display, excludingWindows: [])
+            let config = SCStreamConfiguration()
+            let scale = Int(screen.backingScaleFactor)
+            config.width = display.width * scale
+            config.height = display.height * scale
+            config.showsCursor = UserDefaults.standard.bool(forKey: "captureCursor")
+            config.captureResolution = .best
+            guard
+                let image = try? await SCScreenshotManager.captureImage(
+                    contentFilter: filter, configuration: config)
+            else { return captureViaDisplay() }
+            return image
+        }
+        return captureViaDisplay()
+    }
+
     // MARK: - Single window capture (with transparency)
 
     /// Captures a single window by its CGWindowID, returning an image with transparent corners.

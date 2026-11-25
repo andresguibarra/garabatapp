@@ -1345,10 +1345,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         beginCaptureFullScreen(fromMenu: false)
     }
 
+    /// Garabatapp: "Capture Screen" skips the selection overlay. It grabs the
+    /// whole display under the pointer and opens it straight in the editor.
     private func beginCaptureFullScreen(fromMenu: Bool) {
         guard prepareToStartCapture() else { return }
-        pendingFullScreen = true
-        startCapture(fromMenu: fromMenu)
+        let mouse = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) })
+                ?? NSScreen.main
+        else { return }
+        isCapturing = true
+        Task { @MainActor [weak self] in
+            // A menu click still has the status menu on screen for a moment.
+            if fromMenu { try? await Task.sleep(nanoseconds: 200_000_000) }
+            let cgImage = await ScreenCaptureManager.captureScreen(screen)
+            self?.isCapturing = false
+            guard let cgImage else { NSSound.beep(); return }
+            let scale = screen.backingScaleFactor
+            let image = NSImage(cgImage: cgImage,
+                                size: NSSize(width: CGFloat(cgImage.width) / scale,
+                                             height: CGFloat(cgImage.height) / scale))
+            DetachedEditorWindowController.open(image: image, fromCapture: true)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     @objc private func showHistoryOverlay() {
