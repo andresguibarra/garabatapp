@@ -320,6 +320,18 @@ class HotkeyManager {
         return modifierString(from: modifiers) + keyString(from: keyCode)
     }
 
+    /// Whether the slot still has its shipped binding (or its shipped "None").
+    static func isDefault(_ slot: HotkeySlot) -> Bool {
+        let bound = readHotkey(for: slot)
+        return bound.keyCode == slot.defaultKeyCode && bound.modifiers == slot.defaultModifiers
+    }
+
+    /// Display string for a slot's shipped binding.
+    static func defaultDisplayString(for slot: HotkeySlot) -> String {
+        if slot.defaultKeyCode == 0 && slot.defaultModifiers == 0 { return L("None") }
+        return modifierString(from: slot.defaultModifiers) + keyString(from: slot.defaultKeyCode)
+    }
+
     /// Returns true if the keyCode is a function key (F1–F20), safe to use without modifiers.
     static func isFunctionKey(_ keyCode: UInt32) -> Bool {
         let functionKeyCodes: Set<UInt32> = [

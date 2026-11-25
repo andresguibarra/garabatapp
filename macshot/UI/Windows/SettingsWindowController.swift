@@ -1374,7 +1374,8 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
 
     /// One row: name on the left, the shortcut as a recorder button on the
     /// right (click it and press keys), clear/reset only while hovered.
-    private func shortcutRow(_ label: String, tag: Int, record: Selector, clear: Selector, reset: Selector)
+    private func shortcutRow(_ label: String, tag: Int, record: Selector, clear: Selector, reset: Selector,
+                             isDefault: @escaping () -> Bool, defaultText: @escaping () -> String)
         -> (row: ShortcutRowView, field: NSTextField, recorder: NSButton)
     {
         let recorder = NSButton(title: "", target: self, action: record)
@@ -1386,7 +1387,11 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         let field = MirroredShortcutField(mirror: recorder)
         let clearBtn = shortcutAccessoryButton(symbol: "xmark.circle.fill", tip: L("None"), tag: tag, action: clear)
         let resetBtn = shortcutAccessoryButton(symbol: "arrow.counterclockwise.circle.fill", tip: L("Reset to default"), tag: tag, action: reset)
-        let row = ShortcutRowView(title: label, recorder: recorder, accessories: [resetBtn, clearBtn])
+        let row = ShortcutRowView(title: label, recorder: recorder, resetButton: resetBtn, clearButton: clearBtn,
+                                  isDefault: isDefault, defaultText: defaultText)
+        // Every path that changes a binding (record, clear, reset, a chord
+        // taken from another row, a layout change) rewrites the field.
+        field.onChange = { [weak row] in row?.refreshCustomized() }
         return (row, field, recorder)
     }
 
@@ -1462,8 +1467,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.setCustomSpacing(18, after: search)
 
         func addGroup(_ title: String, _ rows: [(row: ShortcutRowView, label: String)], before: NSView? = nil, note: String) {
-            let header = sectionHeader(title)
+            let header = ShortcutGroupHeaderView(title: sectionHeader(title), rows: rows.map { $0.row })
             stack.addArrangedSubview(header)
+            fullWidth(header)
             stack.setCustomSpacing(8, after: header)
             if let before {
                 stack.addArrangedSubview(before)
@@ -1484,7 +1490,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         var hotkeyRows: [(row: ShortcutRowView, label: String)] = []
         for slot in HotkeyManager.HotkeySlot.allCases {
             let r = shortcutRow(slot.label, tag: slot.rawValue, record: #selector(recordShortcut(_:)),
-                                clear: #selector(clearShortcut(_:)), reset: #selector(resetShortcut(_:)))
+                                clear: #selector(clearShortcut(_:)), reset: #selector(resetShortcut(_:)),
+                                isDefault: { HotkeyManager.isDefault(slot) },
+                                defaultText: { HotkeyManager.defaultDisplayString(for: slot) })
             r.field.stringValue = HotkeyManager.displayString(for: slot)
             hotkeyFields[slot] = r.field
             hotkeyButtons[slot] = r.recorder
@@ -1497,7 +1505,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         var commandRows: [(row: ShortcutRowView, label: String)] = []
         for (index, action) in EditorCommandShortcutManager.Action.allCases.enumerated() {
             let r = shortcutRow(action.label, tag: index, record: #selector(recordCommandShortcut(_:)),
-                                clear: #selector(clearCommandShortcut(_:)), reset: #selector(resetCommandShortcut(_:)))
+                                clear: #selector(clearCommandShortcut(_:)), reset: #selector(resetCommandShortcut(_:)),
+                                isDefault: { EditorCommandShortcutManager.isDefault(action) },
+                                defaultText: { EditorCommandShortcutManager.defaultDisplayString(for: action) })
             r.field.stringValue = EditorCommandShortcutManager.displayString(for: action)
             commandShortcutFields[action] = r.field
             commandShortcutButtons[action] = r.recorder
@@ -1514,7 +1524,9 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         var toolRows: [(row: ShortcutRowView, label: String)] = []
         for (index, action) in ToolShortcutManager.Action.allCases.enumerated() {
             let r = shortcutRow(action.label, tag: index, record: #selector(recordToolShortcut(_:)),
-                                clear: #selector(clearToolShortcut(_:)), reset: #selector(resetToolShortcut(_:)))
+                                clear: #selector(clearToolShortcut(_:)), reset: #selector(resetToolShortcut(_:)),
+                                isDefault: { ToolShortcutManager.isDefault(action) },
+                                defaultText: { ToolShortcutManager.defaultDisplayString(for: action) })
             r.field.stringValue = ToolShortcutManager.displayString(for: action)
             toolShortcutFields[action] = r.field
             toolShortcutButtons[action] = r.recorder
@@ -3974,6 +3986,7 @@ private final class OpaqueColorWell: NSColorWell {
 /// it on the row's recorder button.
 final class MirroredShortcutField: NSTextField {
     private weak var mirror: NSButton?
+    var onChange: (() -> Void)?
 
     init(mirror: NSButton) {
         self.mirror = mirror
@@ -3985,7 +3998,7 @@ final class MirroredShortcutField: NSTextField {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override var stringValue: String {
-        didSet { mirror?.title = stringValue }
+        didSet { mirror?.title = stringValue; onChange?() }
     }
 }
 
@@ -4002,47 +4015,114 @@ final class QuietSearchField: NSSearchField {
     }
 }
 
-/// A System Settings–style row: title left, recorder right, accessory buttons
-/// that appear on hover, and a hairline above every row but the first.
+/// A System Settings–style row: title left, recorder right, and a hairline
+/// above every row but the first. A shortcut that isn't its shipped default
+/// shows "Original: …" under its title and keeps its reset button visible;
+/// clear appears on hover.
 final class ShortcutRowView: NSView {
-    private let accessories: [NSView]
+    private let resetButton: NSButton
+    private let clearButton: NSButton
+    private let label: NSTextField
+    private let originalLabel = NSTextField(labelWithString: "")
+    private let recorder: NSButton
+    private let isDefault: () -> Bool
+    private let defaultText: () -> String
     private var tracking: NSTrackingArea?
+    private var hovered = false
+    private(set) var isCustomized = false
     var showsSeparator = false { didSet { needsDisplay = true } }
+    /// Fires whenever `isCustomized` may have changed.
+    var onCustomizedChange: (() -> Void)?
 
-    init(title: String, recorder: NSButton, accessories: [NSView]) {
-        self.accessories = accessories
+    init(title: String, recorder: NSButton, resetButton: NSButton, clearButton: NSButton,
+         isDefault: @escaping () -> Bool, defaultText: @escaping () -> String) {
+        self.resetButton = resetButton
+        self.clearButton = clearButton
+        self.isDefault = isDefault
+        self.defaultText = defaultText
+        self.recorder = recorder
+        label = NSTextField(labelWithString: title)
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
 
-        let label = NSTextField(labelWithString: title)
         label.font = NSFont.systemFont(ofSize: 13)
         label.lineBreakMode = .byTruncatingTail
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        originalLabel.font = NSFont.systemFont(ofSize: 11)
+        originalLabel.textColor = .secondaryLabelColor
+        originalLabel.lineBreakMode = .byTruncatingTail
+        originalLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let trailing = NSStackView(views: accessories + [recorder])
+        let titles = NSStackView(views: [label, originalLabel])
+        titles.orientation = .vertical
+        titles.alignment = .leading
+        titles.spacing = 1
+
+        let trailing = NSStackView(views: [resetButton, clearButton, recorder])
         trailing.orientation = .horizontal
         trailing.spacing = 6
         trailing.alignment = .centerY
 
-        for v in [label, trailing] as [NSView] {
+        for v in [titles, trailing] as [NSView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
-        for a in accessories { a.alphaValue = 0 }
+        resetButton.alphaValue = 0
+        clearButton.alphaValue = 0
         recorder.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titles.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.labelInset),
+            titles.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titles.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 6),
             trailing.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
             trailing.centerYAnchor.constraint(equalTo: centerYAnchor),
-            trailing.leadingAnchor.constraint(greaterThanOrEqualTo: label.trailingAnchor, constant: 8),
+            trailing.leadingAnchor.constraint(greaterThanOrEqualTo: titles.trailingAnchor, constant: 8),
             recorder.widthAnchor.constraint(equalToConstant: 110),
         ])
+        refreshCustomized()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private static let labelInset: CGFloat = 12
+
+    var title: String { label.stringValue }
+    var currentText: String { recorder.title }
+    var originalText: String { defaultText() }
+
+    /// Re-reads the stored binding and updates the original line and reset.
+    func refreshCustomized() {
+        isCustomized = !isDefault()
+        originalLabel.stringValue = "\(L("Original")): \(defaultText())"
+        originalLabel.isHidden = !isCustomized
+        resetButton.toolTip = "\(L("Reset to default")) (\(defaultText()))"
+        resetButton.isEnabled = isCustomized
+        updateAccessories(animated: window != nil)
+        onCustomizedChange?()
+    }
+
+    private func updateAccessories(animated: Bool) {
+        let resetAlpha: CGFloat = isCustomized ? 1 : 0
+        let clearAlpha: CGFloat = hovered ? 1 : 0
+        guard animated else {
+            resetButton.alphaValue = resetAlpha
+            clearButton.alphaValue = clearAlpha
+            return
+        }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.12
+            resetButton.animator().alphaValue = resetAlpha
+            clearButton.animator().alphaValue = clearAlpha
+        }
+    }
+
+    /// Puts the shipped binding back (same path as clicking the reset button).
+    func resetToDefault() {
+        guard isCustomized else { return }
+        resetButton.performClick(nil)
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -4053,21 +4133,87 @@ final class ShortcutRowView: NSView {
         tracking = area
     }
 
-    private func setAccessoriesVisible(_ visible: Bool) {
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.12
-            for a in accessories { a.animator().alphaValue = visible ? 1 : 0 }
-        }
-    }
-
-    override func mouseEntered(with event: NSEvent) { setAccessoriesVisible(true) }
-    override func mouseExited(with event: NSEvent) { setAccessoriesVisible(false) }
+    override func mouseEntered(with event: NSEvent) { hovered = true; updateAccessories(animated: true) }
+    override func mouseExited(with event: NSEvent) { hovered = false; updateAccessories(animated: true) }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard showsSeparator else { return }
         NSColor.separatorColor.setFill()
         let y = isFlipped ? 0 : bounds.maxY - 1
-        NSRect(x: 12, y: y, width: bounds.width - 12, height: 1).fill()
+        NSRect(x: Self.labelInset, y: y, width: bounds.width - Self.labelInset, height: 1).fill()
+    }
+}
+
+/// A group's section header with a "Reset to default" button on the right
+/// that shows only while one of the group's rows is changed, and asks before
+/// resetting (listing what will change).
+final class ShortcutGroupHeaderView: NSView {
+    private let rows: [ShortcutRowView]
+    private let resetAll: NSButton
+
+    init(title: NSTextField, rows: [ShortcutRowView]) {
+        self.rows = rows
+        resetAll = NSButton(title: L("Reset to default"), target: nil, action: nil)
+        super.init(frame: .zero)
+        resetAll.target = self
+        resetAll.action = #selector(resetAllRows)
+        resetAll.isBordered = false
+        resetAll.bezelStyle = .inline
+        resetAll.font = NSFont.systemFont(ofSize: 11)
+        resetAll.contentTintColor = .controlAccentColor
+        resetAll.attributedTitle = NSAttributedString(string: L("Reset to default"), attributes: [
+            .font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.controlAccentColor])
+        for v in [title, resetAll] as [NSView] {
+            v.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(v)
+        }
+        NSLayoutConstraint.activate([
+            title.leadingAnchor.constraint(equalTo: leadingAnchor),
+            title.bottomAnchor.constraint(equalTo: bottomAnchor),
+            title.topAnchor.constraint(equalTo: topAnchor),
+            resetAll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            resetAll.firstBaselineAnchor.constraint(equalTo: title.firstBaselineAnchor),
+            resetAll.leadingAnchor.constraint(greaterThanOrEqualTo: title.trailingAnchor, constant: 8),
+        ])
+        for row in rows { row.onCustomizedChange = { [weak self] in self?.refresh() } }
+        refresh()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private func refresh() {
+        resetAll.isHidden = !rows.contains { $0.isCustomized }
+    }
+
+    @objc private func resetAllRows() {
+        let changed = rows.filter { $0.isCustomized }
+        guard !changed.isEmpty else { return }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "\(L("Reset to default"))?"
+        alert.informativeText = changed
+            .map { "\($0.title): \($0.currentText)  →  \($0.originalText)" }
+            .joined(separator: "\n")
+        alert.addButton(withTitle: L("Reset"))
+        alert.addButton(withTitle: L("Cancel"))
+        // Return must not confirm an accidental click.
+        alert.buttons[0].keyEquivalent = ""
+        alert.buttons[1].keyEquivalent = "\r"
+        let apply: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            if response == .alertFirstButtonReturn { self?.performResetAll() }
+        }
+        if let window { alert.beginSheetModal(for: window, completionHandler: apply) }
+        else { apply(alert.runModal()) }
+    }
+
+    private func performResetAll() {
+        // Restoring one global hotkey can take its chord from another row, so
+        // repeat until every row is back (defaults never collide).
+        for _ in 0..<3 {
+            let changed = rows.filter { $0.isCustomized }
+            if changed.isEmpty { break }
+            changed.forEach { $0.resetToDefault() }
+        }
     }
 }

@@ -102,6 +102,15 @@ enum EditorCommandShortcutManager {
         return values.isEmpty ? L("None") : values.joined(separator: " / ")
     }
 
+    static func isDefault(_ action: Action) -> Bool {
+        shortcuts(for: action) == action.defaultShortcuts
+    }
+
+    static func defaultDisplayString(for action: Action) -> String {
+        let values = action.defaultShortcuts.map { displayString(for: $0) }
+        return values.isEmpty ? L("None") : values.joined(separator: " / ")
+    }
+
     static func applyPrimaryMenuShortcut(for action: Action, to item: NSMenuItem) {
         guard let shortcut = shortcuts(for: action).first else {
             item.keyEquivalent = ""
