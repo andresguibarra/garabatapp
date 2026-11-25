@@ -85,21 +85,22 @@ struct ShortcutTooltip {
         for key in keys {
             let w = keyWidth(key)
             let cap = NSRect(x: x, y: y, width: w, height: h)
-            // Darker lip at the bottom, then the key face: reads as a physical key.
-            foreground.withAlphaComponent(0.28).setFill()
+            // Darker lip at the bottom, then the key face: reads as a physical key
+            // in both dark and light toolbars (lip is always darker than the face).
+            let faceColor = background.blended(withFraction: 0.2, of: foreground) ?? background
+            let lipColor = faceColor.blended(withFraction: 0.4, of: .black) ?? faceColor
+            lipColor.setFill()
             NSBezierPath(roundedRect: cap, xRadius: 3, yRadius: 3).fill()
             let face = NSRect(x: cap.minX, y: cap.minY + 1.5, width: cap.width, height: cap.height - 1.5)
             let facePath = NSBezierPath(roundedRect: face, xRadius: 3, yRadius: 3)
-            background.setFill()
+            faceColor.setFill()
             facePath.fill()
-            foreground.withAlphaComponent(0.16).setFill()
-            facePath.fill()
-            foreground.withAlphaComponent(0.30).setStroke()
+            foreground.withAlphaComponent(0.35).setStroke()
             facePath.lineWidth = 0.5
             facePath.stroke()
             let ks = (key as NSString).size(withAttributes: kAttrs)
             (key as NSString).draw(
-                at: NSPoint(x: face.midX - ks.width / 2, y: face.midY - ks.height / 2),
+                at: NSPoint(x: face.midX - ks.width / 2, y: face.midY - ks.height / 2 - 1),
                 withAttributes: kAttrs)
             x += w + Self.keyGap
         }
