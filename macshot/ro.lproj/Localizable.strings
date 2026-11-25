@@ -985,3 +985,5 @@
 "Move to More" = "Mută în Mai multe";
 "Remove Separator" = "Elimină separatorul";
 "Settings and Quit always stay in the menu." = "Setări și Ieșire rămân mereu în meniu.";
+"Use a single editor window" = "Use a single editor window";
+"A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";

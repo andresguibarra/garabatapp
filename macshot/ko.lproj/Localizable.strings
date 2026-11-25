@@ -985,3 +985,5 @@
 "Move to More" = "더 보기로 이동";
 "Remove Separator" = "구분선 제거";
 "Settings and Quit always stay in the menu." = "설정과 종료는 항상 메뉴에 남습니다.";
+"Use a single editor window" = "Use a single editor window";
+"A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";

@@ -82,6 +82,10 @@ class DetachedEditorWindowController: NSObject, NSWindowDelegate {
     /// persists "arrow" globally, wiping the user's last-tool memory across
     /// the whole app.
     static func open(image: NSImage, tool: AnnotationTool? = nil, color: NSColor? = nil, strokeWidth: CGFloat? = nil, annotations: [Annotation] = [], historyEntryID: String? = nil, fromCapture: Bool = false, disableBeautify: Bool = false, editState: CaptureEditState? = nil, projectURL: URL? = nil, hooks: Hooks = Hooks()) {
+        // Garabatapp: Settings › Capture › "Use a single editor window". The new
+        // image takes over the open editor's place; what that editor showed is
+        // kept in history (with its annotations) before it goes away.
+        let replacedFrame = retireEditorsForSingleWindowMode()
         let controller = DetachedEditorWindowController()
         controller.projectURL = projectURL
         controller.historyEntryID = historyEntryID
@@ -90,14 +94,62 @@ class DetachedEditorWindowController: NSObject, NSWindowDelegate {
         controller.initialEditState = editState
         // Only warn about unsaved capture if the image came from a live capture (not a file on disk)
         controller.screenshotNeverOutput = fromCapture && historyEntryID == nil
-        controller.show(image: image, tool: tool, color: color, strokeWidth: strokeWidth, annotations: annotations)
+        controller.show(image: image, tool: tool, color: color, strokeWidth: strokeWidth, annotations: annotations, frame: replacedFrame)
         activeControllers.append(controller)
         if activeControllers.count == 1 {
             NSApp.setActivationPolicy(.regular)
         }
     }
 
-    private func show(image: NSImage, tool: AnnotationTool?, color: NSColor?, strokeWidth: CGFloat?, annotations: [Annotation]) {
+    static let singleEditorWindowKey = "singleEditorWindow"
+
+    /// On by default: a new capture replaces the open editor instead of piling
+    /// up windows. Turning it off restores one window per image.
+    static var usesSingleEditorWindow: Bool {
+        UserDefaults.standard.object(forKey: singleEditorWindowKey) as? Bool ?? true
+    }
+
+    /// In single-window mode, hides every replaceable editor, saves its edits
+    /// to history and closes it. Returns the frame of the window being
+    /// replaced so the new editor opens in the same place. Editors linked to
+    /// a `.macshot` project stay (their edits belong in the file, not history),
+    /// and so does anything whose edits have nowhere silent to go.
+    private static func retireEditorsForSingleWindowMode() -> NSRect? {
+        guard usesSingleEditorWindow else { return nil }
+        var frame: NSRect?
+        for controller in activeControllers where controller.projectURL == nil {
+            guard let window = controller.window, window.attachedSheet == nil else { continue }
+            if controller.isDirty() && ScreenshotHistory.shared.maxEntries == 0 { continue }
+            if frame == nil || window.isKeyWindow || window.isMainWindow { frame = window.frame }
+            controller.retireIntoHistory()
+        }
+        return frame
+    }
+
+    /// Closes this editor without prompting, after its edits are in history.
+    /// The window disappears at once; if the save fails it comes back so
+    /// nothing is lost.
+    private func retireIntoHistory() {
+        guard let window else { return }
+        overlayView?.commitTextFieldIfNeeded()
+        window.orderOut(nil)
+        // Close after the replacement is registered: closing the last editor
+        // first would hand focus back to the previous app for a moment.
+        guard isDirty() else {
+            DispatchQueue.main.async { [weak window] in window?.close() }
+            return
+        }
+        saveToHistory { [weak self, weak window] _ in
+            guard let self, let window else { return }
+            if self.isDirty() {
+                window.makeKeyAndOrderFront(nil)
+            } else {
+                window.close()
+            }
+        }
+    }
+
+    private func show(image: NSImage, tool: AnnotationTool?, color: NSColor?, strokeWidth: CGFloat?, annotations: [Annotation], frame replacedFrame: NSRect? = nil) {
         let imgSize = image.size
         // screens can be empty while displays are asleep; a force unwrap here
         // would take the app down rather than open the editor.
@@ -239,6 +291,7 @@ class DetachedEditorWindowController: NSObject, NSWindowDelegate {
         captureCleanBaseline(view)
 
         win.contentView = container
+        if let replacedFrame { win.setFrame(replacedFrame, display: false) }
         win.makeKeyAndOrderFront(nil)
         win.makeFirstResponder(view)
         NSApp.activate(ignoringOtherApps: true)
