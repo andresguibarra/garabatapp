@@ -1144,6 +1144,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         Self.applyDefaultMenuKeyEquivalent("v", to: pasteImageItem, in: menu)
         Self.applyDefaultMenuKeyEquivalent("o", to: openImageItem, in: menu)
 
+        addHiddenHotkeyItems(to: menu)
+
         menu.delegate = self  // menuWillOpen dismisses any modal + prewarms capture
         statusBarMenu = menu
         // Re-attach to the status item unless we're in recording mode (which owns
@@ -1153,6 +1155,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             statusItem?.menu = menu
         }
     }
+
+    /// While the status menu is open, the menu's own event loop swallows the
+    /// global Carbon hotkeys, so a capture shortcut did nothing. `menuWillOpen`
+    /// suspends them so the keystroke reaches the menu as a key equivalent:
+    /// visible items already carry their shortcut, and every other bound
+    /// shortcut gets a hidden item here that runs the same action. The menu
+    /// closes before the action runs, so it never shows up in the capture.
+    private func addHiddenHotkeyItems(to menu: NSMenu) {
+        func claims(_ key: String, _ mods: NSEvent.ModifierFlags, in menu: NSMenu) -> Bool {
+            let mask: NSEvent.ModifierFlags = [.command, .shift, .option, .control, .function]
+            return menu.items.contains { item in
+                (item.keyEquivalent == key
+                    && item.keyEquivalentModifierMask.intersection(mask) == mods.intersection(mask))
+                    || (item.submenu.map { claims(key, mods, in: $0) } ?? false)
+            }
+        }
+        for slot in HotkeyManager.HotkeySlot.allCases where HotkeyManager.isEnabled(slot) {
+            guard let equiv = HotkeyManager.menuKeyEquivalent(for: slot),
+                  !claims(equiv.key, equiv.modifiers, in: menu) else { continue }
+            let item = NSMenuItem(title: "", action: #selector(runHotkeySlotFromMenu(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = slot.rawValue
+            HotkeyManager.applyMenuShortcut(for: slot, to: item)
+            item.isHidden = true
+            item.allowsKeyEquivalentWhenHidden = true
+            menu.addItem(item)
+        }
+    }
+
+    @objc private func runHotkeySlotFromMenu(_ sender: NSMenuItem) {
+        guard let slot = HotkeyManager.HotkeySlot(rawValue: sender.tag) else { return }
+        HotkeyManager.shared.trigger(slot)
+    }
+
+    /// True while `menuWillOpen` has the global hotkeys suspended.
+    private var didSuspendHotkeysForStatusMenu = false
 
     private func makeCaptureMenuItem(_ itemID: CaptureMenuItemID) -> NSMenuItem {
         let action: Selector
@@ -4143,6 +4181,13 @@ extension AppDelegate: NSMenuDelegate {
         // menuNeedsUpdate). Dismiss any active modal before the menu shows, and
         // pre-warm ScreenCaptureKit content while the user browses.
         guard menu === statusBarMenu else { return }
+        // Let the shortcuts reach the open menu as key equivalents (see
+        // `addHiddenHotkeyItems`). Settings may already hold them suspended
+        // while it records a shortcut; leave that alone.
+        if !HotkeyManager.shared.isSuspended {
+            HotkeyManager.shared.suspend()
+            didSuspendHotkeysForStatusMenu = true
+        }
         if isReadyForScreenCapture {
             ScreenCaptureManager.prewarm()
         }
@@ -4150,6 +4195,12 @@ extension AppDelegate: NSMenuDelegate {
             NSApp.stopModal()
             modalWin.close()
         }
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard menu === statusBarMenu, didSuspendHotkeysForStatusMenu else { return }
+        didSuspendHotkeysForStatusMenu = false
+        HotkeyManager.shared.resume()
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
