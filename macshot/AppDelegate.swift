@@ -209,6 +209,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     private var recordingOverlayController: OverlayWindowController?
     private var recordingHUDPanel: RecordingHUDPanel?
     private var recordingScreenRect: NSRect = .zero  // screen-space capture rect
+    /// Snapped window the next take follows when it moves or is resized.
+    private var recordingFollowWindowID: CGWindowID?
+    private var windowFollowTracker: WindowFollowTracker?
     private var recordingScreen: NSScreen?
     private var mouseHighlightOverlay: MouseHighlightOverlay?
     private var keystrokeOverlay: KeystrokeOverlay?
@@ -3269,6 +3272,7 @@ extension AppDelegate: OverlayWindowControllerDelegate {
     func overlayDidRequestStartRecording(_ controller: OverlayWindowController, rect: NSRect, screen: NSScreen) {
         recordingScreenRect = rect
         recordingScreen = screen
+        recordingFollowWindowID = controller.followableWindowID()
 
         // Capture session overrides before dismissing overlays (which destroys the overlay view)
         let fpsOverride = controller.sessionRecordingFPS
@@ -3380,6 +3384,7 @@ extension AppDelegate: OverlayWindowControllerDelegate {
         selectionBorderOverlay?.close()
         selectionBorderOverlay = nil
         removeDelayEscMonitors()
+        recordingFollowWindowID = nil
     }
 
     /// Recordings that open in the video editor keep the pointer, clicks and
@@ -3560,6 +3565,35 @@ extension AppDelegate: OverlayWindowControllerDelegate {
             }
         }
         let cameraWindowID = engine.cameraRecorder != nil ? webcamOverlay.map { CGWindowID($0.windowNumber) } : nil
+
+        // A snapped window is followed when it moves or is resized: the
+        // border and keystrokes move with it and the video tracks it.
+        let tracker = recordingFollowWindowID.flatMap { WindowFollowTracker(windowID: $0) }
+        recordingFollowWindowID = nil
+        windowFollowTracker = tracker
+        if let tracker {
+            tracker.onChange = { [weak self] frame in
+                guard let self else { return }
+                self.recordingScreenRect = frame
+                let center = NSPoint(x: frame.midX, y: frame.midY)
+                let screen = NSScreen.screens.first(where: { $0.frame.contains(center) }) ?? self.recordingScreen
+                // Only the window is captured, so the border can move to
+                // another display without ending up in the video.
+                if let screen, let border = self.selectionBorderOverlay, border.screen != screen,
+                   !border.frame.contains(center) {
+                    border.close()
+                    let moved = SelectionBorderOverlay(screen: screen)
+                    moved.orderFrontRegardless()
+                    self.selectionBorderOverlay = moved
+                }
+                self.selectionBorderOverlay?.setSelectionRect(frame)
+                self.keystrokeOverlay?.setRecordingRect(frame)
+                if let screen, !(self.recordingHUDPanel?.userHasDragged ?? false) {
+                    self.recordingHUDPanel?.positionOnScreen(relativeTo: frame, screen: screen)
+                }
+            }
+            tracker.start()
+        }
         engine.onTelemetryStarted = { [weak self] telemetry in
             guard editable else { return }
             self?.keystrokeOverlay?.onKey = { [weak telemetry] code, mods, text in
@@ -3569,7 +3603,8 @@ extension AppDelegate: OverlayWindowControllerDelegate {
 
         // Start recording
         engine.startRecording(rect: rect, screen: screen, fpsOverride: fpsOverride, excludeWindowNumbers: excludeIDs,
-                              editablePointer: editable, cameraWindowID: cameraWindowID, appName: output.appName)
+                              editablePointer: editable, cameraWindowID: cameraWindowID, appName: output.appName,
+                              followedWindowID: tracker?.windowID, followedWindow: tracker?.frame)
     }
 
     func overlayDidRequestStopRecording(_ controller: OverlayWindowController) {
@@ -3836,6 +3871,9 @@ extension AppDelegate: OverlayWindowControllerDelegate {
         recordingOverlayController = nil
         recordingScreenRect = .zero
         recordingScreen = nil
+        windowFollowTracker?.stop()
+        windowFollowTracker = nil
+        recordingFollowWindowID = nil
         exitRecordingMenuBarMode()
     }
 

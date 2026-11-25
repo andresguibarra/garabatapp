@@ -118,15 +118,22 @@ final class CursorTelemetryRecorder {
     /// the primary display, points) that the video covers.
     private let regionOrigin: CGPoint
     private let regionSize: CGSize
+    /// Set when the take follows a window: positions are mapped through the
+    /// window's live frame instead of the fixed region.
+    private let followedWindow: (frame: TrackedWindowFrame, mapping: WindowFitMapping)?
 
     let url: URL
 
     /// - Parameters:
     ///   - region: Recorded area in global Core Graphics coordinates.
-    init(url: URL, region: CGRect, header: CursorTelemetry.Header) throws {
+    ///   - followedWindow: Live frame of the recorded window, when the take
+    ///     follows one; `region` is then its frame at the start.
+    init(url: URL, region: CGRect, header: CursorTelemetry.Header,
+         followedWindow: TrackedWindowFrame? = nil) throws {
         self.url = url
         regionOrigin = region.origin
         regionSize = region.size
+        self.followedWindow = followedWindow.map { ($0, WindowFitMapping(outputSize: region.size)) }
         writer = try CursorTelemetryWriter(url: url, header: header)
     }
 
@@ -145,8 +152,8 @@ final class CursorTelemetryRecorder {
     func start() {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now(), repeating: .milliseconds(8), leeway: .milliseconds(2))
-        let origin = regionOrigin, size = regionSize
-        timer.setEventHandler { [weak self] in self?.samplePointer(origin: origin, size: size) }
+        let origin = regionOrigin, size = regionSize, followed = followedWindow
+        timer.setEventHandler { [weak self] in self?.samplePointer(origin: origin, size: size, followed: followed) }
         positionTimer = timer
         timer.resume()
 
@@ -207,11 +214,18 @@ final class CursorTelemetryRecorder {
 
     // MARK: Sampling
 
-    nonisolated private func samplePointer(origin: CGPoint, size: CGSize) {
+    nonisolated private func samplePointer(origin: CGPoint, size: CGSize,
+                                           followed: (frame: TrackedWindowFrame, mapping: WindowFitMapping)?) {
         guard let writer, !paused else { return }
         guard let location = CGEvent(source: nil)?.location else { return }
         let now = Self.hostNow()
-        let (x, y) = Self.normalized(location, origin: origin, size: size)
+        let x: Float, y: Float
+        if let followed {
+            let point = followed.mapping.normalized(location, windowFrame: followed.frame.current)
+            (x, y) = (Float(point.x), Float(point.y))
+        } else {
+            (x, y) = Self.normalized(location, origin: origin, size: size)
+        }
         let buttons = [CGMouseButton.left, .right, .center].map {
             CGEventSource.buttonState(.combinedSessionState, button: $0)
         }
