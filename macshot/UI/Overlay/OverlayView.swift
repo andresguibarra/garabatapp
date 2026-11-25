@@ -4379,14 +4379,18 @@ class OverlayView: NSView {
             doc.origin.y = old.midY - half
             doc.size.height = 2 * half
         }
+        let centeredX = old.width < visibleW - 0.5, centeredY = old.height < visibleH - 0.5
         setFrameSize(doc.size)
         setBoundsOrigin(doc.origin)
-        let dx = oldOrigin.x - bounds.origin.x, dy = oldOrigin.y - bounds.origin.y
-        if dx != 0 || dy != 0 {
-            let clip = sv.contentView
-            clip.scroll(to: NSPoint(x: clip.bounds.origin.x + dx, y: clip.bounds.origin.y + dy))
-            sv.reflectScrolledClipView(clip)
-        }
+        // Keep content still: a scrolled axis scrolls by the origin shift; a
+        // centered axis grew evenly, so it only needs re-centering. Either way
+        // the clip's own constraint (centering) gets the last word.
+        let dx = centeredX ? 0 : oldOrigin.x - bounds.origin.x
+        let dy = centeredY ? 0 : oldOrigin.y - bounds.origin.y
+        let proposed = NSRect(origin: NSPoint(x: clip.bounds.origin.x + dx, y: clip.bounds.origin.y + dy),
+                              size: clip.bounds.size)
+        clip.scroll(to: clip.constrainBoundsRect(proposed).origin)
+        sv.reflectScrolledClipView(clip)
     }
 
     private func rotatedBounds(_ base: NSRect, by ann: Annotation) -> NSRect {
