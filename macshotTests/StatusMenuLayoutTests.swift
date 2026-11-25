@@ -140,9 +140,9 @@ final class StatusMenuLayoutEditorTests: XCTestCase {
         let pin = StatusMenuLayout.default.menu.firstIndex(of: .item(.pinFromClipboard))!
         let moreBox = editor.sectionBoxFrame(.more)!
         editor.simulateDrag(from: (.menu, pin), toY: moreBox.midY)
-        XCTAssertEqual(editor.layout.more, [.item(.pinFromClipboard)])
+        XCTAssertEqual(editor.menuLayout.more, [.item(.pinFromClipboard)])
         XCTAssertEqual(reported?.more, [.item(.pinFromClipboard)])
-        XCTAssertNil(editor.layout.menu.firstIndex(of: .item(.pinFromClipboard)))
+        XCTAssertNil(editor.menuLayout.menu.firstIndex(of: .item(.pinFromClipboard)))
     }
 
     func testDraggingQuitToHiddenIsRefused() {
@@ -151,7 +151,7 @@ final class StatusMenuLayoutEditorTests: XCTestCase {
         editor.onChange = { _ in changes += 1 }
         let quit = StatusMenuLayout.default.menu.firstIndex(of: .item(.quit))!
         editor.simulateDrag(from: (.menu, quit), toY: editor.sectionBoxFrame(.hidden)!.midY)
-        XCTAssertEqual(editor.layout, .default)
+        XCTAssertEqual(editor.menuLayout, .default)
         XCTAssertEqual(changes, 0)
     }
 
@@ -160,18 +160,18 @@ final class StatusMenuLayoutEditorTests: XCTestCase {
         let scroll = StatusMenuLayout.default.menu.firstIndex(of: .item(.scrollCapture))!
         let top = editor.rowFrame(zone: .menu, index: 0)!
         editor.simulateDrag(from: (.menu, scroll), toY: top.minY + 2)
-        XCTAssertEqual(editor.layout.menu.first, .item(.scrollCapture))
-        XCTAssertEqual(Set(editor.layout.allItems), Set(StatusMenuItemID.allCases))
+        XCTAssertEqual(editor.menuLayout.menu.first, .item(.scrollCapture))
+        XCTAssertEqual(Set(editor.menuLayout.allItems), Set(StatusMenuItemID.allCases))
     }
 
     func testContextMenuMoves() {
         let editor = makeEditor()
         let video = StatusMenuLayout.default.menu.firstIndex(of: .item(.openVideo))!
         XCTAssertTrue(editor.move(from: (.menu, video), to: .hidden))
-        XCTAssertEqual(editor.layout.hidden, [.item(.openVideo)])
+        XCTAssertEqual(editor.menuLayout.hidden, [.item(.openVideo)])
         XCTAssertTrue(editor.move(from: (.hidden, 0), to: .menu))
-        XCTAssertEqual(editor.layout.zone(of: .openVideo), .menu)
-        let settings = editor.layout.menu.firstIndex(of: .item(.settings))!
+        XCTAssertEqual(editor.menuLayout.zone(of: .openVideo), .menu)
+        let settings = editor.menuLayout.menu.firstIndex(of: .item(.settings))!
         XCTAssertFalse(editor.move(from: (.menu, settings), to: .more))
     }
 }

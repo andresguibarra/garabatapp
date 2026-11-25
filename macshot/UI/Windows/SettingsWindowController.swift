@@ -1237,7 +1237,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
 
     @objc private func resetStatusMenuLayout(_ sender: NSButton) {
         StatusMenuLayout.reset()
-        statusMenuEditor?.layout = StatusMenuLayout.load()
+        statusMenuEditor?.menuLayout = StatusMenuLayout.load()
         onHotkeyChanged?()
     }
 
@@ -2730,7 +2730,7 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         }
         ocrActionPopup.selectItem(at: UserDefaults.standard.integer(forKey: "ocrAction"))
         pinPlacementPopup.selectItem(at: pinPlacementPopup.indexOfItem(withRepresentedObject: PinPlacement.current.rawValue))
-        statusMenuEditor?.layout = StatusMenuLayout.load()
+        statusMenuEditor?.menuLayout = StatusMenuLayout.load()
 
         let copySound = UserDefaults.standard.object(forKey: "playCopySound") as? Bool ?? true
         copySoundCheckbox.state = copySound ? .on : .off

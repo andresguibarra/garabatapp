@@ -11,7 +11,7 @@ final class StatusMenuLayoutEditorView: NSView {
     /// Called after every change the user makes, with the new layout.
     var onChange: ((StatusMenuLayout) -> Void)?
 
-    var layout: StatusMenuLayout {
+    var menuLayout: StatusMenuLayout {
         get { currentLayout() }
         set {
             cancelDrag()
