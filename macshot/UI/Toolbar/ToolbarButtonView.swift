@@ -5,12 +5,14 @@ import Cocoa
 class ToolbarButtonView: NSView {
 
     var action: ToolbarButtonAction
-    var sfSymbol: String?
+    var sfSymbol: String? { didSet { if oldValue != sfSymbol { cachedIcon = nil; cachedIconIsOn = nil; needsDisplay = true } } }
     var isOn: Bool = false { didSet { if oldValue != isOn { cachedIcon = nil; needsDisplay = true } } }
     var tintColor: NSColor = ToolbarLayout.iconColor { didSet { cachedIcon = nil; cachedIconIsOn = nil; needsDisplay = true } }
     var selectedTintColor: NSColor? { didSet { cachedIcon = nil; cachedIconIsOn = nil; needsDisplay = true } }
     var swatchColor: NSColor? { didSet { needsDisplay = true } }
     var hasContextMenu: Bool = false
+    /// Garabatapp: draw a small ▾ to the right of the icon (⋯ button showing the active hidden tool).
+    var showsMenuChevron: Bool = false { didSet { if oldValue != showsMenuChevron { needsDisplay = true } } }
     /// Mic input level (0–1). When > 0, draws a green fill from the bottom of the button.
     var micLevel: Float = 0 { didSet { if abs(oldValue - micLevel) > 0.005 { needsDisplay = true } } }
 
@@ -60,6 +62,7 @@ class ToolbarButtonView: NSView {
         sfSymbol = data.sfSymbol
         tooltipText = data.tooltip
         hasContextMenu = data.hasContextMenu
+        showsMenuChevron = data.showsMenuChevron
         if case .micAudio = action {
             // Preserve the live mic meter while this reused view is still the
             // mic button.
@@ -153,9 +156,18 @@ class ToolbarButtonView: NSView {
             }
         }
         if let icon = cachedIcon {
-            let x = bounds.midX - icon.size.width / 2
+            // With a ▾ the icon and the chevron are centered as one group.
+            let chevron = showsMenuChevron ? Self.menuChevron(color: currentIsOn ? (selectedTintColor ?? ToolbarLayout.iconColor) : tintColor) : nil
+            let gap: CGFloat = 1.5
+            let groupW = icon.size.width + (chevron.map { $0.size.width + gap } ?? 0)
+            let x = (bounds.midX - groupW / 2).rounded()
             let y = bounds.midY - icon.size.height / 2
             icon.draw(at: NSPoint(x: x, y: y), from: .zero, operation: .sourceOver, fraction: 1.0)
+            if let chevron {
+                let cx = x + icon.size.width + gap
+                chevron.draw(at: NSPoint(x: cx, y: (bounds.midY - chevron.size.height / 2).rounded()),
+                             from: .zero, operation: .sourceOver, fraction: 0.85)
+            }
         }
 
         // Context menu triangle
@@ -169,6 +181,23 @@ class ToolbarButtonView: NSView {
             ToolbarLayout.iconColor.withAlphaComponent(0.4).setFill()
             path.fill()
         }
+    }
+
+    /// Garabatapp: small tinted ▾ drawn beside the icon of the ⋯ button.
+    private static func menuChevron(color: NSColor) -> NSImage? {
+        let key = cacheKey(name: "_menuChevron", isOn: false, color: color)
+        if let cached = iconCache[key] { return cached }
+        let cfg = NSImage.SymbolConfiguration(pointSize: 7, weight: .bold)
+        guard let symbol = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: nil)?
+            .withSymbolConfiguration(cfg) else { return nil }
+        let img = NSImage(size: symbol.size, flipped: false) { r in
+            symbol.draw(in: r, from: .zero, operation: .sourceOver, fraction: 1.0)
+            color.setFill()
+            r.fill(using: .sourceAtop)
+            return true
+        }
+        iconCache[key] = img
+        return img
     }
 
     // MARK: - Events

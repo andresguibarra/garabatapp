@@ -6042,9 +6042,16 @@ class OverlayView: NSView {
         bottomButtons.removeAll { $0.isOverflow }
         rightOverflowButtons = rightButtons.filter { $0.isOverflow }
         rightButtons.removeAll { $0.isOverflow }
+        // Selection can change after the strips were built (beautify, move
+        // mode): rebuild each ⋯ button from the final state of its hidden items.
         for i in bottomButtons.indices {
             if case .moreBottom = bottomButtons[i].action {
-                bottomButtons[i].isSelected = bottomOverflowButtons.contains { $0.isSelected }
+                bottomButtons[i] = ToolbarLayout.moreButton(action: .moreBottom, hidden: bottomOverflowButtons)
+            }
+        }
+        for i in rightButtons.indices {
+            if case .moreRight = rightButtons[i].action {
+                rightButtons[i] = ToolbarLayout.moreButton(action: .moreRight, hidden: rightOverflowButtons)
             }
         }
 
