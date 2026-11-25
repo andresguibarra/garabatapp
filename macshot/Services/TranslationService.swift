@@ -296,6 +296,8 @@ enum TranslationService {
         if let s = first as? String { return s.isEmpty ? .failure(.emptyResult) : .success(s) }
         if first is NSNull { return .failure(.emptyResult) }
         guard let segments = first as? [Any] else { return .failure(.parseError) }
+        // [["text", "lang"]]: the first row is a flat string pair, not segments.
+        if let s = segments.first as? String { return s.isEmpty ? .failure(.emptyResult) : .success(s) }
         let translated = segments.compactMap { ($0 as? [Any])?.first as? String }.joined()
         return translated.isEmpty ? .failure(.emptyResult) : .success(translated)
     }
