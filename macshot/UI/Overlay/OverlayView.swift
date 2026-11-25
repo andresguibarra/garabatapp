@@ -4360,26 +4360,49 @@ class OverlayView: NSView {
         guard let sv = enclosingScrollView else { return }
         let m = Self.editorDocumentMargin
         let oldOrigin = bounds.origin
-        var doc = extent.insetBy(dx: -m, dy: -m)
-        // While the document is smaller than the window it sits centered, so
-        // growing one side would slide everything by half the growth. Grow it
-        // evenly around its current center instead: nothing on screen moves.
+        let needed = extent.insetBy(dx: -m, dy: -m)
+        var doc = needed
         let clip = sv.contentView
         let insets = sv.contentInsets
-        let visibleW = clip.bounds.width - insets.left - insets.right
-        let visibleH = clip.bounds.height - insets.top - insets.bottom
+        // The part of the viewport the toolbars leave free, in screen points.
+        let usableW = clip.frame.width - insets.left - insets.right
+        let usableH = clip.frame.height - insets.top - insets.bottom
         let old = bounds
-        if old.width < visibleW - 0.5 {
-            let half = max(old.midX - doc.minX, doc.maxX - old.midX)
-            doc.origin.x = old.midX - half
-            doc.size.width = 2 * half
+
+        // Garabatapp: once what's being drawn or typed no longer fits, zoom out
+        // so the whole canvas stays in view (fit to window, never zoom in).
+        let mag = sv.magnification
+        if usableW > 0, usableH > 0, needed.width * mag > usableW + 0.5 || needed.height * mag > usableH + 0.5 {
+            let fit = max(sv.minMagnification, min(usableW / needed.width, usableH / needed.height))
+            if fit < mag - 0.001 {
+                setFrameSize(needed.size)
+                setBoundsOrigin(needed.origin)
+                sv.magnification = fit
+                chromeParentView?.subviews.compactMap { $0 as? EditorTopBarView }.first?.updateZoom(fit)
+                clip.scroll(to: clip.constrainBoundsRect(clip.bounds).origin)
+                sv.reflectScrolledClipView(clip)
+                return
+            }
         }
-        if old.height < visibleH - 0.5 {
-            let half = max(old.midY - doc.minY, doc.maxY - old.midY)
-            doc.origin.y = old.midY - half
-            doc.size.height = 2 * half
-        }
+
+        // While the document is smaller than the window it sits centered, so
+        // growing one side would slide everything by half the growth. Grow it
+        // evenly around its current center instead (as far as the window
+        // allows): nothing on screen moves.
+        let visibleW = usableW / mag, visibleH = usableH / mag
         let centeredX = old.width < visibleW - 0.5, centeredY = old.height < visibleH - 0.5
+        if centeredX {
+            let half = max(old.midX - needed.minX, needed.maxX - old.midX)
+            let width = max(needed.width, min(2 * half, visibleW))
+            doc.size.width = width
+            doc.origin.x = min(needed.minX, max(needed.maxX - width, old.midX - width / 2))
+        }
+        if centeredY {
+            let half = max(old.midY - needed.minY, needed.maxY - old.midY)
+            let height = max(needed.height, min(2 * half, visibleH))
+            doc.size.height = height
+            doc.origin.y = min(needed.minY, max(needed.maxY - height, old.midY - height / 2))
+        }
         setFrameSize(doc.size)
         setBoundsOrigin(doc.origin)
         // Keep content still: a scrolled axis scrolls by the origin shift; a
