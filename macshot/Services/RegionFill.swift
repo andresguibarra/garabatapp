@@ -14,7 +14,7 @@ struct RegionFill {
     let width: Int
     let height: Int
 
-    static let defaultTolerance = 24
+    static let defaultTolerance = 10
 
     init(pixels: [UInt8], width: Int, height: Int) {
         self.pixels = pixels
