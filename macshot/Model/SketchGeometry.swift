@@ -72,7 +72,9 @@ enum SketchGeometry {
         let rect = rect.standardized
         guard rect.width > 0, rect.height > 0 else { return path }
         func rnd(_ i: Int) -> CGFloat { r.isEmpty ? 0.5 : r[i % r.count] }
-        let rough = lineWidth == 0 ? 12 : lineWidth * 2
+        // The original's jitter was 2× a thin pixel width; past ~5 pt that pulls thick
+        // passes apart into slivers, so it grows more slowly for thick strokes.
+        let rough = lineWidth == 0 ? 12 : min(lineWidth * 2, 6 + lineWidth * 0.8)
         let corners = [CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
                        CGPoint(x: rect.maxX, y: rect.maxY), CGPoint(x: rect.minX, y: rect.maxY)]
         for pass in 0..<2 {
@@ -128,9 +130,11 @@ enum SketchGeometry {
         var anchors: [StrokePoint]
         let bodyEndShorten: CGFloat
         if endHead {
-            var s = minW
+            // Straight: as the original. Bent: the original's curved shaft stopped at
+            // 0.7·width, and a full 2·width gap there reads as a detached head.
+            var s = isStraight ? minW : width * 0.7
             if closedHead { s += headSize * 0.89 - width * 0.5 }
-            if rnd(10) < 0.25 { s += width * 2 }
+            if rnd(10) < 0.25 { s += isStraight ? width * 2 : width * 0.6 }
             bodyEndShorten = s
         } else {
             bodyEndShorten = 0

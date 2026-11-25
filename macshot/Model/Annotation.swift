@@ -1479,15 +1479,14 @@ class Annotation {
             ? SketchGeometry.ellipsePath(in: rect, randoms: r)
             : SketchGeometry.rectPath(in: rect, lineWidth: width, randoms: r)
         ctx.saveGState()
-        ctx.setLineCap(oval ? .round : .butt)
+        // Round ends: marker strokes, and overshooting rectangle sides don't leave square stubs.
+        ctx.setLineCap(.round)
         ctx.setLineJoin(.round)
         if let oc = outlineColor {
-            ctx.setLineCap(.round)
             ctx.addPath(path)
             ctx.setLineWidth(width + 6)
             ctx.setStrokeColor(oc.cgColor)
             ctx.strokePath()
-            ctx.setLineCap(oval ? .round : .butt)
         }
         ctx.addPath(path)
         ctx.setLineWidth(width)
