@@ -150,12 +150,12 @@ final class StatusMenuLayoutEditorView: NSView {
                     if let gap = self.gap, gap.zone == zone, gap.index == slot { slot += 1 }
                     let frame = NSRect(x: Self.boxPadding, y: section.rowsStartY + CGFloat(slot) * Self.rowHeight,
                                        width: section.box.width - Self.boxPadding * 2, height: Self.rowHeight)
-                    if animated { row.animator().frame = frame } else { row.frame = frame }
+                    if animated && self.window != nil { row.animator().frame = frame } else { row.frame = frame }
                     slot += 1
                 }
             }
         }
-        if animated {
+        if animated && window != nil {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.18
                 context.allowsImplicitAnimation = true
