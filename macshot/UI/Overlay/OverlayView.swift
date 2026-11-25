@@ -2027,6 +2027,20 @@ class OverlayView: NSView {
     /// Override to position toolbars for editor mode. Base pins bottom bar centered at bottom, right bar at top-right.    /// Override to control whether detach (open in editor) is allowed. Base returns true when not in editor mode.
     func shouldAllowDetach() -> Bool { !isEditorMode }
 
+    /// Whether a single-key shortcut may run `action`: the capture overlay offers
+    /// every action; the editor only those its toolbars show (visible or in ⋯),
+    /// so a shortcut works exactly when its advertised button does.
+    func toolbarOffersAction(_ action: ToolbarButtonAction) -> Bool {
+        guard isEditorMode else { return true }
+        return (rightButtons + rightOverflowButtons + bottomButtons + bottomOverflowButtons)
+            .contains {
+                switch ($0.action, action) {
+                case (.pin, .pin), (.scrollCapture, .scrollCapture): return true
+                default: return false
+                }
+            }
+    }
+
     /// Override to handle clicks on chrome areas. Base returns false.
     func handleTopChromeClick(at point: NSPoint) -> Bool { false }
 
@@ -10497,7 +10511,7 @@ class OverlayView: NSView {
                 case .detach:
                     if shouldAllowDetach() { handleToolbarAction(.detach) }
                 case .pin, .scrollCapture:
-                    if !isEditorMode { handleToolbarAction(action) }
+                    if toolbarOffersAction(action) { handleToolbarAction(action) }
                 default:
                     handleToolbarAction(action)
                 }
@@ -10608,7 +10622,7 @@ class OverlayView: NSView {
                     case .detach:
                         if shouldAllowDetach() { handleToolbarAction(.detach) }
                     case .pin, .scrollCapture:
-                        if !isEditorMode { handleToolbarAction(action) }
+                        if toolbarOffersAction(action) { handleToolbarAction(action) }
                     default:
                         handleToolbarAction(action)
                     }
