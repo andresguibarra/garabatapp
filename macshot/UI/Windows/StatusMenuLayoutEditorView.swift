@@ -251,6 +251,55 @@ final class StatusMenuLayoutEditorView: NSView {
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
+    // MARK: Hover actions
+
+    private weak var hoveredRow: RowView?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: .zero,
+                                       options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self, userInfo: nil))
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        updateHover(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        setHover(nil, action: nil)
+    }
+
+    private func updateHover(at point: NSPoint) {
+        guard drag == nil, let row = row(at: point) else {
+            setHover(nil, action: nil)
+            return
+        }
+        setHover(row, action: row.actionIndex(at: convert(point, to: row)))
+    }
+
+    private func setHover(_ row: RowView?, action: Int?) {
+        if hoveredRow !== row {
+            hoveredRow?.isHovered = false
+            hoveredRow?.hoveredAction = nil
+            hoveredRow = row
+            row?.isHovered = true
+        }
+        row?.hoveredAction = action
+        toolTip = action.flatMap { row?.actions[$0].title }
+    }
+
+    /// Runs the hover button under `point`, if any. Returns whether it did.
+    private func performAction(at point: NSPoint) -> Bool {
+        guard let row = row(at: point), let index = row.actionIndex(at: convert(point, to: row)),
+              let source = position(of: row) else { return false }
+        let target = row.actions[index].zone
+        setHover(nil, action: nil)
+        move(from: source, to: target)
+        return true
+    }
+
     private func row(at point: NSPoint) -> RowView? {
         for zone in Zone.allCases {
             if let row = rows[zone]?.first(where: { $0.frame.contains(point) }) { return row }
@@ -267,6 +316,10 @@ final class StatusMenuLayoutEditorView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        if performAction(at: point) {
+            pressedRow = nil
+            return
+        }
         pressedRow = row(at: point).map { ($0, point) }
     }
 
@@ -291,6 +344,7 @@ final class StatusMenuLayoutEditorView: NSView {
     // MARK: Dragging
 
     private func beginDrag(row: RowView, origin: (zone: Zone, index: Int), at point: NSPoint) {
+        setHover(nil, action: nil)
         rows[origin.zone]?.remove(at: origin.index)
         drag = Drag(row: row, origin: origin, grabOffsetY: point.y - row.frame.minY,
                     target: origin, rejectedZone: nil)
@@ -472,6 +526,19 @@ final class StatusMenuLayoutEditorView: NSView {
 
     func rowFrame(zone: Zone, index: Int) -> NSRect? { rows[zone]?[index].frame }
 
+    /// Hover buttons of a row, as (destination, frame in this view), for tests and probes.
+    func hoverActions(zone: Zone, index: Int) -> [(zone: Zone, frame: NSRect)] {
+        guard let row = rows[zone]?[index] else { return [] }
+        return zip(row.actions, row.actionRects()).map { ($0.zone, convert($1, from: row)) }
+    }
+
+    /// Clicks at `point` exactly like the mouse does (hover button or nothing).
+    @discardableResult
+    func simulateClick(at point: NSPoint) -> Bool { performAction(at: point) }
+
+    /// Shows the hover state at `point`, for visual probes.
+    func simulateHover(at point: NSPoint) { updateHover(at: point) }
+
     func sectionBoxFrame(_ zone: Zone) -> NSRect? { sectionFrames()[zone]?.box }
 }
 
@@ -488,6 +555,62 @@ private final class RowView: NSView {
             layer?.shadowOffset = NSSize(width: 0, height: -2)
             needsDisplay = true
         }
+    }
+
+    /// A one-click move shown on the right while the row is hovered.
+    struct Action {
+        let zone: StatusMenuLayout.Zone
+        let symbol: String
+        let title: String
+    }
+
+    var isHovered = false { didSet { if isHovered != oldValue { needsDisplay = true } } }
+    var hoveredAction: Int? { didSet { if hoveredAction != oldValue { needsDisplay = true } } }
+
+    var actions: [Action] {
+        let toMenu = Action(zone: .menu, symbol: zone == .hidden ? "eye" : "arrow.up.to.line", title: L("Show in Menu"))
+        let toMore = Action(zone: .more, symbol: "ellipsis.circle", title: L("Move to More"))
+        let hide = Action(zone: .hidden, symbol: "eye.slash", title: L("Hide"))
+        if entry == .separator {
+            return zone == .hidden ? [] : [Action(zone: .hidden, symbol: "xmark", title: L("Remove Separator"))]
+        }
+        if entry.isLocked { return [] }
+        switch zone {
+        case .menu: return [toMore, hide]
+        case .more: return [toMenu, hide]
+        case .hidden: return [toMenu, toMore]
+        }
+    }
+
+    private static let actionSize: CGFloat = 22
+
+    /// Button frames, right-aligned, in row coordinates.
+    func actionRects() -> [NSRect] {
+        let count = actions.count
+        return (0..<count).map { index in
+            let x = bounds.width - 6 - CGFloat(count - index) * (Self.actionSize + 2)
+            return NSRect(x: x, y: (bounds.height - Self.actionSize) / 2, width: Self.actionSize, height: Self.actionSize)
+        }
+    }
+
+    func actionIndex(at point: NSPoint) -> Int? {
+        actionRects().firstIndex { $0.insetBy(dx: -1, dy: -2).contains(point) }
+    }
+
+    /// Draws the hover buttons; returns the x where they start.
+    private func drawActions() -> CGFloat? {
+        guard isHovered, !isLifted else { return nil }
+        let rects = actionRects()
+        guard let first = rects.first else { return nil }
+        for (index, (action, rect)) in zip(actions, rects).enumerated() {
+            let selected = hoveredAction == index
+            let shape = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
+            (selected ? NSColor.controlAccentColor : NSColor.quaternaryLabelColor.withAlphaComponent(0.35)).setFill()
+            shape.fill()
+            Self.draw(Self.symbol(action.symbol, size: 11, weight: .medium),
+                      tint: selected ? .white : .secondaryLabelColor, centeredIn: rect)
+        }
+        return first.minX
     }
 
     init(entry: StatusMenuEntry) {
@@ -534,6 +657,12 @@ private final class RowView: NSView {
             NSBezierPath(roundedRect: content.insetBy(dx: 0.5, dy: 0.5), xRadius: 5, yRadius: 5).stroke()
         }
 
+        if isHovered && !isLifted {
+            NSColor.labelColor.withAlphaComponent(0.06).setFill()
+            NSBezierPath(roundedRect: content, xRadius: 5, yRadius: 5).fill()
+        }
+        let actionsStart = drawActions()
+
         var x: CGFloat = 6
         Self.draw(Self.symbol("line.3.horizontal", size: 10), tint: .tertiaryLabelColor,
                   centeredIn: NSRect(x: x, y: 0, width: 14, height: bounds.height))
@@ -546,11 +675,12 @@ private final class RowView: NSView {
                 .foregroundColor: NSColor.tertiaryLabelColor,
             ]
             let size = label.size(withAttributes: attributes)
-            let midX = (x + bounds.width - 8) / 2
+            let lineEnd = (actionsStart ?? bounds.width) - 8
+            let midX = (x + lineEnd) / 2
             label.draw(at: NSPoint(x: midX - size.width / 2, y: bounds.midY - size.height / 2), withAttributes: attributes)
             NSColor.separatorColor.setFill()
             NSRect(x: x, y: bounds.midY, width: midX - size.width / 2 - 8 - x, height: 1).fill()
-            NSRect(x: midX + size.width / 2 + 8, y: bounds.midY, width: bounds.width - 8 - (midX + size.width / 2 + 8), height: 1).fill()
+            NSRect(x: midX + size.width / 2 + 8, y: bounds.midY, width: lineEnd - (midX + size.width / 2 + 8), height: 1).fill()
             return
         }
 
@@ -560,12 +690,17 @@ private final class RowView: NSView {
         x += 26
 
         var right = bounds.width - 8
-        if id.isLocked {
+        if let actionsStart {
+            // The buttons replace the shortcut while hovered.
+            right = actionsStart - 8
+        } else if id.isLocked {
             let lock = Self.symbol("lock.fill", size: 10, weight: .semibold)
             Self.draw(lock, tint: .systemOrange, centeredIn: NSRect(x: right - 12, y: 0, width: 12, height: bounds.height))
             right -= 20
         }
-        if id.hasSubmenu {
+        if actionsStart != nil {
+            // nothing else on the right
+        } else if id.hasSubmenu {
             Self.draw(Self.symbol("chevron.right", size: 9, weight: .semibold), tint: .tertiaryLabelColor,
                       centeredIn: NSRect(x: right - 10, y: 0, width: 10, height: bounds.height))
             right -= 18
