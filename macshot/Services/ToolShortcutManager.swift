@@ -187,6 +187,16 @@ enum ToolShortcutManager {
         return k.isEmpty ? L("None") : k.uppercased()
     }
 
+    static func isDefault(_ action: Action) -> Bool {
+        key(for: action).lowercased() == action.defaultKey.lowercased()
+    }
+
+    static func defaultDisplayString(for action: Action) -> String {
+        let k = action.defaultKey
+        if k == " " { return L("Space") }
+        return k.isEmpty ? L("None") : k.uppercased()
+    }
+
     /// Raw configured shortcut text for toolbar tooltip suffixes.
     /// Empty string means no shortcut should be shown.
     static func tooltipShortcut(for toolbarAction: ToolbarButtonAction) -> String? {
