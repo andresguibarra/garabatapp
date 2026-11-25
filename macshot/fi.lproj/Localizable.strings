@@ -981,3 +981,5 @@
 "Move to More" = "Siirrä kohtaan Lisää";
 "Remove Separator" = "Poista erotin";
 "Settings and Quit always stay in the menu." = "Asetukset ja Lopeta pysyvät aina valikossa.";
+"Use a single editor window" = "Use a single editor window";
+"A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";

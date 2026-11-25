@@ -987,3 +987,5 @@
 "Move to More" = "Премести у Више";
 "Remove Separator" = "Уклони раздвајач";
 "Settings and Quit always stay in the menu." = "Подешавања и Изађи увек остају у менију.";
+"Use a single editor window" = "Use a single editor window";
+"A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";

@@ -987,3 +987,5 @@
 "Move to More" = "மேலும் என்பதற்கு நகர்த்து";
 "Remove Separator" = "பிரிப்பானை அகற்று";
 "Settings and Quit always stay in the menu." = "அமைப்புகளும் வெளியேறுவும் எப்போதும் மெனுவில் இருக்கும்.";
+"Use a single editor window" = "Use a single editor window";
+"A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";
