@@ -972,3 +972,16 @@
 "Outline + Fill" = "Balangkas + puno";
 "Detach" = "Ihiwalay";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ at ] para mag-adjust · ⌥ + numero para pumili ng slider";
+"Menu Bar Menu" = "Menu ng menu bar";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "I-drag ang mga item para ayusin o ilipat sa pagitan ng mga seksyon. Laging nasa menu ang Settings at Quit.";
+"In the Menu" = "Nasa menu";
+"Under More" = "Nasa Higit pa";
+"Hidden" = "Nakatago";
+"Separator" = "Separator";
+"Add Separator" = "Magdagdag ng separator";
+"Drop items here to keep them under More." = "I-drop dito ang mga gustong ilagay sa Higit pa.";
+"Drop items here to hide them." = "I-drop dito ang mga gustong itago.";
+"Show in Menu" = "Ipakita sa menu";
+"Move to More" = "Ilipat sa Higit pa";
+"Remove Separator" = "Alisin ang separator";
+"Settings and Quit always stay in the menu." = "Laging nasa menu ang Settings at Quit.";

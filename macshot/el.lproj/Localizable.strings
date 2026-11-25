@@ -974,3 +974,16 @@
 "Outline + Fill" = "Περίγραμμα + γέμισμα";
 "Detach" = "Αποσύνδεση";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ και ] ρυθμίζουν · ⌥ + αριθμός επιλέγει ρυθμιστικό";
+"Menu Bar Menu" = "Μενού γραμμής μενού";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Σύρετε στοιχεία για να αλλάξετε τη σειρά τους ή να τα μετακινήσετε μεταξύ ενοτήτων. Οι Ρυθμίσεις και η Έξοδος μένουν πάντα στο μενού.";
+"In the Menu" = "Στο μενού";
+"Under More" = "Στο Περισσότερα";
+"Hidden" = "Κρυφά";
+"Separator" = "Διαχωριστικό";
+"Add Separator" = "Προσθήκη διαχωριστικού";
+"Drop items here to keep them under More." = "Αφήστε εδώ ό,τι θέλετε στο Περισσότερα.";
+"Drop items here to hide them." = "Αφήστε εδώ ό,τι θέλετε να κρύψετε.";
+"Show in Menu" = "Εμφάνιση στο μενού";
+"Move to More" = "Μετακίνηση στο Περισσότερα";
+"Remove Separator" = "Αφαίρεση διαχωριστικού";
+"Settings and Quit always stay in the menu." = "Οι Ρυθμίσεις και η Έξοδος μένουν πάντα στο μενού.";

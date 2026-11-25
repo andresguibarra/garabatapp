@@ -972,3 +972,16 @@
 "Outline + Fill" = "描边 + 填充";
 "Detach" = "分离";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ 和 ] 调整 · ⌥ + 数字选择滑块";
+"Menu Bar Menu" = "菜单栏菜单";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "拖移项目以重新排序或在分区之间移动。“设置”和“退出”始终保留在菜单中。";
+"In the Menu" = "在菜单中";
+"Under More" = "在“更多”中";
+"Hidden" = "已隐藏";
+"Separator" = "分隔线";
+"Add Separator" = "添加分隔线";
+"Drop items here to keep them under More." = "将要放入“更多”的项目拖到这里。";
+"Drop items here to hide them." = "将要隐藏的项目拖到这里。";
+"Show in Menu" = "在菜单中显示";
+"Move to More" = "移到“更多”";
+"Remove Separator" = "移除分隔线";
+"Settings and Quit always stay in the menu." = "“设置”和“退出”始终保留在菜单中。";

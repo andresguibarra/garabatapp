@@ -971,3 +971,16 @@
 "Outline + Fill" = "Outline + Fill";
 "Detach" = "Detach";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ and ] adjust · ⌥ + number picks which slider";
+"Menu Bar Menu" = "Menu Bar Menu";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu.";
+"In the Menu" = "In the Menu";
+"Under More" = "Under More";
+"Hidden" = "Hidden";
+"Separator" = "Separator";
+"Add Separator" = "Add Separator";
+"Drop items here to keep them under More." = "Drop items here to keep them under More.";
+"Drop items here to hide them." = "Drop items here to hide them.";
+"Show in Menu" = "Show in Menu";
+"Move to More" = "Move to More";
+"Remove Separator" = "Remove Separator";
+"Settings and Quit always stay in the menu." = "Settings and Quit always stay in the menu.";

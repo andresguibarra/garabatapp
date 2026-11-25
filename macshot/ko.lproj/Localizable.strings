@@ -972,3 +972,16 @@
 "Outline + Fill" = "윤곽선 + 채우기";
 "Detach" = "분리";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ 와 ] 로 조정 · ⌥ + 숫자로 슬라이더 선택";
+"Menu Bar Menu" = "메뉴 막대 메뉴";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "항목을 드래그하여 순서를 바꾸거나 섹션 간에 이동하세요. 설정과 종료는 항상 메뉴에 남습니다.";
+"In the Menu" = "메뉴에 표시";
+"Under More" = "더 보기 안";
+"Hidden" = "숨김";
+"Separator" = "구분선";
+"Add Separator" = "구분선 추가";
+"Drop items here to keep them under More." = "더 보기에 둘 항목을 여기에 놓으세요.";
+"Drop items here to hide them." = "숨길 항목을 여기에 놓으세요.";
+"Show in Menu" = "메뉴에 표시";
+"Move to More" = "더 보기로 이동";
+"Remove Separator" = "구분선 제거";
+"Settings and Quit always stay in the menu." = "설정과 종료는 항상 메뉴에 남습니다.";

@@ -972,3 +972,16 @@
 "Outline + Fill" = "Garis luar + isian";
 "Detach" = "Tanggalkan";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ dan ] melaraskan · ⌥ + nombor memilih peluncur";
+"Menu Bar Menu" = "Menu bar menu";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Seret item untuk menyusun semula atau memindahkannya antara bahagian. Tetapan dan Keluar sentiasa kekal dalam menu.";
+"In the Menu" = "Dalam menu";
+"Under More" = "Di bawah Lagi";
+"Hidden" = "Tersembunyi";
+"Separator" = "Pemisah";
+"Add Separator" = "Tambah pemisah";
+"Drop items here to keep them under More." = "Lepaskan di sini item untuk disimpan di bawah Lagi.";
+"Drop items here to hide them." = "Lepaskan di sini item untuk disembunyikan.";
+"Show in Menu" = "Tunjuk dalam menu";
+"Move to More" = "Alih ke Lagi";
+"Remove Separator" = "Buang pemisah";
+"Settings and Quit always stay in the menu." = "Tetapan dan Keluar sentiasa kekal dalam menu.";

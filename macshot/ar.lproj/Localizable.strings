@@ -974,3 +974,16 @@
 "Outline + Fill" = "حد + تعبئة";
 "Detach" = "فصل";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ و ] للضبط · ⌥ + رقم لاختيار شريط التمرير";
+"Menu Bar Menu" = "قائمة شريط القوائم";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "اسحب العناصر لإعادة ترتيبها أو نقلها بين الأقسام. تبقى الإعدادات والخروج دائمًا في القائمة.";
+"In the Menu" = "في القائمة";
+"Under More" = "ضمن المزيد";
+"Hidden" = "مخفية";
+"Separator" = "فاصل";
+"Add Separator" = "إضافة فاصل";
+"Drop items here to keep them under More." = "أفلت هنا العناصر التي تريدها ضمن المزيد.";
+"Drop items here to hide them." = "أفلت هنا العناصر التي تريد إخفاءها.";
+"Show in Menu" = "إظهار في القائمة";
+"Move to More" = "نقل إلى المزيد";
+"Remove Separator" = "إزالة الفاصل";
+"Settings and Quit always stay in the menu." = "تبقى الإعدادات والخروج دائمًا في القائمة.";

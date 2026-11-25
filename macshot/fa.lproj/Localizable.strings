@@ -974,3 +974,16 @@
 "Outline + Fill" = "حاشیه + پرشدگی";
 "Detach" = "جدا کردن";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ و ] برای تنظیم · ⌥ + عدد لغزنده را انتخاب می‌کند";
+"Menu Bar Menu" = "منوی نوار منو";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "موارد را بکشید تا ترتیبشان را عوض کنید یا بین بخش‌ها جابه‌جا کنید. تنظیمات و خروج همیشه در منو می‌مانند.";
+"In the Menu" = "در منو";
+"Under More" = "زیر بیشتر";
+"Hidden" = "پنهان";
+"Separator" = "جداکننده";
+"Add Separator" = "افزودن جداکننده";
+"Drop items here to keep them under More." = "مواردی را که می‌خواهید زیر بیشتر باشند اینجا رها کنید.";
+"Drop items here to hide them." = "مواردی را که می‌خواهید پنهان شوند اینجا رها کنید.";
+"Show in Menu" = "نمایش در منو";
+"Move to More" = "انتقال به بیشتر";
+"Remove Separator" = "حذف جداکننده";
+"Settings and Quit always stay in the menu." = "تنظیمات و خروج همیشه در منو می‌مانند.";

@@ -968,3 +968,16 @@
 "Outline + Fill" = "Kontur + fyld";
 "Detach" = "Frigør";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ og ] justerer · ⌥ + tal vælger skyder";
+"Menu Bar Menu" = "Menulinjemenu";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Træk emner for at ændre rækkefølgen eller flytte dem mellem sektioner. Indstillinger og Afslut bliver altid i menuen.";
+"In the Menu" = "I menuen";
+"Under More" = "Under Mere";
+"Hidden" = "Skjulte";
+"Separator" = "Separator";
+"Add Separator" = "Tilføj separator";
+"Drop items here to keep them under More." = "Slip emner her for at have dem under Mere.";
+"Drop items here to hide them." = "Slip emner her for at skjule dem.";
+"Show in Menu" = "Vis i menuen";
+"Move to More" = "Flyt til Mere";
+"Remove Separator" = "Fjern separator";
+"Settings and Quit always stay in the menu." = "Indstillinger og Afslut bliver altid i menuen.";

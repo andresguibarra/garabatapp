@@ -970,3 +970,16 @@
 "Outline + Fill" = "เส้นขอบ + เติมสี";
 "Detach" = "แยกออก";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ และ ] ปรับค่า · ⌥ + ตัวเลข เลือกแถบเลื่อน";
+"Menu Bar Menu" = "เมนูในแถบเมนู";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "ลากรายการเพื่อจัดลำดับใหม่หรือย้ายระหว่างส่วน การตั้งค่าและออกจะอยู่ในเมนูเสมอ";
+"In the Menu" = "ในเมนู";
+"Under More" = "ในเพิ่มเติม";
+"Hidden" = "ซ่อนอยู่";
+"Separator" = "ตัวคั่น";
+"Add Separator" = "เพิ่มตัวคั่น";
+"Drop items here to keep them under More." = "วางรายการที่ต้องการเก็บไว้ในเพิ่มเติมที่นี่";
+"Drop items here to hide them." = "วางรายการที่ต้องการซ่อนที่นี่";
+"Show in Menu" = "แสดงในเมนู";
+"Move to More" = "ย้ายไปเพิ่มเติม";
+"Remove Separator" = "ลบตัวคั่น";
+"Settings and Quit always stay in the menu." = "การตั้งค่าและออกจะอยู่ในเมนูเสมอ";

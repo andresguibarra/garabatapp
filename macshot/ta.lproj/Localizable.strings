@@ -974,3 +974,16 @@
 "Outline + Fill" = "வெளிக்கோடு + நிரப்பு";
 "Detach" = "பிரி";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ மற்றும் ] சரிசெய்ய · ⌥ + எண் ஸ்லைடரைத் தேர்வு செய்யும்";
+"Menu Bar Menu" = "மெனு பட்டி மெனு";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "உருப்படிகளை மறுவரிசைப்படுத்த அல்லது பிரிவுகளுக்கு இடையே நகர்த்த இழுக்கவும். அமைப்புகளும் வெளியேறுவும் எப்போதும் மெனுவில் இருக்கும்.";
+"In the Menu" = "மெனுவில்";
+"Under More" = "மேலும் கீழ்";
+"Hidden" = "மறைக்கப்பட்டவை";
+"Separator" = "பிரிப்பான்";
+"Add Separator" = "பிரிப்பானைச் சேர்";
+"Drop items here to keep them under More." = "மேலும் கீழ் வைக்க வேண்டியவற்றை இங்கே விடவும்.";
+"Drop items here to hide them." = "மறைக்க வேண்டியவற்றை இங்கே விடவும்.";
+"Show in Menu" = "மெனுவில் காட்டு";
+"Move to More" = "மேலும் என்பதற்கு நகர்த்து";
+"Remove Separator" = "பிரிப்பானை அகற்று";
+"Settings and Quit always stay in the menu." = "அமைப்புகளும் வெளியேறுவும் எப்போதும் மெனுவில் இருக்கும்.";
