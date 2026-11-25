@@ -9,7 +9,9 @@ final class ArrowConnectorsTests: XCTestCase {
     }
 
     private func arrow(_ a: NSPoint, _ b: NSPoint) -> Annotation {
-        Annotation(tool: .arrow, startPoint: a, endPoint: b, color: .red, strokeWidth: 2)
+        let link = Annotation(tool: .arrow, startPoint: a, endPoint: b, color: .red, strokeWidth: 2)
+        link.arrowStyle = .single
+        return link
     }
 
     private func assertPoint(_ p: NSPoint, _ x: CGFloat, _ y: CGFloat, file: StaticString = #filePath, line: UInt = #line) {
@@ -17,29 +19,43 @@ final class ArrowConnectorsTests: XCTestCase {
         XCTAssertEqual(p.y, y, accuracy: 0.001, file: file, line: line)
     }
 
-    func testBorderPointOfRectangleSitsGapOutsideTheEdge() {
+    func testBorderPointIsTheOutsideOfThePaint() {
+        // A 2 pt stroke is centered on the edge: its paint ends 1 pt outside.
         let box = rect(NSRect(x: 0, y: 0, width: 100, height: 50))
-        let right = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 500, y: 25))!
-        assertPoint(right, 100 + ArrowConnectors.gap, 25)
-        let top = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 50, y: 400), gap: 0)!
-        assertPoint(top, 50, 50)
+        assertPoint(ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 500, y: 25), gap: 0)!, 101, 25)
+        assertPoint(ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 50, y: 400), gap: 0)!, 50, 51)
     }
 
-    func testDiagonalArrowKeepsTheFullGapAcrossTheEdge() {
-        // A slanted arrow must still clear the border by the whole gap measured
-        // perpendicular to it, not only along the arrow (#arrow overlap at 45°).
+    func testSlantedRayKeepsTheFullGapAcrossTheEdge() {
+        // Measured perpendicular to the edge, not along the ray.
         let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
-        let corner = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 1000, y: 1000), gap: 14)!
-        assertPoint(corner, 114, 114)
         let slanted = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 1050, y: 550), gap: 14)!
-        XCTAssertEqual(slanted.x, 114, accuracy: 0.001, "exits the right side a full 14 pt out")
+        XCTAssertEqual(slanted.x, 115, accuracy: 0.001, "1 pt of stroke + 14 pt out")
+    }
+
+    func testTextBoxUsesItsPillAndOutline() {
+        // The pill is 4 pt bigger than the text on every side and its outline
+        // stroke (2 pt) reaches 1 pt further: the case that used to pierce it.
+        let text = textBox(NSRect(x: 0, y: 0, width: 100, height: 20), outline: true)
+        assertPoint(ArrowConnectors.borderPoint(of: text, toward: NSPoint(x: 900, y: 10), gap: 0)!, 105, 10)
+        let plain = textBox(NSRect(x: 0, y: 0, width: 100, height: 20), outline: false)
+        assertPoint(ArrowConnectors.borderPoint(of: plain, toward: NSPoint(x: 900, y: 10), gap: 0)!, 100, 10)
+    }
+
+    func testRoundedCornerFollowsTheCurve() {
+        let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
+        box.rectCornerRadius = 30
+        box.rectFillStyle = .fill  // no stroke: the paint is the path itself
+        let corner = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 1000, y: 1000), gap: 0)!
+        // Arc center (70,70), radius 30: the 45° point is 30/√2 past it.
+        XCTAssertEqual(corner.x, 70 + 30 / sqrt(2), accuracy: 0.01)
     }
 
     func testBorderPointOfEllipseAndNumber() {
         let oval = Annotation(tool: .ellipse, startPoint: .zero, endPoint: NSPoint(x: 200, y: 100),
                               color: .red, strokeWidth: 2)
-        assertPoint(ArrowConnectors.borderPoint(of: oval, toward: NSPoint(x: 100, y: 999), gap: 0)!, 100, 100)
-        assertPoint(ArrowConnectors.borderPoint(of: oval, toward: NSPoint(x: -999, y: 50), gap: 0)!, 0, 50)
+        assertPoint(ArrowConnectors.borderPoint(of: oval, toward: NSPoint(x: 100, y: 999), gap: 0)!, 100, 101)
+        assertPoint(ArrowConnectors.borderPoint(of: oval, toward: NSPoint(x: -999, y: 50), gap: 0)!, -1, 50)
 
         let number = Annotation(tool: .number, startPoint: NSPoint(x: 10, y: 10), endPoint: NSPoint(x: 10, y: 10),
                                 color: .red, strokeWidth: 2)
@@ -51,7 +67,7 @@ final class ArrowConnectorsTests: XCTestCase {
         let box = rect(NSRect(x: -50, y: -10, width: 100, height: 20))
         box.rotation = .pi / 2  // now 20 wide, 100 tall
         let up = ArrowConnectors.borderPoint(of: box, toward: NSPoint(x: 0, y: 500), gap: 0)!
-        assertPoint(up, 0, 50)
+        assertPoint(up, 0, 51)
     }
 
     func testOnlyShapesAreConnectable() {
@@ -79,8 +95,9 @@ final class ArrowConnectorsTests: XCTestCase {
         link.connectedStartID = a.connectorID
         link.connectedEndID = b.connectorID
 
-        let startGap = ArrowConnectors.clearance(arrow: link, atStart: true, shape: a)
-        let endGap = ArrowConnectors.clearance(arrow: link, atStart: false, shape: b)
+        // 1 pt of rectangle stroke, then the start's 1 pt round cap; the head's tip touches.
+        let startGap: CGFloat = 1 + 1
+        let endGap: CGFloat = 1
         XCTAssertTrue(ArrowConnectors.resolve([a, b, link]))
         assertPoint(link.startPoint, 100 + startGap, 50)
         assertPoint(link.endPoint, 300 - endGap, 50)
@@ -88,9 +105,12 @@ final class ArrowConnectorsTests: XCTestCase {
 
         b.move(dx: 0, dy: 200)
         XCTAssertTrue(ArrowConnectors.resolve([a, b, link]))
-        // From a's center (50,50) toward b's center (350,250): exits through a's right edge.
-        XCTAssertEqual(link.startPoint.x, 100 + startGap, accuracy: 0.01, "the gap is measured across the edge")
+        // Diagonal neighbours: the connector runs corner to corner, each end
+        // touching its shape's paint (1 pt stroke) with its own reach.
         XCTAssertGreaterThan(link.endPoint.y, link.startPoint.y)
+        XCTAssertFalse(ArrowConnectors.contains(a, point: link.startPoint, margin: 0.99))
+        XCTAssertTrue(ArrowConnectors.contains(a, point: link.startPoint, margin: 1.01))
+        XCTAssertTrue(ArrowConnectors.contains(b, point: link.endPoint, margin: 0.01))
     }
 
     func testOneEndedArrowAimsAtItsFreeEnd() {
@@ -98,7 +118,7 @@ final class ArrowConnectorsTests: XCTestCase {
         let link = arrow(NSPoint(x: 100, y: 50), NSPoint(x: 50, y: 400))
         link.connectedStartID = a.connectorID
         ArrowConnectors.resolve([a, link])
-        assertPoint(link.startPoint, 50, 100 + ArrowConnectors.clearance(arrow: link, atStart: true, shape: a))
+        assertPoint(link.startPoint, 50, 101 + 1)
         assertPoint(link.endPoint, 50, 400)
     }
 
@@ -146,21 +166,60 @@ final class ArrowConnectorsTests: XCTestCase {
         XCTAssertEqual(decoded[1].connectedStartID, decoded[0].connectorID)
     }
 
-    func testClearanceKeepsThickStrokesFromOverlapping() {
-        let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
-        box.strokeWidth = 10
+    func testEndPaintFollowsWhatEachStyleDraws() {
         let link = arrow(.zero, NSPoint(x: 300, y: 50))
         link.strokeWidth = 12
-        // Rect paint reaches 5 past its edge, the arrow's round cap 6 past its point.
-        XCTAssertEqual(ArrowConnectors.clearance(arrow: link, atStart: true, shape: box), 5 + 6 + ArrowConnectors.gap)
-
+        func reach(_ atStart: Bool) -> CGFloat {
+            ArrowConnectors.endPaint(of: link, atStart: atStart, length: 300)
+                .filter { $0.side == 0 }.map { $0.radius - $0.back }.max()!
+        }
+        XCTAssertEqual(reach(true), 6, "round cap")
+        XCTAssertEqual(reach(false), 0, "filled head ends on its point")
         link.arrowStyle = .tail
-        XCTAssertEqual(ArrowConnectors.endExtent(of: link, atStart: true), 24, "tail circle radius")
-        XCTAssertEqual(ArrowConnectors.endExtent(of: link, atStart: false), 6)
+        XCTAssertEqual(reach(true), 24, "tail circle radius")
         link.arrowReversed = true
-        XCTAssertEqual(ArrowConnectors.endExtent(of: link, atStart: false), 24, "reversed: the tail is at the end")
+        XCTAssertEqual(reach(false), 24, "reversed: the tail is at the end")
+        link.arrowStyle = .open
+        XCTAssertEqual(reach(true), 6, "stroked chevron tip")
+        link.outlineColor = .black
+        XCTAssertEqual(reach(true), 9)
+    }
 
-        box.rectFillStyle = .fill
-        XCTAssertEqual(ArrowConnectors.edgeExtent(of: box), 0, "a fill-only shape has no stroke outside its edge")
+    func testHeadWingsStayOffAShallowEdge() {
+        // A wide box aimed at from far to the side: pointing at its center the
+        // head's wing would land on the top edge with the tip in the air, so
+        // the tip moves to the nearest spot (the corner) and touches there.
+        let wide = rect(NSRect(x: 0, y: 0, width: 400, height: 30))
+        let link = arrow(NSPoint(x: 600, y: 120), .zero)
+        link.connectedEndID = wide.connectorID
+        ArrowConnectors.resolve([wide, link])
+        XCTAssertTrue(ArrowConnectors.contains(wide, point: link.endPoint, margin: 0.05), "the tip touches")
+        let ux = link.startPoint.x - link.endPoint.x, uy = link.startPoint.y - link.endPoint.y
+        let len = hypot(ux, uy)
+        for dab in ArrowConnectors.endPaint(of: link, atStart: false, length: len) where dab.back > 0.5 {
+            let p = NSPoint(x: link.endPoint.x + ux / len * dab.back - uy / len * dab.side,
+                            y: link.endPoint.y + uy / len * dab.back + ux / len * dab.side)
+            XCTAssertFalse(ArrowConnectors.contains(wide, point: p, margin: dab.radius), "wing on the edge at \(p)")
+        }
+    }
+
+    func testSteepArrowsStillPointAtTheCenter() {
+        let box = rect(NSRect(x: 0, y: 0, width: 100, height: 100))
+        let link = arrow(NSPoint(x: 400, y: 200), .zero)
+        link.connectedEndID = box.connectorID
+        ArrowConnectors.resolve([box, link])
+        // On the line from (50,50) to (400,200), touching the right side's paint at x = 101.
+        XCTAssertEqual(link.endPoint.x, 101, accuracy: 0.01)
+        XCTAssertEqual(link.endPoint.y, 50 + 51 * 150 / 350, accuracy: 0.01)
+    }
+
+    private func textBox(_ r: NSRect, outline: Bool, background: Bool = false) -> Annotation {
+        let t = Annotation(tool: .text, startPoint: r.origin, endPoint: NSPoint(x: r.maxX, y: r.maxY),
+                           color: .black, strokeWidth: 2)
+        t.textDrawRect = r
+        t.textImage = ImageProbe.solidImage(width: max(1, Int(r.width)), height: max(1, Int(r.height)), color: CGColor(gray: 0, alpha: 1))
+        if outline { t.textOutlineColor = .systemGreen }
+        if background { t.textBgColor = .systemYellow }
+        return t
     }
 }
