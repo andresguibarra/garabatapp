@@ -307,19 +307,19 @@ final class StatusMenuLayoutEditorView: NSView {
         current.row.frame.origin.y = point.y - current.grabOffsetY
 
         let rowCenter = current.row.frame.midY
-        let zone = zone(atY: rowCenter)
-        if StatusMenuLayout.canPlace(current.row.entry, in: zone) {
+        let hovered = zone(atY: rowCenter)
+        if StatusMenuLayout.canPlace(current.row.entry, in: hovered) {
             // Rows above the dragged row's center, by their slots without the
             // gap: stable while the gap moves, so the target doesn't flicker.
-            let start = sectionFrames()[zone]?.rowsStartY ?? 0
-            let slots = rows[zone]?.count ?? 0
+            let start = sectionFrames()[hovered]?.rowsStartY ?? 0
+            let slots = rows[hovered]?.count ?? 0
             var index = 0
             while index < slots, start + (CGFloat(index) + 0.5) * Self.rowHeight < rowCenter { index += 1 }
-            current.target = (zone, index)
+            current.target = (hovered, index)
             current.rejectedZone = nil
         } else {
             current.target = nil
-            current.rejectedZone = zone
+            current.rejectedZone = hovered
         }
         let changed = current.target?.zone != drag?.target?.zone || current.target?.index != drag?.target?.index
             || current.rejectedZone != drag?.rejectedZone
