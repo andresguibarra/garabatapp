@@ -605,7 +605,7 @@ private final class RowView: NSView {
         for (index, (action, rect)) in zip(actions, rects).enumerated() {
             let selected = hoveredAction == index
             let shape = NSBezierPath(roundedRect: rect, xRadius: 5, yRadius: 5)
-            (selected ? NSColor.controlAccentColor : NSColor.quaternaryLabelColor.withAlphaComponent(0.35)).setFill()
+            (selected ? NSColor.controlAccentColor : NSColor.labelColor.withAlphaComponent(0.08)).setFill()
             shape.fill()
             Self.draw(Self.symbol(action.symbol, size: 11, weight: .medium),
                       tint: selected ? .white : .secondaryLabelColor, centeredIn: rect)
