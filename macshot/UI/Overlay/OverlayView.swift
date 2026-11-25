@@ -4378,6 +4378,7 @@ class OverlayView: NSView {
                 setFrameSize(needed.size)
                 setBoundsOrigin(needed.origin)
                 sv.magnification = fit
+                chromeParentView?.subviews.compactMap { $0 as? EditorTopBarView }.first?.updateZoom(fit)
                 clip.scroll(to: clip.constrainBoundsRect(clip.bounds).origin)
                 sv.reflectScrolledClipView(clip)
                 return

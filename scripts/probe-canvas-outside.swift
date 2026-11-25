@@ -107,6 +107,8 @@ final class CanvasOutsideProbe: NSObject, NSApplicationDelegate {
         log("long text box \(box2.frame) magnification \(sv.magnification) visible \(visible)")
         check(sv.magnification < 0.999, "zoomed out while the text outgrew the window (\(sv.magnification))")
         check(visible.contains(box2.frame.insetBy(dx: 1, dy: 1)), "whole text box visible while typing")
+        let zoomLabel = find(NSButton.self, in: window.contentView!, where: { $0.title.hasSuffix("% ▾") })?.title ?? "none"
+        check(zoomLabel == "\(Int(sv.magnification * 100))% ▾", "zoom label follows the fit (\(zoomLabel))")
         snap(window, "07-long-text-zoomed-out")
         editor.commitTextFieldIfNeeded()
         await pause(0.5)
