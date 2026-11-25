@@ -24,6 +24,10 @@ struct RecordingConfiguration {
     var overlaysInTelemetry = false
     /// Webcam window excluded because the camera records to its own file.
     var cameraWindowID: CGWindowID?
+    /// Window the take follows when it moves or is resized. The video keeps
+    /// the window's starting size and its content is scaled to fit.
+    var followedWindow: TrackedWindowFrame?
+    var followedWindowID: CGWindowID?
 
     init(displayID: CGDirectDisplayID, rect: CGRect, displayBounds: CGRect,
          backingScale: CGFloat, frameRate: Int, microphone: Bool, systemAudio: Bool,
