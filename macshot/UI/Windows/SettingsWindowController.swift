@@ -3931,13 +3931,15 @@ final class QuietSearchField: NSSearchField {
 
 /// A System Settings–style row: title left, recorder right, and a hairline
 /// above every row but the first. A shortcut that isn't its shipped default
-/// shows "Original: …" under its title and keeps its reset button visible;
+/// gets an accent dot before its title, "Original: …" under it, and keeps its
+/// reset button visible;
 /// clear appears on hover.
 final class ShortcutRowView: NSView {
     private let resetButton: NSButton
     private let clearButton: NSButton
     private let label: NSTextField
     private let originalLabel = NSTextField(labelWithString: "")
+    private let dot = ShortcutCustomizedDot()
     private let recorder: NSButton
     private let isDefault: () -> Bool
     private let defaultText: () -> String
@@ -3977,7 +3979,7 @@ final class ShortcutRowView: NSView {
         trailing.spacing = 6
         trailing.alignment = .centerY
 
-        for v in [titles, trailing] as [NSView] {
+        for v in [dot, titles, trailing] as [NSView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
@@ -3987,6 +3989,10 @@ final class ShortcutRowView: NSView {
 
         NSLayoutConstraint.activate([
             heightAnchor.constraint(greaterThanOrEqualToConstant: 38),
+            dot.widthAnchor.constraint(equalToConstant: 6),
+            dot.heightAnchor.constraint(equalToConstant: 6),
+            dot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.dotInset),
+            dot.centerYAnchor.constraint(equalTo: label.centerYAnchor),
             titles.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.labelInset),
             titles.centerYAnchor.constraint(equalTo: centerYAnchor),
             titles.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 6),
@@ -4000,7 +4006,8 @@ final class ShortcutRowView: NSView {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private static let labelInset: CGFloat = 12
+    private static let dotInset: CGFloat = 10
+    private static let labelInset: CGFloat = 22
 
     var title: String { label.stringValue }
     var currentText: String { recorder.title }
@@ -4011,6 +4018,7 @@ final class ShortcutRowView: NSView {
         isCustomized = !isDefault()
         originalLabel.stringValue = "\(L("Original")): \(defaultText())"
         originalLabel.isHidden = !isCustomized
+        dot.isHidden = !isCustomized
         resetButton.toolTip = "\(L("Reset to default")) (\(defaultText()))"
         resetButton.isEnabled = isCustomized
         updateAccessories(animated: window != nil)
@@ -4056,6 +4064,14 @@ final class ShortcutRowView: NSView {
         NSColor.separatorColor.setFill()
         let y = isFlipped ? 0 : bounds.maxY - 1
         NSRect(x: Self.labelInset, y: y, width: bounds.width - Self.labelInset, height: 1).fill()
+    }
+}
+
+/// The accent dot that marks a changed shortcut.
+final class ShortcutCustomizedDot: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.controlAccentColor.setFill()
+        NSBezierPath(ovalIn: bounds).fill()
     }
 }
 
