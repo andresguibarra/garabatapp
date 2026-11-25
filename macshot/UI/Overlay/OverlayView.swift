@@ -1313,8 +1313,14 @@ class OverlayView: NSView {
         setNeedsDisplay(NSRect(x: newView.x - r, y: newView.y - r, width: r * 2, height: r * 2))
     }
 
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        updateHoveredAnnotation(at: nil)
+    }
+
     override func mouseMoved(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        updateHoveredAnnotation(at: point)
 
         // Anchored selection (right-click in idle → track cursor without
         // holding a button). Shares all modifier behaviour with drag-based
@@ -2280,6 +2286,7 @@ class OverlayView: NSView {
             // Draw selection highlight for selected annotations
             // Suppressed during recording so annotations are purely visual overlays.
             if !isRecording {
+                drawHoveredAnnotationGlow()
                 for selected in selectedAnnotations {
                     // Only draw full controls (handles, buttons) for single selection
                     drawAnnotationControls(for: selected, fullControls: selectedAnnotations.count == 1)
@@ -2332,9 +2339,10 @@ class OverlayView: NSView {
                 }
 
                 // Re-draw annotation controls on top of the beautify preview so they stay visible.
-                if !isRecording && !selectedAnnotations.isEmpty {
+                if !isRecording && (!selectedAnnotations.isEmpty || hoveredAnnotation != nil) {
                     context.saveGraphicsState()
                     applyCanvasTransform(to: context)
+                    drawHoveredAnnotationGlow()
                     for selected in selectedAnnotations {
                         drawAnnotationControls(for: selected, fullControls: selectedAnnotations.count == 1)
                     }
@@ -2405,9 +2413,10 @@ class OverlayView: NSView {
                 context.restoreGraphicsState()
 
                 // Re-draw overlays on top of effects preview
-                if !selectedAnnotations.isEmpty {
+                if !selectedAnnotations.isEmpty || hoveredAnnotation != nil {
                     context.saveGraphicsState()
                     applyCanvasTransform(to: context)
+                    drawHoveredAnnotationGlow()
                     for selected in selectedAnnotations {
                         drawAnnotationControls(for: selected, fullControls: selectedAnnotations.count == 1)
                     }
@@ -5671,7 +5680,57 @@ class OverlayView: NSView {
 
     /// Draw a generic outline glow around any annotation by rendering it offscreen,
     /// dilating the alpha mask, then compositing the outline back. Cached on the annotation.
-    private func drawAnnotationOutlineGlow(_ annotation: Annotation) {
+    /// Garabatapp: the annotation under the pointer that a click would pick up
+    /// (same rules as the open-hand cursor), or nil. Selected annotations are
+    /// left out: they already show their own outline and handles.
+    private func annotationHoverTarget(at point: NSPoint) -> Annotation? {
+        guard state == .selected, !isRecording, !isScrollCapturing,
+              !startsInSelectionMoveMode, currentTool != .colorSampler,
+              !colorWheel.isVisible, !PopoverHelper.isMouseInsidePopover,
+              currentAnnotation == nil, !isDraggingAnnotation,
+              !isResizingAnnotation, !isRotatingAnnotation,
+              NSEvent.pressedMouseButtons == 0 else { return nil }
+        if isEditorMode && !pointIsInVisibleEditorCanvas(point) { return nil }
+        if optionsRowHandlesCursor(at: point) || isPointOnChrome(point) { return nil }
+        // Pencil/marker draw on click inside the image, so nothing is picked up there.
+        if (currentTool == .pencil || currentTool == .marker) && pointIsInSelection(point) { return nil }
+        let canvasPoint = viewToCanvas(point)
+        // Over the selected annotation's handles or buttons: the click acts on them.
+        if let selected = selectedAnnotation,
+           selected.hitTest(point: canvasPoint)
+            || annotationResizeHandleRects.contains(where: { $0.1.insetBy(dx: -4, dy: -4).contains(canvasPoint) })
+            || (annotationRotateHandleRect != .zero && annotationRotateHandleRect.insetBy(dx: -6, dy: -6).contains(canvasPoint))
+            || annotationDeleteButtonRect.contains(canvasPoint)
+            || (annotationEditButtonRect != .zero && annotationEditButtonRect.contains(canvasPoint)) {
+            return nil
+        }
+        guard let hit = annotations.reversed().first(where: { $0.isMovable && $0.hitTest(point: canvasPoint) }),
+              !isSelected(hit) else { return nil }
+        return hit
+    }
+
+    /// Recompute the hovered annotation for a pointer at `point` (view space) and
+    /// repaint only when it changes.
+    func updateHoveredAnnotation(at point: NSPoint?) {
+        let target = point.flatMap { annotationHoverTarget(at: $0) }
+        guard target !== hoveredAnnotation else { return }
+        hoveredAnnotationClearTimer?.invalidate()
+        hoveredAnnotationClearTimer = nil
+        hoveredAnnotation = target
+        needsDisplay = true
+    }
+
+    /// Hover feedback: a lighter version of the selection outline, computed from
+    /// the annotation's own rendered pixels so it follows any shape.
+    private func drawHoveredAnnotationGlow() {
+        guard let hovered = hoveredAnnotation, !isRecording, !isSelected(hovered),
+              currentAnnotation == nil, !isDraggingAnnotation,
+              !isResizingAnnotation, !isRotatingAnnotation,
+              annotations.contains(where: { $0 === hovered }) else { return }
+        drawAnnotationOutlineGlow(hovered, opacity: 0.45)
+    }
+
+    private func drawAnnotationOutlineGlow(_ annotation: Annotation, opacity: CGFloat = 0.55) {
         // Skip expensive glow during resize — bounding box changes every frame,
         // invalidating the CIFilter cache. A simple stroke rect is drawn instead.
         if isResizingAnnotation && isSelected(annotation) {
@@ -5738,7 +5797,7 @@ class OverlayView: NSView {
         if let cached = annotation.outlineGlowImage, annotation.outlineGlowRect == unrotatedBBox {
             guard let context = NSGraphicsContext.current else { return }
             context.cgContext.saveGState()
-            context.cgContext.setAlpha(0.55)
+            context.cgContext.setAlpha(opacity)
             if annotation.rotation != 0 && annotation.supportsRotation {
                 let cx = unrotatedBBox.midX, cy = unrotatedBBox.midY
                 context.cgContext.translateBy(x: cx, y: cy)
@@ -5805,7 +5864,7 @@ class OverlayView: NSView {
 
         guard let context = NSGraphicsContext.current else { return }
         context.cgContext.saveGState()
-        context.cgContext.setAlpha(0.55)
+        context.cgContext.setAlpha(opacity)
         if annotation.rotation != 0 && annotation.supportsRotation {
             let cx = unrotatedBBox.midX, cy = unrotatedBBox.midY
             context.cgContext.translateBy(x: cx, y: cy)
@@ -6434,6 +6493,7 @@ class OverlayView: NSView {
     // MARK: - Mouse Events
 
     override func mouseDown(with event: NSEvent) {
+        updateHoveredAnnotation(at: nil)
         if isRecognizingText { return }
         // A second click whose mouse-up never arrived (window ordered out
         // mid-press) must not turn the next press into a copy.
