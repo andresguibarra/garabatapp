@@ -464,34 +464,35 @@ class ToolOptionsRowView: NSView {
 
     private func addLineStyleSegment(at x: CGFloat, ov: OverlayView) -> CGFloat {
         var curX = x
+        let tool = editingAnnotation?.tool ?? ov.currentTool
+        let styles = LineStyle.styles(for: tool)
         let seg = NSSegmentedControl()
-        seg.segmentCount = LineStyle.allCases.count
+        seg.segmentCount = styles.count
         seg.trackingMode = .selectOne
         seg.target = self
         seg.action = #selector(lineStyleChanged(_:))
         seg.tag = 979  // tag for finding this segment to disable dashed/dotted when outline is on
-        for (i, style) in LineStyle.allCases.enumerated() {
+        for (i, style) in styles.enumerated() {
             seg.setImage(Self.lineStyleImage(style), forSegment: i)
             seg.setWidth(36, forSegment: i)
         }
-        let currentStyle = editingAnnotation?.lineStyle ?? ov.currentLineStyle
-        seg.selectedSegment = currentStyle.rawValue
-        let segW = CGFloat(LineStyle.allCases.count) * 36
+        var currentStyle = editingAnnotation?.lineStyle ?? ov.currentLineStyle
+        if !styles.contains(currentStyle) { currentStyle = .solid }
+        seg.selectedSegment = styles.firstIndex(of: currentStyle) ?? 0
+        let segW = CGFloat(styles.count) * 36
         seg.frame = NSRect(x: curX, y: (rowHeight - 22) / 2, width: segW, height: 22)
         (seg.cell as? NSSegmentedCell)?.segmentStyle = .roundRect
 
-        // Disable dashed/dotted for rect/ellipse when outline is enabled
-        let isShapeTool = [AnnotationTool.rectangle, .ellipse].contains(editingAnnotation?.tool ?? ov.currentTool)
+        // Disable dashed/dotted for rect/ellipse when outline is enabled (hand-drawn still works)
+        let isShapeTool = [AnnotationTool.rectangle, .ellipse].contains(tool)
         let hasOutline = editingAnnotation?.outlineColor != nil || (isShapeTool && UserDefaults.standard.bool(forKey: "annotationOutlineEnabled"))
         if isShapeTool && hasOutline {
-            for (i, style) in LineStyle.allCases.enumerated() {
-                if style != .solid {
-                    seg.setEnabled(false, forSegment: i)
-                }
+            for (i, style) in styles.enumerated() where style == .dashed || style == .dotted {
+                seg.setEnabled(false, forSegment: i)
             }
             // Force solid if currently dashed/dotted
-            if currentStyle != .solid {
-                seg.selectedSegment = LineStyle.solid.rawValue
+            if currentStyle == .dashed || currentStyle == .dotted {
+                seg.selectedSegment = styles.firstIndex(of: .solid) ?? 0
                 if let ann = editingAnnotation {
                     ann.lineStyle = .solid
                     ov.cachedCompositedImage = nil
@@ -624,6 +625,21 @@ class ToolOptionsRowView: NSView {
 
     private static func lineStyleImage(_ style: LineStyle) -> NSImage {
         let size = NSSize(width: 28, height: 16)
+        if style == .sketch {
+            // A small hand-drawn squiggle: wavy stroke that thickens in the middle.
+            return NSImage(size: size, flipped: false) { _ in
+                ToolbarLayout.iconColor.setStroke()
+                let path = NSBezierPath()
+                path.lineWidth = 2.2
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.move(to: NSPoint(x: 4, y: 6))
+                path.curve(to: NSPoint(x: 14, y: 9), controlPoint1: NSPoint(x: 7, y: 12), controlPoint2: NSPoint(x: 10, y: 4))
+                path.curve(to: NSPoint(x: 24, y: 10), controlPoint1: NSPoint(x: 18, y: 14), controlPoint2: NSPoint(x: 21, y: 7))
+                path.stroke()
+                return true
+            }
+        }
         return NSImage(size: size, flipped: false) { _ in
             let path = NSBezierPath()
             path.lineWidth = 2
@@ -1671,7 +1687,9 @@ class ToolOptionsRowView: NSView {
 
     @objc private func lineStyleChanged(_ sender: NSSegmentedControl) {
         guard let ov = overlayView else { return }
-        if let style = LineStyle(rawValue: sender.selectedSegment) {
+        let styles = LineStyle.styles(for: editingAnnotation?.tool ?? ov.currentTool)
+        if styles.indices.contains(sender.selectedSegment) {
+            let style = styles[sender.selectedSegment]
             if let ann = editingAnnotation {
                 ensureSnapshot()
                 ann.lineStyle = style
@@ -2472,6 +2490,8 @@ extension ToolOptionsRowView {
         switch seg.action {
         case #selector(lineStyleChanged(_:)) where seg.segmentCount == 3:
             names = [L("Solid"), L("Dashed"), L("Dotted")]
+        case #selector(lineStyleChanged(_:)) where seg.segmentCount == 4:
+            names = [L("Solid"), L("Dashed"), L("Dotted"), L("Hand-drawn")]
         case #selector(highlightBorderChanged(_:)) where seg.segmentCount == 2:
             names = [L("Solid"), L("Dashed")]
         case #selector(shapeFillChanged(_:)) where seg.segmentCount == 3:

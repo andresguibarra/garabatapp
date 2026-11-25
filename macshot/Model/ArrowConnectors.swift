@@ -26,7 +26,7 @@ enum ArrowConnectors {
 
     /// The paint an arrow puts down around one end, as dabs: the tip, the head's
     /// two edges back to its wings, a tail circle or round cap. Mirrors
-    /// `Annotation.drawArrow`, `drawThickArrow` and `drawSketchyArrow`, so a
+    /// `Annotation.drawArrow`, `drawThickArrow` and `SketchGeometry.strokePath`, so a
     /// head that meets a long edge at a shallow angle keeps its wings off it too.
     /// `length` is the arrow's length, which sizes its head.
     static func endPaint(of arrow: Annotation, atStart: Bool, length: CGFloat) -> [Dab] {
@@ -43,6 +43,15 @@ enum ArrowConnectors {
                 dabs.append(Dab(back: back, side: -halfWidth * f, radius: radius))
             }
             return dabs
+        }
+        // Hand-drawn arrows (SketchGeometry): variable-width body, head ~√width long.
+        if arrow.arrowStyle == .sketchy || (arrow.lineStyle == .sketch && arrow.arrowStyle != .thick) {
+            let body = sw * 0.7 + 1.3
+            let headLen = min((body * 2).squareRoot() * 10 * 1.2, max(4, length * 0.5))
+            if isHeadEnd || arrow.arrowStyle == .double {
+                return head(length: headLen, halfWidth: headLen * 0.6, radius: body * 0.6 + ring)
+            }
+            return [Dab(back: 0, side: 0, radius: body * 0.6 + ring)]
         }
         let arrowLen = min(max(14, sw * 5), max(4, length * 0.45))
         let wingBack = arrowLen * cos(CGFloat.pi / 6), wingSide = arrowLen * sin(CGFloat.pi / 6)
