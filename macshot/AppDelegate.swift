@@ -381,12 +381,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // finished its launch lifecycle before an action presents UI or starts
         // a capture. Keep accepting requests into the queue until this runs so
         // their delivery order is preserved.
+        let launchedByUser = !isReplacement && !Self.launchedAtLogin()
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.isReadyForOpenRequests = true
             let urls = self.pendingOpenURLs
             self.pendingOpenURLs.removeAll()
             self.handleOpenURLs(urls)
+            // Garabatapp: opening the app by hand shows the latest capture in
+            // the editor, like reopening it while it runs. Not at login, not
+            // when it was opened for a file/URL, not over the permission guide.
+            if launchedByUser, urls.isEmpty, self.onboardingController == nil,
+               !NSApp.windows.contains(where: { $0.isVisible && $0.styleMask.contains(.titled) }) {
+                self.openLatestCapture()
+            }
         }
     }
 
@@ -518,7 +526,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // Only open settings if no windows are visible (e.g. pure menu-bar state).
         // If editor/video editor is already open, just bring the app to the front.
         if !flag {
-            openSettings()
+            openLatestCaptureOrSettings()
         }
         return false
     }
@@ -2089,7 +2097,53 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             UserDefaults.standard.set(false, forKey: "hideMenuBarIcon")
             setMenuBarIconVisible(true)
         }
-        openSettings()
+        // A second copy was launched: behave like reopening the running one.
+        if let window = NSApp.windows.first(where: { $0.isVisible && $0.styleMask.contains(.titled) }) {
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            openLatestCaptureOrSettings()
+        }
+    }
+
+    /// Garabatapp: opening the app (Dock, Finder, Spotlight) shows the most
+    /// recent capture from history in the editor, annotations included, like
+    /// the previous app did. With an empty history there is nothing to edit,
+    /// so Settings opens as before.
+    private func openLatestCaptureOrSettings() {
+        if !openLatestCapture() {
+            openSettings()
+        }
+    }
+
+    @discardableResult
+    private func openLatestCapture() -> Bool {
+        for entry in ScreenshotHistory.shared.entries.prefix(5) {
+            if openHistoryEntryInEditor(id: entry.id) { return true }
+        }
+        return false
+    }
+
+    /// True when the system started the app as a login item: the classic
+    /// open-application flag, or the "Launch at login" service starting it
+    /// right after boot/login (SMAppService launches don't always carry it).
+    private static func launchedAtLogin() -> Bool {
+        if let event = NSAppleEventManager.shared().currentAppleEvent,
+           event.eventID == kAEOpenApplication,
+           event.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem {
+            return true
+        }
+        guard UserDefaults.standard.bool(forKey: "launchAtLogin") else { return false }
+        let sinceLogin = Self.sessionStartDate().map { Date().timeIntervalSince($0) }
+            ?? ProcessInfo.processInfo.systemUptime
+        return sinceLogin < 120
+    }
+
+    /// When the current login session began (its loginwindow started).
+    private static func sessionStartDate() -> Date? {
+        NSWorkspace.shared.runningApplications
+            .first { $0.bundleIdentifier == "com.apple.loginwindow" }?
+            .launchDate
     }
 
     @objc private func keyboardInputSourceDidChange() {
@@ -2870,8 +2924,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     /// available (falls back to the flattened image, like the history overlay does). Lets
     /// external tools re-open a specific capture for editing — `macshot://edit?id=<id>` —
     /// without flattening it, which `open?file=` cannot do.
-    private func openHistoryEntryInEditor(id: String) {
-        guard let entry = ScreenshotHistory.shared.entries.first(where: { $0.id == id }) else { return }
+    @discardableResult
+    private func openHistoryEntryInEditor(id: String) -> Bool {
+        guard let entry = ScreenshotHistory.shared.entries.first(where: { $0.id == id }) else { return false }
 
         if entry.hasAnnotations,
            let editable = ScreenshotHistory.shared.loadEditableCapture(for: entry) {
@@ -2881,12 +2936,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
                 historyEntryID: id,
                 editState: editable.editState
             )
-            return
+            return true
         }
 
         // Fall back to the flattened image — beautify already baked in.
-        guard let image = ScreenshotHistory.shared.loadImage(for: entry) else { return }
+        guard let image = ScreenshotHistory.shared.loadImage(for: entry) else { return false }
         DetachedEditorWindowController.open(image: image, historyEntryID: id, disableBeautify: true)
+        return true
     }
 
     @objc private func showRecordingsInFinder() {
