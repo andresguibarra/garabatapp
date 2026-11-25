@@ -92,6 +92,16 @@ final class StatusMenuLayoutTests: XCTestCase {
         XCTAssertEqual(layout.zone(of: .pinFromClipboard), .menu)
     }
 
+    func testCaptureActiveWindowJoinsALayoutSavedBeforeItExisted() {
+        defaults.set([
+            "menu": ["captureArea", "scrollCapture", "captureDelay", "settings", "quit"],
+            "more": [], "hidden": [],
+        ], forKey: StatusMenuLayout.userDefaultsKey)
+        let menu = StatusMenuLayout.load(defaults: defaults).menu
+        let scroll = menu.firstIndex(of: .item(.scrollCapture))!
+        XCTAssertEqual(menu[scroll + 1], .item(.captureActiveWindow))
+    }
+
     func testLegacyCaptureOrderIsKept() {
         defaults.set(["scrollCapture", "captureArea"], forKey: CaptureMenuItemID.userDefaultsKey)
         let layout = StatusMenuLayout.load(defaults: defaults)
