@@ -990,3 +990,6 @@
 "Use a single editor window" = "Use a single editor window";
 "A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";
 "Hand-drawn" = "مرسوم باليد";
+"Audio" = "صوت";
+"Exporting audio…" = "جارٍ تصدير الصوت…";
+"This video has no audio" = "لا يحتوي هذا الفيديو على صوت";

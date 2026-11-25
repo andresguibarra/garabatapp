@@ -984,3 +984,6 @@
 "Use a single editor window" = "Use a single editor window";
 "A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";
 "Hand-drawn" = "Handritad";
+"Audio" = "Ljud";
+"Exporting audio…" = "Exporterar ljud…";
+"This video has no audio" = "Den här videon har inget ljud";

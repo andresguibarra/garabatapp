@@ -988,3 +988,6 @@
 "Use a single editor window" = "Use a single editor window";
 "A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";
 "Hand-drawn" = "Ručne kreslené";
+"Audio" = "Zvuk";
+"Exporting audio…" = "Exportuje sa zvuk…";
+"This video has no audio" = "Toto video nemá zvuk";

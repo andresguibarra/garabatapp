@@ -2,7 +2,17 @@ import AVFoundation
 
 /// Export preferences. Persisted across sessions (existing keys).
 struct VideoExportSettings: Equatable {
-    enum Format: String { case mp4, gif }
+    enum Format: String {
+        case mp4, gif, audio
+
+        var pathExtension: String {
+            switch self {
+            case .mp4: return "mp4"
+            case .gif: return "gif"
+            case .audio: return "m4a"
+            }
+        }
+    }
     var format: Format = .mp4
     /// Output scale relative to the native canvas, 0 < scale ≤ 1.
     var scale: CGFloat = 1
@@ -53,7 +63,7 @@ final class VideoEditorExporter {
     /// Whether saving must render (otherwise the source file is copied as is).
     func needsRender(_ settings: VideoExportSettings) -> Bool {
         let project = document.project
-        return settings.format == .gif || settings.scale < 0.999 || settings.quality != .high
+        return settings.format != .mp4 || settings.scale < 0.999 || settings.quality != .high
             || project.hasEdits || document.cursorIsEditable || document.cameraURL != nil
             || (document.overlaysAreEditable && document.hasKeystrokes)
     }
@@ -118,6 +128,26 @@ final class VideoEditorExporter {
             outputTransform: .identity, sourceFrameDuration: document.frameDuration)
         request.additionalVideoTracks = prepared.processed.cameraTrack.map { [$0] } ?? []
         return VideoExportJob(request: request, sourceLease: lease)
+    }
+
+    /// Whether the edited video has a sound track to export on its own.
+    var hasAudio: Bool { document.audioTrackCount > 0 && !document.project.muted }
+
+    /// The edited timeline's sound alone as AAC in an M4A file. Cuts, speed
+    /// and freezes follow the timeline; microphone and system audio mix into
+    /// one track.
+    func audioJob(outputURL: URL) throws -> VideoExportJob {
+        guard hasAudio, let project = document.project.copy() else { throw ExportError.invalidSetup }
+        let processed = try VideoRenderPlanner(document: document).processed(
+            project: project, from: project.trimStart, to: project.trimEnd, includeAudio: true)
+        guard !processed.audioTracks.isEmpty,
+              let session = AVAssetExportSession(asset: processed.composition,
+                                                 presetName: AVAssetExportPresetAppleM4A) else {
+            throw ExportError.invalidSetup
+        }
+        session.outputURL = outputURL
+        session.outputFileType = .m4a
+        return VideoExportJob(session: session, sourceLease: document.source.lease)
     }
 
     func gifRequest(_ settings: VideoExportSettings, outputURL: URL) throws -> GIFExporter.Request {

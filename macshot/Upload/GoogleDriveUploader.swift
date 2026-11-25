@@ -144,7 +144,7 @@ final class GoogleDriveUploader: NSObject, ASWebAuthenticationPresentationContex
     func uploadVideo(url: URL, progress: (@MainActor @Sendable (Double) -> Void)? = nil,
                      completion: @escaping (Result<String, Error>) -> Void) {
         upload(payload: .file(url), filename: url.lastPathComponent,
-               mimeType: url.pathExtension.lowercased() == "gif" ? "image/gif" : "video/mp4",
+               mimeType: ["gif": "image/gif", "m4a": "audio/mp4"][url.pathExtension.lowercased()] ?? "video/mp4",
                progress: progress, completion: completion)
     }
 

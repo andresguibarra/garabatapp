@@ -986,3 +986,6 @@
 "Use a single editor window" = "Use a single editor window";
 "A new capture opens in the editor that is already open. What it showed stays in history with its annotations." = "A new capture opens in the editor that is already open. What it showed stays in history with its annotations.";
 "Hand-drawn" = "วาดด้วยมือ";
+"Audio" = "เสียง";
+"Exporting audio…" = "กำลังส่งออกเสียง…";
+"This video has no audio" = "วิดีโอนี้ไม่มีเสียง";
