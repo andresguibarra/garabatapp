@@ -78,7 +78,8 @@ final class StatusMenuLayoutTests: XCTestCase {
         XCTAssertEqual(layout.zone(of: .openVideo), .more)
         XCTAssertEqual(layout.zone(of: .recordGIF), .hidden)
         XCTAssertFalse(layout.hidden.contains(.separator))
-        XCTAssertEqual(layout.menu.first, .item(.captureScreen))
+        // captureArea was missing; with no default neighbour before it, it goes first.
+        XCTAssertEqual(Array(layout.menu.prefix(2)), [.item(.captureArea), .item(.captureScreen)])
     }
 
     func testItemsMissingFromAnOlderLayoutJoinTheMenuNextToTheirDefaultNeighbour() {

@@ -92,10 +92,22 @@ final class StatusMenuLayoutEditorView: NSView {
         var rowsStartY: CGFloat
     }
 
-    /// Rows shown in each zone, with the drag gap where the dragged row would land.
+    /// Where the gap is drawn: the drop target, or the row's own place while
+    /// the pointer is over a section that refuses it.
+    private var gap: (zone: Zone, index: Int)? {
+        guard let drag else { return nil }
+        return drag.target ?? drag.origin
+    }
+
+    /// Slots in each zone. While dragging, the origin section keeps the dragged
+    /// row's slot (blank at its end when the gap is elsewhere) and the target
+    /// section grows by one. Sections above the target then never move, so the
+    /// section under a still pointer doesn't change when the gap moves.
     private func slotCount(in zone: Zone) -> Int {
         var count = rows[zone]?.count ?? 0
-        if let target = drag?.target, target.zone == zone { count += 1 }
+        guard let drag else { return count }
+        if zone == drag.origin.zone { count += 1 }
+        if let gap, gap.zone == zone, zone != drag.origin.zone { count += 1 }
         return count
     }
 
@@ -135,7 +147,7 @@ final class StatusMenuLayoutEditorView: NSView {
                 guard let section = frames[zone] else { continue }
                 var slot = 0
                 for row in self.rows[zone] ?? [] {
-                    if let target = self.drag?.target, target.zone == zone, target.index == slot { slot += 1 }
+                    if let gap = self.gap, gap.zone == zone, gap.index == slot { slot += 1 }
                     let frame = NSRect(x: Self.boxPadding, y: section.rowsStartY + CGFloat(slot) * Self.rowHeight,
                                        width: section.box.width - Self.boxPadding * 2, height: Self.rowHeight)
                     if animated { row.animator().frame = frame } else { row.frame = frame }
@@ -513,10 +525,11 @@ private final class RowView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         let content = bounds.insetBy(dx: 0, dy: 1)
         if isLifted {
-            NSColor.controlAccentColor.withAlphaComponent(0.22).setFill()
-            NSBezierPath(roundedRect: content, xRadius: 5, yRadius: 5).fill()
-            NSColor.controlBackgroundColor.withAlphaComponent(0.6).setFill()
-            NSBezierPath(roundedRect: content, xRadius: 5, yRadius: 5).fill()
+            let shape = NSBezierPath(roundedRect: content, xRadius: 5, yRadius: 5)
+            NSColor.windowBackgroundColor.setFill()
+            shape.fill()
+            NSColor.controlAccentColor.withAlphaComponent(0.18).setFill()
+            shape.fill()
             NSColor.controlAccentColor.withAlphaComponent(0.6).setStroke()
             NSBezierPath(roundedRect: content.insetBy(dx: 0.5, dy: 0.5), xRadius: 5, yRadius: 5).stroke()
         }
