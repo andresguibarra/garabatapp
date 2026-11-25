@@ -382,7 +382,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // a capture. Keep accepting requests into the queue until this runs so
         // their delivery order is preserved.
         let launchedByUser = !isReplacement && !Self.launchedAtLogin()
-        NSLog("[launch-open] didFinish replacement=\(isReplacement) ae=\(String(describing: NSAppleEventManager.shared().currentAppleEvent))")
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.isReadyForOpenRequests = true
@@ -392,7 +391,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             // Garabatapp: opening the app by hand shows the latest capture in
             // the editor, like reopening it while it runs. Not at login, not
             // when it was opened for a file/URL, not over the permission guide.
-            NSLog("[launch-open] byUser=\(launchedByUser) urls=\(urls.count) onboarding=\(self.onboardingController != nil) visible=\(NSApp.windows.filter { $0.isVisible && $0.styleMask.contains(.titled) }.map(\.title)) history=\(ScreenshotHistory.shared.entries.count) ae=\(String(describing: NSAppleEventManager.shared().currentAppleEvent))")
             if launchedByUser, urls.isEmpty, self.onboardingController == nil,
                !NSApp.windows.contains(where: { $0.isVisible && $0.styleMask.contains(.titled) }) {
                 self.openLatestCapture()
@@ -2120,7 +2118,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     @discardableResult
     private func openLatestCapture() -> Bool {
-        NSLog("[launch-open] openLatestCapture entries=\(ScreenshotHistory.shared.entries.count)")
         for entry in ScreenshotHistory.shared.entries.prefix(5) {
             if openHistoryEntryInEditor(id: entry.id) { return true }
         }
