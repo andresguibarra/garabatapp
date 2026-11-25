@@ -10522,11 +10522,18 @@ class OverlayView: NSView {
                 colorWheel.dismiss()
                 needsDisplay = true
             } else if textEditView != nil {
-                commitTextFieldIfNeeded()  // Garabatapp: Escape keeps the text
+                // Garabatapp: Escape keeps the text and, like any finished
+                // drawing, puts the tool down so the next Escape closes.
+                commitTextFieldIfNeeded()
+                selectedAnnotations = []
+                _ = releaseArmedToolOnEscape()
+                needsDisplay = true
             } else if PopoverHelper.isVisible {
                 PopoverHelper.dismiss()
             } else if !selectedAnnotations.isEmpty {
+                // One Escape deselects and returns to Select & Move; the next closes.
                 selectedAnnotations = []
+                _ = releaseArmedToolOnEscape()
                 needsDisplay = true
             } else if releaseArmedToolOnEscape() {
                 // First Escape only puts the drawing tool down; the next one closes.
