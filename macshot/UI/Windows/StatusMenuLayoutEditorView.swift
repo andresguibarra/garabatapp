@@ -508,18 +508,18 @@ private final class RowView: NSView {
             .withSymbolConfiguration(.init(pointSize: size, weight: weight))
     }
 
+    /// Draws an SF Symbol in `tint`. The color is resolved for the current
+    /// drawing appearance first: a dynamic color handed to an image would be
+    /// resolved later, under whatever appearance draws the cached image.
     private static func draw(_ image: NSImage?, tint: NSColor, centeredIn rect: NSRect) {
         guard let image else { return }
-        let size = image.size
+        let resolved = tint.usingColorSpace(.sRGB) ?? tint
+        let colored = image.withSymbolConfiguration(
+            image.symbolConfiguration.applying(.init(paletteColors: [resolved]))) ?? image
+        let size = colored.size
         let target = NSRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2,
                             width: size.width, height: size.height)
-        let tinted = NSImage(size: size, flipped: false) { bounds in
-            image.draw(in: bounds)
-            tint.set()
-            bounds.fill(using: .sourceAtop)
-            return true
-        }
-        tinted.draw(in: target, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+        colored.draw(in: target, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
     }
 
     override func draw(_ dirtyRect: NSRect) {
