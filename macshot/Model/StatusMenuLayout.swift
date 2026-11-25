@@ -9,6 +9,7 @@ enum StatusMenuItemID: String, CaseIterable {
     case quickCapture
     case captureLastArea
     case scrollCapture
+    case captureActiveWindow
     case captureDelay
     case recordArea
     case recordGIF
@@ -44,6 +45,7 @@ enum StatusMenuItemID: String, CaseIterable {
         case .quickCapture: return L("Quick Capture")
         case .captureLastArea: return L("Capture Last Area")
         case .scrollCapture: return L("Scroll Capture")
+        case .captureActiveWindow: return L("Capture Active Window")
         case .captureDelay: return L("Capture Delay")
         case .recordArea: return L("Record Area")
         case .recordGIF: return "\(L("Record")) \(L("GIF"))"
@@ -70,6 +72,7 @@ enum StatusMenuItemID: String, CaseIterable {
         case .quickCapture: return "square.and.arrow.down"
         case .captureLastArea: return "arrow.counterclockwise.circle"
         case .scrollCapture: return "scroll"
+        case .captureActiveWindow: return "macwindow"
         case .captureDelay: return "timer"
         case .recordArea: return "record.circle"
         case .recordGIF: return "photo.stack"
@@ -97,6 +100,7 @@ enum StatusMenuItemID: String, CaseIterable {
         case .quickCapture: return .quickCapture
         case .captureLastArea: return .captureLastArea
         case .scrollCapture: return .scrollCapture
+        case .captureActiveWindow: return .captureActiveWindow
         case .recordArea: return .recordArea
         case .recordGIF: return .recordGIF
         case .recordScreen: return .recordScreen
@@ -171,7 +175,7 @@ struct StatusMenuLayout: Equatable {
 
     static func defaultMenu(captureOrder: [CaptureMenuItemID]) -> [StatusMenuEntry] {
         captureOrder.compactMap { StatusMenuItemID(rawValue: $0.rawValue) }.map { .item($0) }
-            + [.item(.captureDelay), .separator,
+            + [.item(.captureActiveWindow), .item(.captureDelay), .separator,
                .item(.recordArea), .item(.recordGIF), .item(.recordScreen), .separator,
                .item(.recentCaptures), .item(.historyPanel), .separator,
                .item(.openImage), .item(.openVideo), .item(.showRecordings),
