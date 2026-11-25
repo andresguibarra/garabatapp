@@ -4319,13 +4319,20 @@ class OverlayView: NSView {
     /// Show the canvas growing while a gesture runs past the image.
     func updateLiveCanvasExtent() {
         guard isEditorMode, isInsideScrollView, !beautifyEnabled else { return }
-        guard currentAnnotation != nil || isDraggingAnnotation || isResizingAnnotation || isRotatingAnnotation else { return }
+        let textBox = textEditView != nil ? textEditor.scrollView?.frame : nil
+        guard currentAnnotation != nil || isDraggingAnnotation || isResizingAnnotation || isRotatingAnnotation
+            || textBox != nil else { return }
         if annotations.contains(where: { $0.tool == .stamp && $0.stampImage != nil }) { return }
         var target = selectionRect
         var all = annotations
         if let cur = currentAnnotation { all.append(cur) }
         for ann in all {
             if let g = canvasGrowthRect(of: ann, image: selectionRect) { target = target.union(g) }
+        }
+        // A text box being typed past the edge: its editor view lives in the
+        // document, so the document must reach it or it would be cut off.
+        if let box = textBox, !selectionRect.insetBy(dx: -1, dy: -1).contains(box) {
+            target = target.union(box.insetBy(dx: -2, dy: -2))
         }
         target = NSRect(x: floor(target.minX), y: floor(target.minY),
                         width: ceil(target.maxX) - floor(target.minX), height: ceil(target.maxY) - floor(target.minY))
@@ -4353,14 +4360,37 @@ class OverlayView: NSView {
         guard let sv = enclosingScrollView else { return }
         let m = Self.editorDocumentMargin
         let oldOrigin = bounds.origin
-        setFrameSize(NSSize(width: extent.width + 2 * m, height: extent.height + 2 * m))
-        setBoundsOrigin(NSPoint(x: extent.minX - m, y: extent.minY - m))
-        let dx = oldOrigin.x - bounds.origin.x, dy = oldOrigin.y - bounds.origin.y
-        if dx != 0 || dy != 0 {
-            let clip = sv.contentView
-            clip.scroll(to: NSPoint(x: clip.bounds.origin.x + dx, y: clip.bounds.origin.y + dy))
-            sv.reflectScrolledClipView(clip)
+        var doc = extent.insetBy(dx: -m, dy: -m)
+        // While the document is smaller than the window it sits centered, so
+        // growing one side would slide everything by half the growth. Grow it
+        // evenly around its current center instead: nothing on screen moves.
+        let clip = sv.contentView
+        let insets = sv.contentInsets
+        let visibleW = clip.bounds.width - insets.left - insets.right
+        let visibleH = clip.bounds.height - insets.top - insets.bottom
+        let old = bounds
+        if old.width < visibleW - 0.5 {
+            let half = max(old.midX - doc.minX, doc.maxX - old.midX)
+            doc.origin.x = old.midX - half
+            doc.size.width = 2 * half
         }
+        if old.height < visibleH - 0.5 {
+            let half = max(old.midY - doc.minY, doc.maxY - old.midY)
+            doc.origin.y = old.midY - half
+            doc.size.height = 2 * half
+        }
+        let centeredX = old.width < visibleW - 0.5, centeredY = old.height < visibleH - 0.5
+        setFrameSize(doc.size)
+        setBoundsOrigin(doc.origin)
+        // Keep content still: a scrolled axis scrolls by the origin shift; a
+        // centered axis grew evenly, so it only needs re-centering. Either way
+        // the clip's own constraint (centering) gets the last word.
+        let dx = centeredX ? 0 : oldOrigin.x - bounds.origin.x
+        let dy = centeredY ? 0 : oldOrigin.y - bounds.origin.y
+        let proposed = NSRect(origin: NSPoint(x: clip.bounds.origin.x + dx, y: clip.bounds.origin.y + dy),
+                              size: clip.bounds.size)
+        clip.scroll(to: clip.constrainBoundsRect(proposed).origin)
+        sv.reflectScrolledClipView(clip)
     }
 
     private func rotatedBounds(_ base: NSRect, by ann: Annotation) -> NSRect {
@@ -9990,12 +10020,14 @@ class OverlayView: NSView {
             canvas: self)
         textEditor.textView?.delegate = self
         rebuildToolbarLayout()
+        updateLiveCanvasExtent()
         needsDisplay = true
     }
 
     func cancelTextEditing() {
         textToolDoubleClickCopyDeadline = 0
         textEditor.cancel(canvas: self)
+        finishLiveCanvasExtent()
         window?.makeFirstResponder(self)
         rebuildToolbarLayout()
         needsDisplay = true
@@ -10016,6 +10048,7 @@ class OverlayView: NSView {
         guard textEditor.isEditing else { return }
         textToolDoubleClickCopyDeadline = 0
         textEditor.commit(canvas: self)
+        finishLiveCanvasExtent()
         window?.makeFirstResponder(self)
         rebuildToolbarLayout()
         needsDisplay = true
@@ -11652,6 +11685,7 @@ extension OverlayView: NSTextViewDelegate {
 
     func textDidChange(_ notification: Notification) {
         textEditor.resizeToFit()
+        updateLiveCanvasExtent()
         needsDisplay = true
     }
 }
