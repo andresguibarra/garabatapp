@@ -831,6 +831,8 @@ class OverlayView: NSView {
 
     // Instant tooltip for hovered toolbar button
     private var hoveredTooltip: String?
+    /// Shortcut shown as key caps next to `hoveredTooltip` (nil = none).
+    private var hoveredTooltipShortcut: String?
     /// "Press Esc again to close" hint shown beside the bottom toolbar after
     /// Escape puts a drawing tool down. Lives outside the image, next to the bar.
     private var escapeHintView: TooltipBackgroundView?
@@ -6005,6 +6007,7 @@ class OverlayView: NSView {
     func rebuildToolbarLayout() {
         // Clear tooltip before rebuilding — old button views are about to be destroyed
         hoveredTooltip = nil
+        hoveredTooltipShortcut = nil
         hoveredTooltipButtonView = nil
 
         let movableAnnotations = annotations.contains { $0.isMovable }
@@ -8578,21 +8581,20 @@ class OverlayView: NSView {
                 // For non-tool actions, compare string representation
                 return "\(bv.action)" == "\(action)"
             }
-            hoveredTooltip = toolbarTooltipText(for: action, base: btn?.tooltipText)
+            hoveredTooltip = btn?.tooltipText
+            hoveredTooltipShortcut = toolbarTooltipShortcut(for: action)
             hoveredTooltipButtonView = btn
         } else {
             hoveredTooltip = nil
+            hoveredTooltipShortcut = nil
             hoveredTooltipButtonView = nil
         }
         needsDisplay = true
     }
 
-    private func toolbarTooltipText(for action: ToolbarButtonAction, base: String?) -> String? {
-        guard let base, !base.isEmpty else { return base }
-        guard tooltipShortcutDisplayEnabled,
-              let shortcut = ToolShortcutManager.tooltipShortcut(for: action)
-        else { return base }
-        return "\(base) (\(shortcut))"
+    private func toolbarTooltipShortcut(for action: ToolbarButtonAction) -> String? {
+        guard tooltipShortcutDisplayEnabled else { return nil }
+        return ToolShortcutManager.tooltipShortcut(for: action)
     }
 
     private func clearToolbarHoverState(
@@ -8602,6 +8604,7 @@ class OverlayView: NSView {
     ) {
         if clearTooltip {
             hoveredTooltip = nil
+            hoveredTooltipShortcut = nil
             hoveredTooltipButtonView = nil
         }
         bottomStripView?.clearInteractionState(
@@ -8615,6 +8618,7 @@ class OverlayView: NSView {
 
     private func showMoveDragTooltip(anchor moveButton: ToolbarButtonView?) {
         hoveredTooltip = L("Release to finish")
+        hoveredTooltipShortcut = nil
         hoveredTooltipButtonView = moveButton
         needsDisplay = true
     }
@@ -8754,15 +8758,9 @@ class OverlayView: NSView {
               let btn = hoveredTooltipButtonView,
               !PopoverHelper.isVisible else { return }
 
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-            .foregroundColor: ToolbarLayout.iconColor,
-        ]
-        let str = tooltip as NSString
-        let textSize = str.size(withAttributes: attrs)
-        let pad: CGFloat = 6
-        let tipW = textSize.width + pad * 2
-        let tipH = textSize.height + pad
+        let content = ShortcutTooltip(title: tooltip, shortcut: hoveredTooltipShortcut)
+        let tipW = content.size.width
+        let tipH = content.size.height
 
         // Convert the button's rect to OverlayView coordinates. The button may
         // live in a separate glass chrome panel (different window), so go through
@@ -8797,9 +8795,7 @@ class OverlayView: NSView {
             y: max(bounds.minY + 2, min(tipRect.minY, bounds.maxY - tipH - 2)),
             width: tipW, height: tipH)
 
-        ToolbarLayout.bgColor.setFill()
-        NSBezierPath(roundedRect: clamped, xRadius: 4, yRadius: 4).fill()
-        str.draw(at: NSPoint(x: clamped.minX + pad, y: clamped.minY + pad / 2), withAttributes: attrs)
+        content.draw(in: clamped, background: ToolbarLayout.bgColor, foreground: ToolbarLayout.iconColor)
     }
 
     /// In editor mode, show tooltip as a floating NSView in the chrome parent (container),
@@ -8819,15 +8815,9 @@ class OverlayView: NSView {
             return
         }
 
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-            .foregroundColor: NSColor.white,
-        ]
-        let str = tooltip as NSString
-        let textSize = str.size(withAttributes: attrs)
-        let pad: CGFloat = 6
-        let tipW = textSize.width + pad * 2
-        let tipH = textSize.height + pad
+        let content = ShortcutTooltip(title: tooltip, shortcut: hoveredTooltipShortcut)
+        let tipW = content.size.width
+        let tipH = content.size.height
 
         let btnFrame = btn.convert(btn.bounds, to: parent)
         let isBottomBar = btn.superview === bottomStripView
@@ -8858,6 +8848,7 @@ class OverlayView: NSView {
         }
         tip.frame = clamped
         tip.text = tooltip
+        tip.shortcut = hoveredTooltipShortcut
         tip.needsDisplay = true
     }
 
@@ -11852,16 +11843,11 @@ extension OverlayView: TextEditingCanvas {}
 /// Small rounded-rect tooltip view used for editor mode toolbar hover labels.
 private class TooltipBackgroundView: NSView {
     var text: String = ""
+    var shortcut: String?
 
     override func draw(_ dirtyRect: NSRect) {
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
-            .foregroundColor: ToolbarLayout.iconColor,
-        ]
-        ToolbarLayout.bgColor.setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: 4, yRadius: 4).fill()
-        let pad: CGFloat = 6
-        (text as NSString).draw(at: NSPoint(x: pad, y: pad / 2), withAttributes: attrs)
+        ShortcutTooltip(title: text, shortcut: shortcut)
+            .draw(in: bounds, background: ToolbarLayout.bgColor, foreground: ToolbarLayout.iconColor)
     }
 }
 
