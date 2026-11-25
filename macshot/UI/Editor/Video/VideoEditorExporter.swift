@@ -2,7 +2,17 @@ import AVFoundation
 
 /// Export preferences. Persisted across sessions (existing keys).
 struct VideoExportSettings: Equatable {
-    enum Format: String { case mp4, gif }
+    enum Format: String {
+        case mp4, gif, audio
+
+        var pathExtension: String {
+            switch self {
+            case .mp4: return "mp4"
+            case .gif: return "gif"
+            case .audio: return "m4a"
+            }
+        }
+    }
     var format: Format = .mp4
     /// Output scale relative to the native canvas, 0 < scale ≤ 1.
     var scale: CGFloat = 1
@@ -53,7 +63,7 @@ final class VideoEditorExporter {
     /// Whether saving must render (otherwise the source file is copied as is).
     func needsRender(_ settings: VideoExportSettings) -> Bool {
         let project = document.project
-        return settings.format == .gif || settings.scale < 0.999 || settings.quality != .high
+        return settings.format != .mp4 || settings.scale < 0.999 || settings.quality != .high
             || project.hasEdits || document.cursorIsEditable || document.cameraURL != nil
             || (document.overlaysAreEditable && document.hasKeystrokes)
     }
@@ -93,7 +103,17 @@ final class VideoEditorExporter {
         let includeAudio = !document.project.muted
         let prepared = try prepare(settings, includeAudio: includeAudio)
         let lease = document.source.lease
+        let canvas = prepared.composition.renderSize
+        // Full quality keeps every pixel and frame but encodes screen content
+        // at constant quality, so it is not several times larger than needed.
+        var highSettings: [String: Any]?
         if settings.quality == .high {
+            let fps = SafeNumerics.frameRate(Float(1 / document.frameDuration.seconds))
+            let (width, height) = VideoEncodingSettings.evenDimensions(width: canvas.width, height: canvas.height)
+            highSettings = VideoEncodingSettings.screenContentSettings(width: width, height: height, fps: fps) { [:] }
+            if highSettings?.isEmpty == true { highSettings = nil }
+        }
+        if settings.quality == .high, highSettings == nil {
             guard let session = AVAssetExportSession(asset: prepared.processed.composition,
                                                      presetName: AVAssetExportPresetHighestQuality) else {
                 throw ExportError.invalidSetup
@@ -106,18 +126,43 @@ final class VideoEditorExporter {
             if !includeAudio { session.audioMix = nil }
             return VideoExportJob(session: session, sourceLease: lease)
         }
-        let canvas = prepared.composition.renderSize
-        guard let plan = encodingPlan(settings, canvas: canvas, project: prepared.project) else {
-            throw ExportError.invalidSetup
+        let videoSettings: [String: Any]
+        if let highSettings {
+            videoSettings = highSettings
+        } else {
+            guard let plan = encodingPlan(settings, canvas: canvas, project: prepared.project) else {
+                throw ExportError.invalidSetup
+            }
+            videoSettings = plan.outputSettings
         }
         var request = VideoTranscoder.Request(
             asset: prepared.processed.composition, videoTrack: prepared.processed.videoTrack,
             audioTracks: includeAudio ? prepared.processed.audioTracks : [], composition: prepared.composition,
             timeRange: CMTimeRange(start: .zero, duration: prepared.processed.composition.duration),
-            outputURL: outputURL, videoSettings: plan.outputSettings, decodedSize: nil,
+            outputURL: outputURL, videoSettings: videoSettings, decodedSize: nil,
             outputTransform: .identity, sourceFrameDuration: document.frameDuration)
         request.additionalVideoTracks = prepared.processed.cameraTrack.map { [$0] } ?? []
         return VideoExportJob(request: request, sourceLease: lease)
+    }
+
+    /// Whether the edited video has a sound track to export on its own.
+    var hasAudio: Bool { document.audioTrackCount > 0 && !document.project.muted }
+
+    /// The edited timeline's sound alone as AAC in an M4A file. Cuts, speed
+    /// and freezes follow the timeline; microphone and system audio mix into
+    /// one track.
+    func audioJob(outputURL: URL) throws -> VideoExportJob {
+        guard hasAudio, let project = document.project.copy() else { throw ExportError.invalidSetup }
+        let processed = try VideoRenderPlanner(document: document).processed(
+            project: project, from: project.trimStart, to: project.trimEnd, includeAudio: true)
+        guard !processed.audioTracks.isEmpty,
+              let session = AVAssetExportSession(asset: processed.composition,
+                                                 presetName: AVAssetExportPresetAppleM4A) else {
+            throw ExportError.invalidSetup
+        }
+        session.outputURL = outputURL
+        session.outputFileType = .m4a
+        return VideoExportJob(session: session, sourceLease: document.source.lease)
     }
 
     func gifRequest(_ settings: VideoExportSettings, outputURL: URL) throws -> GIFExporter.Request {

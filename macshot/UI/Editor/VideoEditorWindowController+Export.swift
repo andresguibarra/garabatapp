@@ -21,6 +21,8 @@ extension VideoEditorWindowController {
         // scale there must not make GIF everyone's default export format.
         var remembered = settings
         if settings.format == previousFormat { remembered.format = VideoExportSettings.load().format }
+        // Audio is a one-off extraction, never the default for the next video.
+        if remembered.format == .audio { remembered.format = VideoExportSettings.load().format }
         remembered.save()
         savedURL = nil
     }
@@ -28,6 +30,11 @@ extension VideoEditorWindowController {
     /// Estimated file size and output size text for the export panel.
     func exportSummary(_ settings: VideoExportSettings) -> String {
         var parts: [String] = []
+        if settings.format == .audio {
+            guard exporter.hasAudio else { return L("This video has no audio") }
+            return ["M4A", VideoTransportBar.format(VideoRenderPlanner.outputDuration(project: editorDocument.project))]
+                .joined(separator: "  ·  ")
+        }
         if let size = exporter.outputSize(settings) { parts.append("\(Int(size.width))×\(Int(size.height))") }
         parts.append(VideoTransportBar.format(VideoRenderPlanner.outputDuration(project: editorDocument.project)))
         if let bytes = exporter.estimatedBytes(settings) {
@@ -44,11 +51,15 @@ extension VideoEditorWindowController {
     /// Saves to the recordings folder, or asks where when it isn't set.
     func saveVideo() {
         guard !isExporting else { return }
+        guard exportSettings.format != .audio || exporter.hasAudio else {
+            showStatus(L("This video has no audio"), isError: true)
+            return
+        }
         guard let directory = SaveDirectoryAccess.resolveRecordingDirectoryIfAccessible() else {
             saveVideoAs()
             return
         }
-        let ext = exportSettings.format == .gif ? "gif" : "mp4"
+        let ext = exportSettings.format.pathExtension
         let base = editorDocument.source.originalURL.deletingPathExtension().lastPathComponent
         var destination = directory.appendingPathComponent(base + "." + ext)
         // Never replace an unrelated file silently: pick a free name.
@@ -63,9 +74,10 @@ extension VideoEditorWindowController {
     func saveVideoAs() {
         guard !isExporting, let window else { return }
         let panel = NSSavePanel()
-        let gif = exportSettings.format == .gif
-        panel.allowedContentTypes = gif ? [.gif] : [.mpeg4Movie]
-        panel.nameFieldStringValue = editorDocument.source.originalURL.deletingPathExtension().lastPathComponent + (gif ? ".gif" : ".mp4")
+        let format = exportSettings.format
+        guard format != .audio || exporter.hasAudio else { showStatus(L("This video has no audio"), isError: true); return }
+        panel.allowedContentTypes = [format == .gif ? .gif : format == .audio ? .mpeg4Audio : .mpeg4Movie]
+        panel.nameFieldStringValue = editorDocument.source.originalURL.deletingPathExtension().lastPathComponent + "." + format.pathExtension
         panel.directoryURL = SaveDirectoryAccess.recordingDirectoryHint()
         panel.canCreateDirectories = true
         panel.beginSheetModal(for: window) { [weak self] response in
@@ -95,9 +107,10 @@ extension VideoEditorWindowController {
                 })
                 return
             }
-            let job: VideoExportJob? = exporter.needsRender(settings)
-                ? try exporter.mp4Job(settings, outputURL: destination) : nil
-            startExport(status: job == nil ? L("Saving...") : L("Exporting..."), title: destination.lastPathComponent,
+            let job: VideoExportJob? = settings.format == .audio ? try exporter.audioJob(outputURL: destination)
+                : exporter.needsRender(settings) ? try exporter.mp4Job(settings, outputURL: destination) : nil
+            let status = settings.format == .audio ? L("Exporting audio…") : job == nil ? L("Saving...") : L("Exporting...")
+            startExport(status: status, title: destination.lastPathComponent,
                 operation: { cancellation, progress in
                     let save = try await MediaExportIO.perform { () throws -> AtomicMediaSave in
                         try cancellation.check()
@@ -151,19 +164,25 @@ extension VideoEditorWindowController {
         PopoverHelper.dismiss()
         guard !isExporting else { return }
         let settings = exportSettings
+        guard settings.format != .audio || exporter.hasAudio else { showStatus(L("This video has no audio"), isError: true); return }
+        let copy: (URL) -> Void = { [weak self] url in
+            switch settings.format {
+            case .gif: self?.copyGIFData(from: url)
+            case .mp4: self?.copyMP4Data(from: url, contentIsMP4: true)
+            case .audio: self?.copyFileURL(url)
+            }
+        }
         if let savedURL, savedRevision == editorDocument.revision,
-           savedURL.pathExtension.lowercased() == (settings.format == .gif ? "gif" : "mp4") {
-            settings.format == .gif ? copyGIFData(from: savedURL) : copyMP4Data(from: savedURL, contentIsMP4: true)
+           savedURL.pathExtension.lowercased() == settings.format.pathExtension {
+            copy(savedURL)
             return
         }
-        renderTemporary(settings) { [weak self] url in
-            settings.format == .gif ? self?.copyGIFData(from: url) : self?.copyMP4Data(from: url, contentIsMP4: true)
-        }
+        renderTemporary(settings, completion: copy)
     }
 
     /// Renders the edited video to a temporary file that outlives the editor.
     private func renderTemporary(_ settings: VideoExportSettings, completion: @escaping (URL) -> Void) {
-        let ext = settings.format == .gif ? "gif" : "mp4"
+        let ext = settings.format.pathExtension
         let base = editorDocument.source.originalURL.deletingPathExtension().lastPathComponent
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("macshot-share/\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -180,8 +199,9 @@ extension VideoEditorWindowController {
                 })
                 return
             }
-            let job: VideoExportJob? = exporter.needsRender(settings) ? try exporter.mp4Job(settings, outputURL: output) : nil
-            startExport(status: L("Exporting..."), title: output.lastPathComponent, operation: { cancellation, progress in
+            let job: VideoExportJob? = settings.format == .audio ? try exporter.audioJob(outputURL: output)
+                : exporter.needsRender(settings) ? try exporter.mp4Job(settings, outputURL: output) : nil
+            startExport(status: settings.format == .audio ? L("Exporting audio…") : L("Exporting..."), title: output.lastPathComponent, operation: { cancellation, progress in
                 if let job {
                     try await job.export(to: output) { progress($0) }
                     try cancellation.beginPublication()
@@ -227,6 +247,14 @@ extension VideoEditorWindowController {
         showStatus(L("Copied to clipboard!"))
     }
 
+    /// Audio goes on the clipboard as a file, which apps paste as an attachment.
+    private func copyFileURL(_ url: URL) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects([url as NSURL])
+        showStatus(L("Copied to clipboard!"))
+    }
+
     /// Inline MP4 bytes (for apps that paste video data) plus the file URL.
     private func copyMP4Data(from url: URL, contentIsMP4: Bool) {
         let pasteboard = NSPasteboard.general
@@ -259,6 +287,9 @@ extension VideoEditorWindowController {
         }
         if provider != "gdrive" && provider != "s3" {
             showStatus(L("Video upload requires Google Drive or S3"), isError: true); return
+        }
+        guard exportSettings.format != .audio || exporter.hasAudio else {
+            showStatus(L("This video has no audio"), isError: true); return
         }
         let label = provider == "s3" ? "S3" : "Drive"
         let progress: @MainActor @Sendable (Double) -> Void = { [weak self] fraction in
@@ -341,6 +372,7 @@ final class VideoExportPanel: NSView {
     private let stack = NSStackView()
     private var qualityRow: NSView?
     private var fpsRow: NSView?
+    private var resolutionRow: NSView?
     private let resolutionPopup = NSPopUpButton(frame: .zero, pullsDown: false)
     private var scales: [CGFloat] = []
 
@@ -367,8 +399,10 @@ final class VideoExportPanel: NSView {
 
     private func build() {
         stack.addArrangedSubview(VideoEditorStyle.label(L("Export"), size: 14, weight: .semibold))
-        let format = InspectorSegmentRow(title: L("Format"), labels: ["MP4", "GIF"], selected: settings.format == .gif ? 1 : 0) { [weak self] i in
-            self?.settings.format = i == 1 ? .gif : .mp4
+        let formats: [VideoExportSettings.Format] = [.mp4, .gif, .audio]
+        let format = InspectorSegmentRow(title: L("Format"), labels: ["MP4", "GIF", L("Audio")],
+                                         selected: formats.firstIndex(of: settings.format) ?? 0) { [weak self] i in
+            self?.settings.format = formats[i]
             self?.changed()
         }
         stack.addArrangedSubview(format)
@@ -382,6 +416,7 @@ final class VideoExportPanel: NSView {
         resolution.orientation = .vertical
         resolution.alignment = .leading
         resolution.spacing = 6
+        resolutionRow = resolution
         stack.addArrangedSubview(resolution)
         fillResolutions()
 
@@ -473,8 +508,9 @@ final class VideoExportPanel: NSView {
     }
 
     private func updateVisibility() {
-        qualityRow?.isHidden = settings.format == .gif
+        qualityRow?.isHidden = settings.format != .mp4
         fpsRow?.isHidden = settings.format != .gif
+        resolutionRow?.isHidden = settings.format == .audio
         summary.stringValue = controller?.exportSummary(settings) ?? ""
     }
 }

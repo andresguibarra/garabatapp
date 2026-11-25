@@ -155,6 +155,47 @@ enum VideoEncodingSettings {
         ]
     }
 
+    /// Constant-quality HEVC for screen recordings and full-quality exports.
+    ///
+    /// Screen content is mostly still: a fixed bitrate spends the same bits on
+    /// a static window as on a scroll. Constant quality lets still frames cost
+    /// almost nothing and spends bits only where the picture changes. On real
+    /// screen recordings this is about 8x smaller than the old H.264 target
+    /// with text reading the same (quality 0.75, measured 2026-11-25).
+    static let screenQuality: Double = 0.75
+
+    static func screenContentSettings(width: Int, height: Int, fps: Int) -> [String: Any] {
+        [
+            AVVideoCodecKey: AVVideoCodecType.hevc,
+            AVVideoWidthKey: width,
+            AVVideoHeightKey: height,
+            AVVideoColorPropertiesKey: [
+                AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
+                AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
+                AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
+            ],
+            AVVideoCompressionPropertiesKey: [
+                AVVideoQualityKey: screenQuality,
+                AVVideoExpectedSourceFrameRateKey: fps,
+                // Keyframes are the expensive frames in constant quality. Every
+                // few seconds still keeps scrubbing and crash recovery quick.
+                AVVideoMaxKeyFrameIntervalDurationKey: 4.0,
+                AVVideoAllowFrameReorderingKey: false,
+            ] as [String: Any],
+        ]
+    }
+
+    /// The screen-content settings when this Mac's encoder accepts them
+    /// (Apple silicon), otherwise the given fallback.
+    static func screenContentSettings(width: Int, height: Int, fps: Int,
+                                      fallback: () -> [String: Any]) -> [String: Any] {
+        let settings = screenContentSettings(width: width, height: height, fps: fps)
+        let probe = FileManager.default.temporaryDirectory.appendingPathComponent("encoder-probe-\(UUID().uuidString).mp4")
+        guard let writer = try? AVAssetWriter(outputURL: probe, fileType: .mp4),
+              writer.canApply(outputSettings: settings, forMediaType: .video) else { return fallback() }
+        return settings
+    }
+
     /// Ensures width and height are even — H.264/HEVC both require this.
     static func evenDimensions(width: CGFloat, height: CGFloat) -> (Int, Int) {
         let w = (Int(width.rounded()) / 2) * 2
