@@ -37,7 +37,11 @@ class CenteringClipView: NSClipView {
         // route to document view — but only if the point is over the actual image area
         // (not the toolbar/top bar chrome regions outside the scroll view's visible area).
         if result === self, let doc = documentView {
-            // Convert point to document view coordinates and check if it's within the image
+            // Garabatapp: the editor takes every click over the empty area,
+            // not just the ones inside its document frame. A narrow canvas
+            // (after a crop, or a tall capture) leaves most of the window
+            // outside that frame, and drawing there must grow the canvas.
+            if let editor = doc as? OverlayView, editor.isEditorMode { return editor }
             let docPoint = doc.convert(point, from: self)
             if doc.bounds.contains(docPoint) {
                 return doc
