@@ -358,7 +358,8 @@ final class StatusMenuLayoutEditorView: NSView {
         NSCursor.pop()
         drag = nil
         current.row.isLifted = false
-        rows[current.origin.zone]?.insert(current.row, at: min(current.origin.index, rows[current.origin.zone]?.count ?? 0))
+        let index = min(current.origin.index, rows[current.origin.zone]?.count ?? 0)
+        rows[current.origin.zone]?.insert(current.row, at: index)
     }
 
     // MARK: Programmatic moves (context menu, tests)
