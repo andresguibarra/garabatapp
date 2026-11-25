@@ -160,49 +160,152 @@ enum TranslationService {
 
     // MARK: - Google Translate (unofficial endpoint)
 
+    /// Longest `q` (in characters, before percent-encoding) sent in one GET.
+    /// Percent-encoded accented text can triple in size; this keeps the URL
+    /// well under the ~16 KB limit Google accepts.
+    static let googleChunkCharacterLimit = 1800
+
+    /// Translates the whole batch with as few requests as possible: lines are
+    /// joined with "\n" into chunks and sent one chunk at a time. Firing one
+    /// request per OCR line in parallel is what gets the unofficial endpoint
+    /// to answer with a 429 "Sorry..." HTML page instead of JSON.
     private static func translateBatchGoogle(
         texts: [String],
         targetLang: String,
         completion: @escaping (Result<[String], Error>) -> Void
     ) {
+        let finish: (Result<[String], Error>) -> Void = { result in
+            DispatchQueue.main.async { completion(result) }
+        }
+        let chunks = googleChunks(for: texts, limit: googleChunkCharacterLimit)
         var results = Array(repeating: "", count: texts.count)
-        let group = DispatchGroup()
-        var firstError: Error?
-        let lock = NSLock()
+        for (i, text) in texts.enumerated()
+        where text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            results[i] = text
+        }
 
-        for (i, text) in texts.enumerated() {
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else {
-                results[i] = text
-                continue
-            }
-            group.enter()
-            translateOneGoogle(text: trimmed, targetLang: targetLang) { result in
-                lock.lock()
-                switch result {
-                case .success(let translated):
-                    results[i] = translated
-                case .failure(let error):
-                    if firstError == nil { firstError = error }
-                    results[i] = ""
+        func translateLinesSequentially(_ indices: [Int], lines: [String], done: @escaping (Error?) -> Void) {
+            func step(_ k: Int) {
+                guard k < indices.count else { done(nil); return }
+                translateOneGoogle(text: lines[k], targetLang: targetLang) { result in
+                    switch result {
+                    case .failure(let error): done(error)
+                    case .success(let t):
+                        results[indices[k]] = t.trimmingCharacters(in: .whitespacesAndNewlines)
+                        step(k + 1)
+                    }
                 }
-                lock.unlock()
-                group.leave()
+            }
+            step(0)
+        }
+
+        func run(_ chunkIndex: Int) {
+            guard chunkIndex < chunks.count else {
+                finish(.success(results))
+                return
+            }
+            let indices = chunks[chunkIndex]
+            let lines = indices.map { googleLine(texts[$0]) }
+            translateOneGoogle(text: lines.joined(separator: "\n"), targetLang: targetLang) { result in
+                switch result {
+                case .failure(let error):
+                    finish(.failure(error))
+                case .success(let translated):
+                    if let split = splitGoogleLines(translated, expected: lines.count) {
+                        for (k, i) in indices.enumerated() { results[i] = split[k] }
+                        run(chunkIndex + 1)
+                    } else {
+                        // Google merged or split lines: translate this chunk
+                        // line by line (sequentially, never in parallel).
+                        translateLinesSequentially(indices, lines: lines) { error in
+                            if let error { finish(.failure(error)) } else { run(chunkIndex + 1) }
+                        }
+                    }
+                }
             }
         }
 
-        group.notify(queue: .main) {
-            if let error = firstError {
-                completion(.failure(error))
-            } else {
-                completion(.success(results))
+        run(0)
+    }
+
+    /// One line of input with internal line breaks flattened, so "\n" only
+    /// ever separates batch entries.
+    static func googleLine(_ text: String) -> String {
+        text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+
+    /// Groups the indices of non-empty texts into chunks whose joined length
+    /// stays under `limit`. A single text longer than `limit` gets its own chunk.
+    static func googleChunks(for texts: [String], limit: Int) -> [[Int]] {
+        var chunks: [[Int]] = []
+        var current: [Int] = []
+        var length = 0
+        for (i, text) in texts.enumerated() {
+            let line = googleLine(text)
+            guard !line.isEmpty else { continue }
+            let added = line.count + (current.isEmpty ? 0 : 1)
+            if !current.isEmpty, length + added > limit {
+                chunks.append(current)
+                current = []
+                length = 0
             }
+            current.append(i)
+            length += line.count + (current.count > 1 ? 1 : 0)
         }
+        if !current.isEmpty { chunks.append(current) }
+        return chunks
+    }
+
+    /// Splits a translated chunk back into its lines. Returns nil when the
+    /// line count doesn't match, so the caller can fall back to per-line.
+    static func splitGoogleLines(_ translated: String, expected: Int) -> [String]? {
+        let parts = translated
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        var lines = parts
+        while lines.count > expected, lines.last?.isEmpty == true { lines.removeLast() }
+        guard lines.count == expected, !lines.contains(where: { $0.isEmpty }) else { return nil }
+        return lines
+    }
+
+    /// Extracts the translated text from a `translate_a/single?dt=t` body.
+    /// The body is `[[["out","in",…],["out2","in2",…],…], null, "es", …]`;
+    /// segment shapes vary (extra fields, nulls, transliteration rows without
+    /// output), and some edges prefix the JSON with `)]}'`.
+    static func parseGoogleResponse(_ data: Data) -> Result<String, TranslationError> {
+        var body = data
+        if let text = String(data: data, encoding: .utf8) {
+            var trimmed = Substring(text).drop(while: { $0.isWhitespace })
+            if trimmed.hasPrefix(")]}'") { trimmed = trimmed.dropFirst(4) }
+            let lower = trimmed.prefix(64).lowercased()
+            if lower.hasPrefix("<!doctype") || lower.hasPrefix("<html") {
+                return .failure(.blocked)
+            }
+            body = Data(trimmed.utf8)
+        }
+        guard let root = try? JSONSerialization.jsonObject(with: body, options: [.fragmentsAllowed]) else {
+            return .failure(.parseError)
+        }
+        // Some variants answer with a bare string or ["text", "lang"].
+        if let s = root as? String { return s.isEmpty ? .failure(.emptyResult) : .success(s) }
+        guard let top = root as? [Any], let first = top.first else { return .failure(.parseError) }
+        if let s = first as? String { return s.isEmpty ? .failure(.emptyResult) : .success(s) }
+        if first is NSNull { return .failure(.emptyResult) }
+        guard let segments = first as? [Any] else { return .failure(.parseError) }
+        // [["text", "lang"]]: the first row is a flat string pair, not segments.
+        if let s = segments.first as? String { return s.isEmpty ? .failure(.emptyResult) : .success(s) }
+        let translated = segments.compactMap { ($0 as? [Any])?.first as? String }.joined()
+        return translated.isEmpty ? .failure(.emptyResult) : .success(translated)
     }
 
     private static func translateOneGoogle(
         text: String,
         targetLang: String,
+        attempt: Int = 0,
         completion: @escaping (Result<String, Error>) -> Void
     ) {
         var components = URLComponents(string: "https://translate.googleapis.com/translate_a/single")!
@@ -211,8 +314,14 @@ enum TranslationService {
             URLQueryItem(name: "sl",     value: "auto"),
             URLQueryItem(name: "tl",     value: targetLang),
             URLQueryItem(name: "dt",     value: "t"),
+            URLQueryItem(name: "ie",     value: "UTF-8"),
+            URLQueryItem(name: "oe",     value: "UTF-8"),
             URLQueryItem(name: "q",      value: text),
         ]
+        // URLComponents leaves "+" and "&"-adjacent characters alone in some
+        // positions; encode "+" explicitly so it isn't read as a space.
+        components.percentEncodedQuery = components.percentEncodedQuery?
+            .replacingOccurrences(of: "+", with: "%2B")
         guard let url = components.url else {
             completion(.failure(TranslationError.badURL))
             return
@@ -220,28 +329,36 @@ enum TranslationService {
 
         var request = URLRequest(url: url)
         request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 10
+        request.timeoutInterval = 15
 
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
-                completion(.failure(error))
+                completion(.failure(TranslationError.network(error.localizedDescription)))
                 return
             }
-            guard let data = data else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 200
+            let retryable = status == 429 || status >= 500
+            if retryable, attempt < 2 {
+                let delay = attempt == 0 ? 1.5 : 4.0
+                DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                    translateOneGoogle(text: text, targetLang: targetLang,
+                                       attempt: attempt + 1, completion: completion)
+                }
+                return
+            }
+            if status == 429 {
+                completion(.failure(TranslationError.rateLimited))
+                return
+            }
+            guard (200..<300).contains(status) else {
+                completion(.failure(TranslationError.httpStatus(status)))
+                return
+            }
+            guard let data = data, !data.isEmpty else {
                 completion(.failure(TranslationError.noData))
                 return
             }
-            guard let json = try? JSONSerialization.jsonObject(with: data) as? [Any],
-                  let outer = json.first as? [[Any]] else {
-                completion(.failure(TranslationError.parseError))
-                return
-            }
-            let translated = outer.compactMap { $0.first as? String }.joined()
-            guard !translated.isEmpty else {
-                completion(.failure(TranslationError.emptyResult))
-                return
-            }
-            completion(.success(translated))
+            completion(parseGoogleResponse(data).mapError { $0 as Error })
         }.resume()
     }
 
@@ -407,13 +524,21 @@ private struct TranslationBridgeView: View {
 
 enum TranslationError: LocalizedError {
     case badURL, noData, parseError, emptyResult
+    case rateLimited, blocked
+    case httpStatus(Int)
+    case network(String)
     case appleTranslation(String)
     var errorDescription: String? {
+        let fallback = "Try again in a minute, or switch to Apple Translation in Settings."
         switch self {
         case .badURL:      return "Invalid translation URL"
-        case .noData:      return "No response from translation service"
-        case .parseError:  return "Could not parse translation response"
-        case .emptyResult: return "Translation returned empty result"
+        case .noData:      return "No response from Google Translate. \(fallback)"
+        case .parseError:  return "Google Translate sent a response that couldn't be read. \(fallback)"
+        case .emptyResult: return "Google Translate returned no text for this selection."
+        case .rateLimited: return "Google Translate is limiting requests right now (HTTP 429). \(fallback)"
+        case .blocked:     return "Google Translate refused the request (it answered with a web page instead of a translation). \(fallback)"
+        case .httpStatus(let code): return "Google Translate is unavailable (HTTP \(code)). \(fallback)"
+        case .network(let msg): return "Couldn't reach Google Translate: \(msg)"
         case .appleTranslation(let msg): return msg
         }
     }
