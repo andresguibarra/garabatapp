@@ -972,3 +972,16 @@
 "Outline + Fill" = "Kontur + Füllung";
 "Detach" = "Lösen";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ und ] ändern · ⌥ + Zahl wählt den Regler";
+"Menu Bar Menu" = "Menü in der Menüleiste";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Ziehe Einträge, um sie neu zu ordnen oder zwischen Bereichen zu verschieben. Einstellungen und Beenden bleiben immer im Menü.";
+"In the Menu" = "Im Menü";
+"Under More" = "Unter Mehr";
+"Hidden" = "Ausgeblendet";
+"Separator" = "Trennlinie";
+"Add Separator" = "Trennlinie hinzufügen";
+"Drop items here to keep them under More." = "Hier ablegen, um Einträge unter Mehr zu behalten.";
+"Drop items here to hide them." = "Hier ablegen, um Einträge auszublenden.";
+"Show in Menu" = "Im Menü anzeigen";
+"Move to More" = "Nach Mehr verschieben";
+"Remove Separator" = "Trennlinie entfernen";
+"Settings and Quit always stay in the menu." = "Einstellungen und Beenden bleiben immer im Menü.";

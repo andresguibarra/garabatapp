@@ -974,3 +974,16 @@
 "Outline + Fill" = "আউটলাইন + ফিল";
 "Detach" = "বিচ্ছিন্ন করুন";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ ও ] দিয়ে সামঞ্জস্য · ⌥ + সংখ্যা দিয়ে স্লাইডার বাছুন";
+"Menu Bar Menu" = "মেনু বার মেনু";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "আইটেমগুলো পুনর্বিন্যাস করতে বা বিভাগের মধ্যে সরাতে টেনে আনুন। সেটিংস ও প্রস্থান সবসময় মেনুতে থাকে।";
+"In the Menu" = "মেনুতে";
+"Under More" = "আরও-এর মধ্যে";
+"Hidden" = "লুকানো";
+"Separator" = "বিভাজক";
+"Add Separator" = "বিভাজক যোগ করুন";
+"Drop items here to keep them under More." = "যেগুলো আরও-এর মধ্যে রাখতে চান সেগুলো এখানে ছাড়ুন।";
+"Drop items here to hide them." = "যেগুলো লুকাতে চান সেগুলো এখানে ছাড়ুন।";
+"Show in Menu" = "মেনুতে দেখান";
+"Move to More" = "আরও-তে সরান";
+"Remove Separator" = "বিভাজক সরান";
+"Settings and Quit always stay in the menu." = "সেটিংস ও প্রস্থান সবসময় মেনুতে থাকে।";

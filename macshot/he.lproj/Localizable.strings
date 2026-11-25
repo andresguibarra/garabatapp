@@ -974,3 +974,16 @@
 "Outline + Fill" = "קו מתאר + מילוי";
 "Detach" = "נתק";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ ו-] לכוונון · ⌥ + מספר בוחר מחוון";
+"Menu Bar Menu" = "תפריט בשורת התפריטים";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "גרור פריטים כדי לסדר אותם מחדש או להעביר אותם בין מקטעים. הגדרות ויציאה תמיד נשארים בתפריט.";
+"In the Menu" = "בתפריט";
+"Under More" = "תחת עוד";
+"Hidden" = "מוסתרים";
+"Separator" = "מפריד";
+"Add Separator" = "הוסף מפריד";
+"Drop items here to keep them under More." = "שחרר כאן פריטים שיישארו תחת עוד.";
+"Drop items here to hide them." = "שחרר כאן פריטים להסתרה.";
+"Show in Menu" = "הצג בתפריט";
+"Move to More" = "העבר לעוד";
+"Remove Separator" = "הסר מפריד";
+"Settings and Quit always stay in the menu." = "הגדרות ויציאה תמיד נשארים בתפריט.";

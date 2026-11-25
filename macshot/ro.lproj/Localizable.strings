@@ -972,3 +972,16 @@
 "Outline + Fill" = "Contur + umplere";
 "Detach" = "Desprinde";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ și ] ajustează · ⌥ + număr alege glisorul";
+"Menu Bar Menu" = "Meniul din bara de meniu";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Trage elementele pentru a le reordona sau a le muta între secțiuni. Setări și Ieșire rămân mereu în meniu.";
+"In the Menu" = "În meniu";
+"Under More" = "În Mai multe";
+"Hidden" = "Ascunse";
+"Separator" = "Separator";
+"Add Separator" = "Adaugă separator";
+"Drop items here to keep them under More." = "Plasează aici elementele de păstrat în Mai multe.";
+"Drop items here to hide them." = "Plasează aici elementele de ascuns.";
+"Show in Menu" = "Arată în meniu";
+"Move to More" = "Mută în Mai multe";
+"Remove Separator" = "Elimină separatorul";
+"Settings and Quit always stay in the menu." = "Setări și Ieșire rămân mereu în meniu.";

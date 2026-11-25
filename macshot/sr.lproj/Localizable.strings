@@ -974,3 +974,16 @@
 "Outline + Fill" = "Оквир + испуна";
 "Detach" = "Одвоји";
 "[ and ] adjust · ⌥ + number picks which slider" = "[ и ] подешавају · ⌥ + број бира клизач";
+"Menu Bar Menu" = "Мени на траци менија";
+"Drag items to reorder them or move them between sections. Settings and Quit always stay in the menu." = "Превуците ставке да бисте их преуредили или преместили између одељака. Подешавања и Изађи увек остају у менију.";
+"In the Menu" = "У менију";
+"Under More" = "Под Више";
+"Hidden" = "Скривено";
+"Separator" = "Раздвајач";
+"Add Separator" = "Додај раздвајач";
+"Drop items here to keep them under More." = "Овде отпустите ставке које желите под Више.";
+"Drop items here to hide them." = "Овде отпустите ставке које желите да сакријете.";
+"Show in Menu" = "Прикажи у менију";
+"Move to More" = "Премести у Више";
+"Remove Separator" = "Уклони раздвајач";
+"Settings and Quit always stay in the menu." = "Подешавања и Изађи увек остају у менију.";
