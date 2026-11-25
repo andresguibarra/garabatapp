@@ -86,7 +86,9 @@ class PinWindowController {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.hidesOnDeactivate = false
-        panel.isMovableByWindowBackground = true
+        // PinView moves the window itself so it can show a closed hand for
+        // the whole drag (a window-server drag swallows mouseUp).
+        panel.isMovableByWindowBackground = false
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.contentAspectRatio = size
@@ -275,11 +277,17 @@ private class PinView: NSView {
     var onResetZoom: (() -> Void)?
 
     private let image: NSImage
-    private var closeButton: NSButton?
-    private var editButton: NSButton?
+    private var closeButton: PinOverlayButton?
+    private var editButton: PinOverlayButton?
     private var zoomLabel: NSTextField?
     private var trackingArea: NSTrackingArea?
     private var isHovering = false
+    /// Pointer (global screen coords) and window origin when a drag started.
+    private var dragStartMouse: NSPoint?
+    private var dragStartOrigin: NSPoint?
+    private var isDraggingWindow = false
+
+    private var chromeViews: [NSView] { [editButton, closeButton, zoomLabel].compactMap { $0 } }
 
     var zoomPercent: Int = 100 {
         didSet {
@@ -299,28 +307,26 @@ private class PinView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func makeOverlayButton(symbol: String, action: Selector) -> NSButton {
-        let btn = NSButton(frame: NSRect(x: 0, y: 0, width: 24, height: 24))
-        btn.bezelStyle = .circular
-        btn.isBordered = false
-        btn.wantsLayer = true
-        btn.layer?.cornerRadius = 12
-        btn.layer?.backgroundColor = NSColor(white: 0, alpha: 0.6).cgColor
+    private func makeOverlayButton(symbol: String, action: Selector, hoverColor: NSColor) -> PinOverlayButton {
+        let btn = PinOverlayButton(frame: NSRect(x: 0, y: 0, width: 24, height: 24))
+        btn.hoverColor = hoverColor
         let img = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
         btn.image = img
-        btn.contentTintColor = .white
         btn.target = self
         btn.action = action
         btn.isHidden = true
+        btn.alphaValue = 0
         return btn
     }
 
     private func setupButtons() {
-        let edit = makeOverlayButton(symbol: "pencil", action: #selector(editClicked))
+        let edit = makeOverlayButton(symbol: "pencil", action: #selector(editClicked),
+                                     hoverColor: ToolbarLayout.accentColor)
         addSubview(edit)
         editButton = edit
 
-        let close = makeOverlayButton(symbol: "xmark", action: #selector(closeClicked))
+        let close = makeOverlayButton(symbol: "xmark", action: #selector(closeClicked),
+                                      hoverColor: NSColor.systemRed)
         addSubview(close)
         closeButton = close
 
@@ -336,6 +342,7 @@ private class PinView: NSView {
         label.layer?.backgroundColor = NSColor(white: 0, alpha: 0.6).cgColor
         label.alignment = .center
         label.isHidden = true
+        label.alphaValue = 0
         addSubview(label)
         zoomLabel = label
     }
@@ -353,23 +360,68 @@ private class PinView: NSView {
         if let existing = trackingArea {
             removeTrackingArea(existing)
         }
-        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self, userInfo: nil)
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .cursorUpdate, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
         addTrackingArea(area)
         trackingArea = area
     }
 
     override func mouseEntered(with event: NSEvent) {
         isHovering = true
-        editButton?.isHidden = false
-        closeButton?.isHidden = false
-        zoomLabel?.isHidden = false
+        setChromeVisible(true)
+        updateCursor(at: convert(event.locationInWindow, from: nil))
     }
 
     override func mouseExited(with event: NSEvent) {
         isHovering = false
-        editButton?.isHidden = true
-        closeButton?.isHidden = true
-        zoomLabel?.isHidden = true
+        // Keep the closed hand (and the buttons) while a fast drag outruns the window.
+        guard !isDraggingWindow else { return }
+        setChromeVisible(false)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        updateCursor(at: convert(event.locationInWindow, from: nil))
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        updateCursor(at: convert(event.locationInWindow, from: nil))
+    }
+
+    /// Open hand over the image, pointing hand over the buttons and the zoom
+    /// label, closed hand while moving the pin.
+    private func updateCursor(at point: NSPoint) {
+        if isDraggingWindow {
+            NSCursor.closedHand.set()
+        } else if chromeViews.contains(where: { !$0.isHidden && $0.frame.contains(point) }) {
+            NSCursor.pointingHand.set()
+        } else if bounds.contains(point) {
+            NSCursor.openHand.set()
+        } else {
+            NSCursor.arrow.set()
+        }
+    }
+
+    private func setChromeVisible(_ visible: Bool) {
+        let views = chromeViews
+        if visible {
+            views.forEach { $0.isHidden = false }
+        }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = visible ? 0.12 : 0.18
+            views.forEach { $0.animator().alphaValue = visible ? 1 : 0 }
+        }, completionHandler: { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, !visible, !self.isHovering else { return }
+                self.chromeViews.forEach { $0.isHidden = true }
+                (self.closeButton)?.resetHover()
+                (self.editButton)?.resetHover()
+            }
+        })
     }
 
     override func layout() {
@@ -430,7 +482,39 @@ private class PinView: NSView {
             onResetZoom?()
             return
         }
-        super.mouseDown(with: event)
+        guard event.clickCount == 1, let window else {
+            super.mouseDown(with: event)
+            return
+        }
+        dragStartMouse = NSEvent.mouseLocation
+        dragStartOrigin = window.frame.origin
+        isDraggingWindow = true
+        NSCursor.closedHand.set()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isDraggingWindow, let start = dragStartMouse, let origin = dragStartOrigin, let window else { return }
+        let now = NSEvent.mouseLocation
+        window.setFrameOrigin(NSPoint(x: origin.x + now.x - start.x, y: origin.y + now.y - start.y))
+        NSCursor.closedHand.set()
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard isDraggingWindow else {
+            super.mouseUp(with: event)
+            return
+        }
+        isDraggingWindow = false
+        dragStartMouse = nil
+        dragStartOrigin = nil
+        let loc = convert(event.locationInWindow, from: nil)
+        if bounds.contains(loc) {
+            updateCursor(at: loc)
+        } else {
+            isHovering = false
+            setChromeVisible(false)
+            NSCursor.arrow.set()
+        }
     }
 
     // Scroll to zoom (mouse wheel and trackpad two-finger scroll)
@@ -460,6 +544,94 @@ private class PinView: NSView {
         } else {
             super.keyDown(with: event)
         }
+    }
+}
+
+// MARK: - Pin overlay button (hover: fills with its color and grows a little)
+
+private final class PinOverlayButton: NSButton {
+    private static let restColor = NSColor(white: 0, alpha: 0.6)
+    var hoverColor: NSColor = .controlAccentColor
+    private var isHovered = false
+    private var hoverArea: NSTrackingArea?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        bezelStyle = .circular
+        isBordered = false
+        wantsLayer = true
+        contentTintColor = .white
+        layer?.cornerRadius = frameRect.height / 2
+        layer?.backgroundColor = Self.restColor.cgColor
+        layer?.borderColor = NSColor.white.withAlphaComponent(0.0).cgColor
+        layer?.borderWidth = 1
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverArea { removeTrackingArea(hoverArea) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                  owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) { setHovered(true) }
+    override func mouseExited(with event: NSEvent) { setHovered(false) }
+
+    override func mouseDown(with event: NSEvent) {
+        applyLook(pressed: true, animated: false)
+        super.mouseDown(with: event)  // tracks until mouseUp
+        applyLook(pressed: false, animated: true)
+    }
+
+    func resetHover() {
+        isHovered = false
+        applyLook(pressed: false, animated: false)
+    }
+
+    private func setHovered(_ hovered: Bool) {
+        guard hovered != isHovered else { return }
+        isHovered = hovered
+        applyLook(pressed: false, animated: true)
+    }
+
+    private func applyLook(pressed: Bool, animated: Bool) {
+        guard let layer else { return }
+        let bg: NSColor = pressed
+            ? hoverColor.blended(withFraction: 0.25, of: .black) ?? hoverColor
+            : (isHovered ? hoverColor.withAlphaComponent(0.92) : Self.restColor)
+        let scale: CGFloat = pressed ? 0.94 : (isHovered ? 1.12 : 1.0)
+        let border = NSColor.white.withAlphaComponent(isHovered || pressed ? 0.35 : 0)
+
+        // Scale around the center (AppKit layers keep a bottom-left anchor).
+        let w = bounds.width / 2, h = bounds.height / 2
+        var t = CATransform3DMakeTranslation(w, h, 0)
+        t = CATransform3DScale(t, scale, scale, 1)
+        t = CATransform3DTranslate(t, -w, -h, 0)
+
+        // Layer-backed NSViews have implicit actions turned off, so animate explicitly.
+        if animated {
+            let duration: CFTimeInterval = 0.14
+            let timing = CAMediaTimingFunction(name: .easeOut)
+            for (key, to) in [("backgroundColor", bg.cgColor as Any),
+                              ("borderColor", border.cgColor as Any),
+                              ("transform", NSValue(caTransform3D: t) as Any)] {
+                let anim = CABasicAnimation(keyPath: key)
+                anim.fromValue = layer.presentation()?.value(forKeyPath: key) ?? layer.value(forKeyPath: key)
+                anim.toValue = to
+                anim.duration = duration
+                anim.timingFunction = timing
+                layer.add(anim, forKey: key)
+            }
+        }
+        layer.backgroundColor = bg.cgColor
+        layer.borderColor = border.cgColor
+        layer.transform = t
     }
 }
 
