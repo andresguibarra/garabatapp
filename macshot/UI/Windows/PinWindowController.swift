@@ -300,8 +300,13 @@ private class PinView: NSView {
     init(image: NSImage) {
         self.image = image
         super.init(frame: .zero)
+        BackgroundCursor.enable()
         setupButtons()
     }
+
+    // A pin floats over other apps: the first click must already start a drag
+    // (or press a button) instead of only bringing the panel forward.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -571,6 +576,8 @@ private final class PinOverlayButton: NSButton {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let hoverArea { removeTrackingArea(hoverArea) }
@@ -632,6 +639,32 @@ private final class PinOverlayButton: NSButton {
         layer.backgroundColor = bg.cgColor
         layer.borderColor = border.cgColor
         layer.transform = t
+    }
+}
+
+// MARK: - Cursor changes while another app is active
+
+/// macOS ignores `NSCursor.set()` from an app that isn't frontmost, so hovering
+/// a pin over another app kept that app's cursor until the first click. The
+/// window server honors it once the connection opts in with the
+/// "SetsCursorInBackground" property (what floating-window utilities use).
+/// The symbols are looked up at runtime; if they ever disappear, pins simply
+/// fall back to the old behavior.
+@MainActor
+enum BackgroundCursor {
+    private static var enabled = false
+
+    static func enable() {
+        guard !enabled else { return }
+        enabled = true
+        typealias DefaultConnection = @convention(c) () -> Int32
+        typealias SetProperty = @convention(c) (Int32, Int32, CFString, CFTypeRef) -> Int32
+        guard let handle = dlopen(nil, RTLD_NOW),
+              let connSym = dlsym(handle, "_CGSDefaultConnection"),
+              let setSym = dlsym(handle, "CGSSetConnectionProperty") else { return }
+        let connection = unsafeBitCast(connSym, to: DefaultConnection.self)()
+        let setProperty = unsafeBitCast(setSym, to: SetProperty.self)
+        _ = setProperty(connection, connection, "SetsCursorInBackground" as CFString, kCFBooleanTrue)
     }
 }
 
