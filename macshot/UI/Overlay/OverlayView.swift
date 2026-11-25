@@ -1514,6 +1514,38 @@ class OverlayView: NSView {
 
     /// Imperative cursor management. Called from mouseMoved and a 30fps timer.
     /// Simplified: arrow for chrome, resize cursors for handles, tool cursor for canvas.
+    /// The cursor for a selected annotation's resize handle: a two-headed arrow
+    /// along the direction that handle drags. Shape handles point from the
+    /// shape's center through the handle, turned by the shape's rotation; a
+    /// line's or arrow's ends point along the line there. Nil for handles that
+    /// move freely (bends, anchors, a number's pointer).
+    private func resizeHandleCursor(for handle: ResizeHandle, rect: NSRect) -> NSCursor? {
+        guard let ann = selectedAnnotation else { return nil }
+        switch ann.tool {
+        case .arrow, .line, .measure:
+            guard handle == .bottomLeft || handle == .topRight,
+                  let angle = ResizeCursor.endpointAngle(of: ann, atStart: handle == .bottomLeft) else { return nil }
+            return ResizeCursor.cursor(angle: angle)
+        case .rectangle, .filledRectangle, .ellipse, .text, .pixelate, .stamp, .loupe, .highlight:
+            guard handle != .none, handle != .move else { return nil }
+            // Handle rects are laid out in the shape's unrotated frame.
+            let box = ann.tool == .text && ann.textDrawRect != .zero ? ann.textDrawRect : ann.boundingRect
+            var dx = rect.midX - box.midX, dy = rect.midY - box.midY
+            switch handle {
+            case .top: dx = 0; dy = 1
+            case .bottom: dx = 0; dy = -1
+            case .left: dx = -1; dy = 0
+            case .right: dx = 1; dy = 0
+            default: break
+            }
+            guard abs(dx) > 0.001 || abs(dy) > 0.001 else { return nil }
+            let rotation = ann.supportsRotation ? ann.rotation : 0
+            return ResizeCursor.cursor(angle: atan2(dy, dx) + rotation)
+        default:
+            return nil
+        }
+    }
+
     private func updateCursorForPoint(_ point: NSPoint) {
         // Arrow cursor when mouse is over an open popover
         if PopoverHelper.isMouseInsidePopover {
@@ -1617,23 +1649,12 @@ class OverlayView: NSView {
                     handlePoint = point
                 }
 
-                // Resize handles — directional cursors for shapes, open hand for line/arrow points
-                let isShapeTool = [AnnotationTool.rectangle, .filledRectangle, .ellipse, .text,
-                                   .pixelate, .stamp, .loupe, .highlight].contains(selectedAnnotation?.tool)
+                // Resize handles: a two-headed cursor along the direction the handle drags
+                // (rotated with the shape, or along a line's end); open hand for bends.
                 for (_, handleEntry) in annotationResizeHandleRects.enumerated() {
                     let (handle, rect) = handleEntry
                     if rect.insetBy(dx: -4, dy: -4).contains(handlePoint) {
-                        if isShapeTool {
-                            switch handle {
-                            case .topLeft, .bottomRight: Self.nwseCursor.set()
-                            case .topRight, .bottomLeft: Self.neswCursor.set()
-                            case .top, .bottom: NSCursor.resizeUpDown.set()
-                            case .left, .right: NSCursor.resizeLeftRight.set()
-                            default: NSCursor.openHand.set()
-                            }
-                        } else {
-                            NSCursor.openHand.set()
-                        }
+                        resizeHandleCursor(for: handle, rect: rect)?.set() ?? NSCursor.openHand.set()
                         return
                     }
                 }
@@ -6840,6 +6861,13 @@ class OverlayView: NSView {
                 return
             }
             if isResizingAnnotation, let annotation = selectedAnnotation {
+                defer {
+                    if [.arrow, .line, .measure].contains(annotation.tool),
+                       annotationResizeHandle == .bottomLeft || annotationResizeHandle == .topRight,
+                       let angle = ResizeCursor.endpointAngle(of: annotation, atStart: annotationResizeHandle == .bottomLeft) {
+                        ResizeCursor.cursor(angle: angle).set()
+                    }
+                }
                 if spaceRepositioning {
                     let dx = canvasPoint.x - spaceRepositionLast.x
                     let dy = canvasPoint.y - spaceRepositionLast.y
