@@ -3904,7 +3904,10 @@ class OverlayView: NSView {
         ]
 
         let hexSize = (hexStr as NSString).size(withAttributes: hexAttrs)
-        let copyText = L("Right-click to copy")
+        let copyKey = ToolShortcutManager.key(for: .copyColor)
+        let copyText = copyKey.isEmpty
+            ? L("Right-click to copy")
+            : String(format: L("%@ or right-click to copy"), ToolShortcutManager.displayString(for: .copyColor))
         let copySize = (copyText as NSString).size(withAttributes: copyAttrs)
 
         let swatchSize: CGFloat = 16
@@ -3946,6 +3949,15 @@ class OverlayView: NSView {
 
     /// Sample the rendered canvas without transient UI chrome. Committed annotations
     /// are included, while selection handles, toolbars, and this preview are not.
+    /// Copies the hex of the pixel at `canvasPoint` and confirms it on screen.
+    private func copySampledColor(atCanvas canvasPoint: NSPoint) {
+        guard let result = sampleCanvasColor(at: canvasPoint) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(result.hex, forType: .string)
+        showOverlayError(String(format: L("Copied %@"), result.hex))
+        needsDisplay = true
+    }
+
     private func sampleCanvasColor(at canvasPoint: NSPoint) -> (
         color: NSColor, hex: String
     )? {
@@ -6765,12 +6777,7 @@ class OverlayView: NSView {
         if event.modifierFlags.contains(.control) && state == .selected
             && currentTool == .colorSampler && !startsInSelectionMoveMode
         {
-            if let result = sampleCanvasColor(at: viewToCanvas(point)) {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(result.hex, forType: .string)
-                showOverlayError(String(format: L("Copied %@"), result.hex))
-                needsDisplay = true
-            }
+            copySampledColor(atCanvas: viewToCanvas(point))
             return
         }
 
@@ -8266,12 +8273,7 @@ class OverlayView: NSView {
 
         if state == .selected && currentTool == .colorSampler && !startsInSelectionMoveMode {
             // Right-click with color sampler: copy hex to clipboard
-            if let result = sampleCanvasColor(at: viewToCanvas(point)) {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(result.hex, forType: .string)
-                showOverlayError(String(format: L("Copied %@"), result.hex))
-                needsDisplay = true
-            }
+            copySampledColor(atCanvas: viewToCanvas(point))
             return
         }
 
@@ -10544,6 +10546,15 @@ class OverlayView: NSView {
         if state == .idle, !isEditorMode, textEditView == nil,
            KeyboardShortcutMatcher.matches(event, character: "r", modifiers: []) {
             overlayDelegate?.overlayViewDidRequestRestoreLastSelection()
+            return
+        }
+
+        // Color Picker: the configured key (Tab by default) copies the hex under the pointer.
+        if state == .selected, currentTool == .colorSampler, textEditView == nil,
+           !startsInSelectionMoveMode, !event.isARepeat,
+           ToolShortcutManager.matches(event, action: .copyColor) {
+            copySampledColor(atCanvas: colorSamplerPoint != .zero
+                ? colorSamplerPoint : viewToCanvas(convert(window?.mouseLocationOutsideOfEventStream ?? .zero, from: nil)))
             return
         }
 
