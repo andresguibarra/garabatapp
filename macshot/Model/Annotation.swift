@@ -163,6 +163,38 @@ class Annotation {
     var bakedBlurNSImage: NSImage?    // baked result for pixelate/blur (NSImage avoids CGImage flip issues)
     var outlineGlowImage: NSImage?   // cached selection outline glow (invalidated on move/change)
     var outlineGlowRect: NSRect = .zero  // the rect the cached glow covers
+    var outlineGlowSignature: Int = 0    // outlineGlowShapeSignature when the glow was rendered
+
+    /// Everything about the drawn shape except its position, so the cached
+    /// selection glow is rebuilt when the style changes (sketch → solid, stroke,
+    /// fill, radius, arrow head, bend, …) but survives a move.
+    var outlineGlowShapeSignature: Int {
+        var h = Hasher()
+        let o = startPoint
+        func rel(_ p: NSPoint) { h.combine(p.x - o.x); h.combine(p.y - o.y) }
+        h.combine(tool)
+        rel(endPoint)
+        if let c = controlPoint { rel(c) }
+        anchorPoints?.forEach(rel)
+        h.combine(points?.count ?? -1)
+        h.combine(strokeWidth)
+        h.combine(lineStyle)
+        h.combine(arrowStyle)
+        h.combine(arrowReversed)
+        h.combine(rectFillStyle)
+        h.combine(rectCornerRadius)
+        h.combine(isRounded)
+        h.combine(randomSeed)
+        h.combine(outlineColor != nil)
+        h.combine(color.alphaComponent)
+        h.combine(number)
+        h.combine(numberFormat)
+        h.combine(fontSize)
+        h.combine(text)
+        h.combine(textImage.map(ObjectIdentifier.init))
+        h.combine(stampImage.map(ObjectIdentifier.init))
+        return h.finalize()
+    }
     var textImage: NSImage?   // snapshot of the NSTextView at commit time — drawn as-is, no coord math
     var textDrawRect: NSRect = .zero  // where to draw textImage in OverlayView coords
     var fontSize: CGFloat = 20
