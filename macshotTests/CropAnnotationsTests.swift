@@ -81,3 +81,39 @@ final class CropAnnotationsTests: XCTestCase {
         XCTAssertGreaterThan(editor.selectionRect.width, 200)
     }
 }
+
+/// The area the canvas grows into takes the capture's border color; only a
+/// mostly transparent border (a window shadow) leaves it transparent.
+final class CanvasFillColorTests: XCTestCase {
+
+    private func image(width: Int = 60, height: Int = 40, draw: (CGContext) -> Void) -> CGImage {
+        let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                            space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        draw(ctx)
+        return ctx.makeImage()!
+    }
+
+    func testRoundedTransparentCornersStillGiveTheBorderColor() throws {
+        let cg = image { ctx in
+            ctx.setFillColor(CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1))
+            ctx.fill(CGRect(x: 0, y: 0, width: 60, height: 40))
+            // Transparent corners, like a rounded or anti-aliased edge.
+            for (x, y) in [(0, 0), (1, 0), (0, 1), (59, 39), (58, 39), (59, 38), (0, 39), (59, 0)] {
+                ctx.clear(CGRect(x: x, y: y, width: 1, height: 1))
+            }
+        }
+        let color = try XCTUnwrap(OverlayView.borderFillColor(of: cg)?.usingColorSpace(.sRGB))
+        XCTAssertEqual(color.redComponent, 1, accuracy: 0.02)
+        XCTAssertEqual(color.greenComponent, 1, accuracy: 0.02)
+        XCTAssertEqual(color.blueComponent, 1, accuracy: 0.02)
+    }
+
+    func testATransparentBorderStaysTransparent() {
+        let cg = image { ctx in
+            ctx.setFillColor(CGColor(srgbRed: 0.2, green: 0.4, blue: 0.6, alpha: 1))
+            ctx.fill(CGRect(x: 6, y: 6, width: 48, height: 28))
+        }
+        XCTAssertNil(OverlayView.borderFillColor(of: cg))
+    }
+}
