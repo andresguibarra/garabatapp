@@ -118,3 +118,30 @@ final class CanvasFillColorTests: XCTestCase {
         XCTAssertNil(OverlayView.borderFillColor(of: cg))
     }
 }
+
+/// A text box typed or resized past the image edge keeps the canvas grown
+/// while it is open; the mouse-up that placed or resized it must not undo that.
+@MainActor
+final class TextBoxCanvasGrowthTests: XCTestCase {
+
+    func testAnOpenTextBoxPastTheEdgeKeepsTheCanvasGrownAfterMouseUp() throws {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 900, height: 700))
+        let editor = EditorView()
+        scroll.documentView = editor
+        editor.layoutEditorDocument(forImageSize: NSSize(width: 300, height: 200))
+        editor.screenshotImage = ImageProbe.quadrantImage(width: 300, height: 200)
+        editor.applySelection(NSRect(x: 0, y: 0, width: 300, height: 200))
+
+        editor.textEditor.show(in: editor, at: NSPoint(x: 250, y: 120), color: .red, canvas: editor)
+        editor.updateLiveCanvasExtent()
+        let grown = try XCTUnwrap(editor.liveCanvasExtent, "the box past the edge grows the canvas")
+        XCTAssertGreaterThan(grown.maxX, 300)
+
+        editor.finishLiveCanvasExtent()  // the mouse-up that placed the box
+        XCTAssertEqual(editor.liveCanvasExtent, grown, "still grown while the text is being edited")
+
+        editor.textEditor.cancel(canvas: editor)
+        editor.finishLiveCanvasExtent()
+        XCTAssertNil(editor.liveCanvasExtent, "cancelled: back to the image")
+    }
+}
