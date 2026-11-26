@@ -417,7 +417,10 @@ class OverlayView: NSView {
                     if ann.tool == .text {
                         textEditor.restoreState(from: ann)
                     }
-                    toolOptionsRowView?.rebuild(forAnnotation: ann)
+                    // The row is created lazily for tools that have options; a
+                    // shape selected while the Select tool is active (or made
+                    // from an area with R/O/…) still needs it.
+                    ensureToolOptionsRowView()?.rebuild(forAnnotation: ann)
                     repositionToolbars()
                 } else if selectedAnnotations.isEmpty {
                     if let tool = currentTool as AnnotationTool? {
@@ -5865,7 +5868,9 @@ class OverlayView: NSView {
 
         // Use cached glow if available and unrotated position hasn't changed.
         // Rotation is handled at draw time via transform, not by regenerating the glow.
-        if let cached = annotation.outlineGlowImage, annotation.outlineGlowRect == unrotatedBBox {
+        let glowSignature = annotation.outlineGlowShapeSignature
+        if let cached = annotation.outlineGlowImage, annotation.outlineGlowRect == unrotatedBBox,
+           annotation.outlineGlowSignature == glowSignature {
             guard let context = NSGraphicsContext.current else { return }
             context.cgContext.saveGState()
             context.cgContext.setAlpha(opacity)
@@ -5932,6 +5937,7 @@ class OverlayView: NSView {
         let outlineImage = NSImage(cgImage: outlineCG, size: unrotatedBBox.size)
         annotation.outlineGlowImage = outlineImage
         annotation.outlineGlowRect = unrotatedBBox
+        annotation.outlineGlowSignature = glowSignature
 
         guard let context = NSGraphicsContext.current else { return }
         context.cgContext.saveGState()
@@ -6169,12 +6175,7 @@ class OverlayView: NSView {
 
         // Rebuild options row content
         if toolHasOptionsRow {
-            if toolOptionsRowView == nil {
-                let row = ToolOptionsRowView()
-                row.overlayView = self
-                parent.addSubview(row)
-                toolOptionsRowView = row
-            }
+            ensureToolOptionsRowView()
             // Don't overwrite annotation-specific options when editing a selected annotation
             if let ann = selectedAnnotation, toolOptionsRowView?.editingAnnotation === ann {
                 // Already showing this annotation's options — skip rebuild
@@ -6185,6 +6186,18 @@ class OverlayView: NSView {
 
         repositionToolbars()
         updateResolutionBox()
+    }
+
+    /// The options row, created on first use in the chrome parent.
+    @discardableResult
+    private func ensureToolOptionsRowView() -> ToolOptionsRowView? {
+        if let row = toolOptionsRowView { return row }
+        guard bottomStripView != nil else { return nil }
+        let row = ToolOptionsRowView()
+        row.overlayView = self
+        (chromeParentView ?? self).addSubview(row)
+        toolOptionsRowView = row
+        return row
     }
 
     /// Reposition toolbar strips based on current selection/bounds. Cheap — safe to call from draw().

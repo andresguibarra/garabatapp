@@ -83,6 +83,7 @@ final class AnnotationPersistenceTests: XCTestCase {
         "sourceImageBounds": .transient,  // paired with sourceImage
         "outlineGlowImage": .transient,   // selection-highlight cache
         "outlineGlowRect": .transient,    // paired with outlineGlowImage
+        "outlineGlowSignature": .transient, // paired with outlineGlowImage
     ]
 
     // MARK: - Fixtures
