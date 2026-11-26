@@ -20,6 +20,9 @@ enum ToolShortcutManager {
         case censor       // pixelate/blur tool
         case highlight    // spotlight tool
         case colorSampler
+        /// Copies the hex under the Color Picker. Only active while that tool is
+        /// selected; may be Tab (stored as "\t"), unlike the other actions.
+        case copyColor
         case stamp
         case measure
         case loupe
@@ -53,6 +56,7 @@ enum ToolShortcutManager {
             case .censor: return L("Censor")
             case .highlight: return L("Highlight")
             case .colorSampler: return L("Color Picker")
+            case .copyColor: return L("Copy Color")
             case .stamp: return L("Stamp")
             case .measure: return L("Measure")
             case .loupe: return L("Loupe")
@@ -88,6 +92,7 @@ enum ToolShortcutManager {
             case .censor: return "b"
             case .highlight: return "h"
             case .colorSampler: return "i"
+            case .copyColor: return ToolShortcutManager.tabKey
             case .stamp: return "g"
             case .measure: return ""
             case .loupe: return ""
@@ -111,6 +116,23 @@ enum ToolShortcutManager {
     }
 
     private static let defaultsKey = "overlayToolShortcuts"
+
+    /// Stored key for Tab. Tab has no printable character, so it is matched
+    /// by key code (layout-independent) instead of through the character lookup.
+    static let tabKey = "\t"
+
+    /// Whether `event` (modifier-free, ⇧ allowed) presses the key bound to `action`.
+    static func matches(_ event: NSEvent, action: Action) -> Bool {
+        let modifiers = KeyboardShortcutMatcher.modifiers(in: event)
+        guard !modifiers.contains(.command),
+              !modifiers.contains(.option),
+              !modifiers.contains(.control) else { return false }
+        let shortcut = key(for: action).lowercased()
+        if shortcut.isEmpty { return false }
+        if shortcut == tabKey { return event.keyCode == 48 }
+        if shortcut == " " { return event.keyCode == 49 }
+        return KeyboardShortcutMatcher.toolCharacters(for: event).contains(shortcut)
+    }
 
     /// Get the key character for an action. Empty string = disabled.
     static func key(for action: Action) -> String {
@@ -157,6 +179,7 @@ enum ToolShortcutManager {
             case .censor: lookup[k] = .tool(.pixelate)
             case .highlight: lookup[k] = .tool(.highlight)
             case .colorSampler: lookup[k] = .tool(.colorSampler)
+            case .copyColor: continue  // handled by the Color Picker itself
             case .stamp: lookup[k] = .tool(.stamp)
             case .measure: lookup[k] = .tool(.measure)
             case .loupe: lookup[k] = .tool(.loupe)
@@ -184,6 +207,7 @@ enum ToolShortcutManager {
     static func displayString(for action: Action) -> String {
         let k = key(for: action)
         if k == " " { return L("Space") }
+        if k == tabKey { return "Tab" }
         return k.isEmpty ? L("None") : k.uppercased()
     }
 
@@ -194,6 +218,7 @@ enum ToolShortcutManager {
     static func defaultDisplayString(for action: Action) -> String {
         let k = action.defaultKey
         if k == " " { return L("Space") }
+        if k == tabKey { return "Tab" }
         return k.isEmpty ? L("None") : k.uppercased()
     }
 

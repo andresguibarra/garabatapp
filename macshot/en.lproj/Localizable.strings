@@ -990,3 +990,6 @@
 "Audio" = "Audio";
 "Exporting audio…" = "Exporting audio…";
 "This video has no audio" = "This video has no audio";
+
+"Copy Color" = "Copy Color";
+"%@ or right-click to copy" = "%@ or right-click to copy";

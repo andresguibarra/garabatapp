@@ -3904,7 +3904,10 @@ class OverlayView: NSView {
         ]
 
         let hexSize = (hexStr as NSString).size(withAttributes: hexAttrs)
-        let copyText = L("Right-click to copy")
+        let copyKey = ToolShortcutManager.key(for: .copyColor)
+        let copyText = copyKey.isEmpty
+            ? L("Right-click to copy")
+            : String(format: L("%@ or right-click to copy"), ToolShortcutManager.displayString(for: .copyColor))
         let copySize = (copyText as NSString).size(withAttributes: copyAttrs)
 
         let swatchSize: CGFloat = 16
@@ -3942,6 +3945,15 @@ class OverlayView: NSView {
             at: NSPoint(x: textX, y: labelRect.minY + padding), withAttributes: copyAttrs)
 
         context.restoreGraphicsState()
+    }
+
+    /// Copies the hex of the pixel at `canvasPoint` and confirms it on screen.
+    private func copySampledColor(atCanvas canvasPoint: NSPoint) {
+        guard let result = sampleCanvasColor(at: canvasPoint) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(result.hex, forType: .string)
+        showOverlayError(String(format: L("Copied %@"), result.hex))
+        needsDisplay = true
     }
 
     /// Sample the rendered canvas without transient UI chrome. Committed annotations
@@ -4189,7 +4201,9 @@ class OverlayView: NSView {
         for ann in annotations {
             let r: NSRect
             if hasImageStamps {
-                r = ann.boundingRect
+                r = isCropClipped(ann, core: annotationCoreBounds(ann))
+                    ? ann.boundingRect.intersection(NSRect(origin: .zero, size: selectionRect.size))
+                    : ann.boundingRect
                 guard r.width > 0, r.height > 0 else { continue }
             } else {
                 guard let g = canvasGrowthRect(of: ann, image: opaqueRect) else { continue }
@@ -4257,6 +4271,63 @@ class OverlayView: NSView {
         cachedCompositedImage = nil
     }
 
+    /// The geometry an annotation covers (rotation included, stroke excluded).
+    private func annotationCoreBounds(_ ann: Annotation) -> NSRect {
+        let core: NSRect
+        switch ann.tool {
+        case .pencil, .marker:
+            if let pts = ann.points, !pts.isEmpty {
+                var r = NSRect(origin: pts[0], size: .zero)
+                for p in pts { r = r.union(NSRect(origin: p, size: .zero)) }
+                core = r
+            } else {
+                core = ann.boundingRect
+            }
+        case .text:
+            core = ann.textDrawRect != .zero ? ann.textDrawRect : ann.boundingRect
+        default:
+            core = ann.boundingRect
+        }
+        return rotatedBounds(core, by: ann)
+    }
+
+    /// Annotations a crop cut through, with their geometry at crop time. They
+    /// stay clipped to the cropped image (it never grows back to show their cut
+    /// part) until the user moves, resizes or edits them.
+    struct CropClip {
+        weak var annotation: Annotation?
+        var core: NSRect
+    }
+    var cropClippedAnnotations: [CropClip] = []
+
+    private func isCropClipped(_ ann: Annotation, core: NSRect) -> Bool {
+        guard let clip = cropClippedAnnotations.first(where: { $0.annotation === ann }) else { return false }
+        let r = clip.core
+        return abs(r.minX - core.minX) < 0.5 && abs(r.minY - core.minY) < 0.5
+            && abs(r.width - core.width) < 0.5 && abs(r.height - core.height) < 0.5
+    }
+
+    /// Annotations a crop removed because nothing of them was left inside it,
+    /// keyed by the crop undo entry's image, with their index in `annotations`.
+    /// Undo puts them back; redo removes them again.
+    var cropRemovals: [ObjectIdentifier: [(Annotation, Int)]] = [:]
+
+    /// Whether any visible part of `ann` falls inside `rect` (canvas coords).
+    func annotationTouches(_ ann: Annotation, rect: NSRect) -> Bool {
+        var r = annotationCoreBounds(ann)
+        let pad: CGFloat
+        switch ann.tool {
+        case .marker: pad = ann.strokeWidth * 3
+        case .text, .stamp, .number: pad = 0
+        default: pad = ann.strokeWidth / 2
+        }
+        r = r.insetBy(dx: -pad, dy: -pad)
+        // A perfectly straight horizontal/vertical stroke has no area.
+        if r.width < 1 { r = r.insetBy(dx: -0.5, dy: 0) }
+        if r.height < 1 { r = r.insetBy(dx: 0, dy: -0.5) }
+        return r.intersects(rect)
+    }
+
     /// Previous-image identities of undo/redo entries made by automatic canvas
     /// growth. Undo/redo step over them together with the edit that caused them.
     var autoGrowthImages = Set<ObjectIdentifier>()
@@ -4270,21 +4341,15 @@ class OverlayView: NSView {
     /// geometry stays inside the image (an arrow pointing at the edge must not
     /// add a sliver), or for annotations that only make sense over pixels.
     private func canvasGrowthRect(of ann: Annotation, image: NSRect) -> NSRect? {
-        let core: NSRect
         switch ann.tool {
         case .pixelate, .blur, .loupe, .translateOverlay, .crop, .select, .colorSampler, .highlight:
             return nil
-        case .pencil, .marker:
-            guard let pts = ann.points, !pts.isEmpty else { return nil }
-            var r = NSRect(origin: pts[0], size: .zero)
-            for p in pts { r = r.union(NSRect(origin: p, size: .zero)) }
-            core = r
-        case .text:
-            core = ann.textDrawRect != .zero ? ann.textDrawRect : ann.boundingRect
         default:
-            core = ann.boundingRect
+            break
         }
-        let c = rotatedBounds(core, by: ann)
+        let c = annotationCoreBounds(ann)
+        // Cut through by a crop and not touched since: the crop is the edge.
+        if isCropClipped(ann, core: c) { return nil }
         if c.minX >= image.minX - 1 && c.maxX <= image.maxX + 1
             && c.minY >= image.minY - 1 && c.maxY <= image.maxY + 1 {
             return nil
@@ -4509,6 +4574,10 @@ class OverlayView: NSView {
     /// would need a source image restored censors don't have) and a loupe's
     /// source circle follows its lens.
     private func translateAnnotationsWithCanvas(dx: CGFloat, dy: CGFloat) {
+        cropClippedAnnotations.removeAll { $0.annotation == nil }
+        for i in cropClippedAnnotations.indices {
+            cropClippedAnnotations[i].core = cropClippedAnnotations[i].core.offsetBy(dx: dx, dy: dy)
+        }
         for ann in annotations {
             let bake = ann.bakedBlurNSImage
             ann.move(dx: dx, dy: dy)
@@ -5316,6 +5385,21 @@ class OverlayView: NSView {
         zoomAnchorView = .zero
     }
 
+    private func removeAnnotationsForCrop(_ list: [Annotation]) {
+        annotations.removeAll { a in list.contains { $0 === a } }
+        let numbers = list.filter { $0.tool == .number }.count
+        numberCounter = max(0, numberCounter - numbers)
+        if let sel = selectedAnnotation, list.contains(where: { $0 === sel }) { selectedAnnotation = nil }
+        clearHoverIfNeeded(list)
+    }
+
+    private func restoreAnnotationsForCrop(_ list: [(Annotation, Int)]) {
+        for (ann, idx) in list.sorted(by: { $0.1 < $1.1 }) {
+            annotations.insert(ann, at: min(idx, annotations.count))
+        }
+        numberCounter += list.filter { $0.0.tool == .number }.count
+    }
+
     /// Crop the screenshot to `viewRect` (view-space, within selectionRect),
     /// translate all annotations accordingly, and reset zoom.
     private func commitCrop(viewRect: NSRect) {
@@ -5356,6 +5440,19 @@ class OverlayView: NSView {
                                          annotationSnapshots: annotations.map { ($0, $0.clone()) }))
         redoStack.removeAll()
 
+        // The crop is what the user keeps: annotations left entirely outside it
+        // go (undo brings them back), and ones it cuts through stay clipped to
+        // it instead of growing the canvas back on the next edit.
+        let keepRect = canvasRect.intersection(selectionRect)
+        var removed: [(Annotation, Int)] = []
+        for (i, ann) in annotations.enumerated() where !annotationTouches(ann, rect: keepRect) {
+            removed.append((ann, i))
+        }
+        if !removed.isEmpty {
+            cropRemovals[ObjectIdentifier(prevImage)] = removed
+            removeAnnotationsForCrop(removed.map { $0.0 })
+        }
+
         let dx = selectionRect.minX - canvasRect.minX
         let dy = selectionRect.minY - canvasRect.minY
         translateAnnotationsWithCanvas(dx: dx, dy: dy)
@@ -5369,6 +5466,14 @@ class OverlayView: NSView {
         // Update selectionRect to match new image size
         selectionRect = NSRect(origin: .zero, size: croppedPointSize)
         rebindEffectSourcesToCanvas()
+
+        cropClippedAnnotations.removeAll { $0.annotation == nil }
+        for ann in annotations {
+            let core = annotationCoreBounds(ann)
+            guard !selectionRect.insetBy(dx: -1, dy: -1).contains(core) else { continue }
+            cropClippedAnnotations.removeAll { $0.annotation === ann }
+            cropClippedAnnotations.append(CropClip(annotation: ann, core: core))
+        }
 
         cachedCompositedImage = nil
 
@@ -6672,12 +6777,7 @@ class OverlayView: NSView {
         if event.modifierFlags.contains(.control) && state == .selected
             && currentTool == .colorSampler && !startsInSelectionMoveMode
         {
-            if let result = sampleCanvasColor(at: viewToCanvas(point)) {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(result.hex, forType: .string)
-                showOverlayError(String(format: L("Copied %@"), result.hex))
-                needsDisplay = true
-            }
+            copySampledColor(atCanvas: viewToCanvas(point))
             return
         }
 
@@ -8173,12 +8273,7 @@ class OverlayView: NSView {
 
         if state == .selected && currentTool == .colorSampler && !startsInSelectionMoveMode {
             // Right-click with color sampler: copy hex to clipboard
-            if let result = sampleCanvasColor(at: viewToCanvas(point)) {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(result.hex, forType: .string)
-                showOverlayError(String(format: L("Copied %@"), result.hex))
-                needsDisplay = true
-            }
+            copySampledColor(atCanvas: viewToCanvas(point))
             return
         }
 
@@ -10454,6 +10549,15 @@ class OverlayView: NSView {
             return
         }
 
+        // Color Picker: the configured key (Tab by default) copies the hex under the pointer.
+        if state == .selected, currentTool == .colorSampler, textEditView == nil,
+           !startsInSelectionMoveMode, !event.isARepeat,
+           ToolShortcutManager.matches(event, action: .copyColor) {
+            copySampledColor(atCanvas: colorSamplerPoint != .zero
+                ? colorSamplerPoint : viewToCanvas(convert(window?.mouseLocationOutsideOfEventStream ?? .zero, from: nil)))
+            return
+        }
+
         if handleAreaKey(event) { return }
 
         // ⌥1…⌥9 pick an option in the tool options row; [ and ] change its main slider.
@@ -10980,6 +11084,10 @@ class OverlayView: NSView {
             let currentImage = screenshotImage?.copy() as? NSImage ?? previousImage
             let currentSnapped = previousSnapped != nil ? snappedWindowImage : nil
             if isAutoGrowth(entry) { autoGrowthImages.insert(ObjectIdentifier(currentImage)) }
+            if let removed = cropRemovals.removeValue(forKey: ObjectIdentifier(previousImage)) {
+                restoreAnnotationsForCrop(removed)
+                cropRemovals[ObjectIdentifier(currentImage)] = removed
+            }
             redoStack.append(.imageTransform(previousImage: currentImage,
                                              previousSnappedWindowImage: currentSnapped,
                                              annotationSnapshots: restoreAnnotationSnapshots(snapshots)))
@@ -11074,6 +11182,10 @@ class OverlayView: NSView {
             let currentImage = screenshotImage?.copy() as? NSImage ?? redoImage
             let currentSnapped = redoSnapped != nil ? snappedWindowImage : nil
             if isAutoGrowth(entry) { autoGrowthImages.insert(ObjectIdentifier(currentImage)) }
+            if let removed = cropRemovals.removeValue(forKey: ObjectIdentifier(redoImage)) {
+                removeAnnotationsForCrop(removed.map { $0.0 })
+                cropRemovals[ObjectIdentifier(currentImage)] = removed
+            }
             undoStack.append(.imageTransform(previousImage: currentImage,
                                              previousSnappedWindowImage: currentSnapped,
                                              annotationSnapshots: restoreAnnotationSnapshots(snapshots)))
