@@ -84,6 +84,7 @@ final class CropAnnotationsTests: XCTestCase {
 
 /// The area the canvas grows into takes the capture's border color; only a
 /// mostly transparent border (a window shadow) leaves it transparent.
+@MainActor
 final class CanvasFillColorTests: XCTestCase {
 
     private func image(width: Int = 60, height: Int = 40, draw: (CGContext) -> Void) -> CGImage {
