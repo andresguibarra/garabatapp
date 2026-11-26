@@ -1591,9 +1591,18 @@ class OverlayView: NSView {
             return
         }
 
-        // Non-interactive states — simple cursors
+        // Typing in a text box: its resize handles get the same two-headed
+        // cursors as outside edit mode (mouseDown resizes from the same rects).
         if textEditView != nil {
-            NSCursor.arrow.set()
+            if isResizingTextBox {
+                cursorForHandle(textBoxResizeHandle).set()
+            } else if let handle = textBoxHandle(at: point) {
+                cursorForHandle(handle).set()
+            } else if let sv = textEditor.scrollView, sv.frame.contains(point) {
+                NSCursor.iBeam.set()
+            } else {
+                NSCursor.arrow.set()
+            }
             return
         }
         if state == .idle || state == .selecting {
@@ -1888,6 +1897,24 @@ class OverlayView: NSView {
             ).contains(point)
         {
             return .resizeLeftRight
+        }
+        return nil
+    }
+
+    /// The resize handle of the text box being typed in under `point`, if any.
+    /// One source for both the hover cursor and mouseDown's resize hit test.
+    private func textBoxHandle(at point: NSPoint) -> ResizeHandle? {
+        guard textEditView != nil, showToolbars, let f = textEditor.scrollView?.frame else { return nil }
+        let hs: CGFloat = 10  // hit area
+        let spots: [(ResizeHandle, NSPoint)] = [
+            (.bottomLeft, NSPoint(x: f.minX, y: f.minY)), (.bottomRight, NSPoint(x: f.maxX, y: f.minY)),
+            (.topLeft, NSPoint(x: f.minX, y: f.maxY)), (.topRight, NSPoint(x: f.maxX, y: f.maxY)),
+            (.bottom, NSPoint(x: f.midX, y: f.minY)), (.top, NSPoint(x: f.midX, y: f.maxY)),
+            (.left, NSPoint(x: f.minX, y: f.midY)), (.right, NSPoint(x: f.maxX, y: f.midY)),
+        ]
+        for (handle, c) in spots
+        where NSRect(x: c.x - hs / 2, y: c.y - hs / 2, width: hs, height: hs).contains(point) {
+            return handle
         }
         return nil
     }
@@ -6687,43 +6714,13 @@ class OverlayView: NSView {
         // Check text box resize handles when editing
         if isTextEditing && showToolbars {
             // Check text box resize handles
-            if let sv = textEditor.scrollView {
-                let hs: CGFloat = 10  // hit area
-                let f = sv.frame
-                let handles: [(ResizeHandle, NSRect)] = [
-                    (
-                        .bottomLeft,
-                        NSRect(x: f.minX - hs / 2, y: f.minY - hs / 2, width: hs, height: hs)
-                    ),
-                    (
-                        .bottomRight,
-                        NSRect(x: f.maxX - hs / 2, y: f.minY - hs / 2, width: hs, height: hs)
-                    ),
-                    (
-                        .topLeft,
-                        NSRect(x: f.minX - hs / 2, y: f.maxY - hs / 2, width: hs, height: hs)
-                    ),
-                    (
-                        .topRight,
-                        NSRect(x: f.maxX - hs / 2, y: f.maxY - hs / 2, width: hs, height: hs)
-                    ),
-                    (
-                        .bottom,
-                        NSRect(x: f.midX - hs / 2, y: f.minY - hs / 2, width: hs, height: hs)
-                    ),
-                    (.top, NSRect(x: f.midX - hs / 2, y: f.maxY - hs / 2, width: hs, height: hs)),
-                    (.left, NSRect(x: f.minX - hs / 2, y: f.midY - hs / 2, width: hs, height: hs)),
-                    (.right, NSRect(x: f.maxX - hs / 2, y: f.midY - hs / 2, width: hs, height: hs)),
-                ]
-                for (handle, rect) in handles {
-                    if rect.contains(point) {
-                        isResizingTextBox = true
-                        textBoxResizeHandle = handle
-                        textBoxResizeStart = point
-                        textBoxOrigFrame = f
-                        return
-                    }
-                }
+            if let sv = textEditor.scrollView, let handle = textBoxHandle(at: point) {
+                isResizingTextBox = true
+                textBoxResizeHandle = handle
+                textBoxResizeStart = point
+                textBoxOrigFrame = sv.frame
+                cursorForHandle(handle).set()
+                return
             }
             // Clicking on the text editor itself — don't commit
             if let sv = textEditor.scrollView, sv.frame.contains(point) {
@@ -7596,6 +7593,7 @@ class OverlayView: NSView {
 
         if isResizingTextBox {
             isResizingTextBox = false
+            updateCursorForCurrentTool()
             return
         }
         if isRotatingAnnotation {
@@ -10069,6 +10067,10 @@ class OverlayView: NSView {
             existingText: existingText, existingFrame: existingFrame,
             canvas: self)
         textEditor.textView?.delegate = self
+        textEditor.textView?.ownerHandlesCursor = { [weak self] windowPoint in
+            guard let self else { return false }
+            return self.isResizingTextBox || self.textBoxHandle(at: self.convert(windowPoint, from: nil)) != nil
+        }
         rebuildToolbarLayout()
         updateLiveCanvasExtent()
         needsDisplay = true
