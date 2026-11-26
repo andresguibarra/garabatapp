@@ -248,6 +248,15 @@ final class ToolShortcutTests: XCTestCase {
         }
     }
 
+    func testCopyColorDefaultsToTabAndStaysOutOfTheToolLookup() {
+        withDefaults([toolsKey: nil]) {
+            XCTAssertEqual(ToolShortcutManager.key(for: .copyColor), ToolShortcutManager.tabKey)
+            XCTAssertEqual(ToolShortcutManager.displayString(for: .copyColor), "Tab")
+            XCTAssertTrue(ToolShortcutManager.isDefault(.copyColor))
+            XCTAssertNil(ToolShortcutManager.lookupAction(for: ToolShortcutManager.tabKey))
+        }
+    }
+
     func testSettingAKeyChangesTheLookup() {
         withDefaults([toolsKey: nil]) {
             let original = ToolShortcutManager.key(for: .pencil)

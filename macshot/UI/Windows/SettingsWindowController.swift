@@ -1642,8 +1642,18 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
             }
             guard !event.modifierFlags.contains(.command),
                   !event.modifierFlags.contains(.option),
-                  !event.modifierFlags.contains(.control),
-                  let char = KeyboardShortcutMatcher.semanticCharacter(for: event) else { return nil }
+                  !event.modifierFlags.contains(.control) else { return nil }
+            // Tab has no character; only Copy Color can use it (it cycles
+            // capture snapping before a selection, so tools can't own it).
+            let char: String
+            if event.keyCode == 48 {
+                guard action == .copyColor else { return nil }
+                char = ToolShortcutManager.tabKey
+            } else if let c = KeyboardShortcutMatcher.semanticCharacter(for: event) {
+                char = c
+            } else {
+                return nil
+            }
 
             ToolShortcutManager.setKey(char, for: action)
             self.toolShortcutFields[action]?.stringValue = ToolShortcutManager.displayString(for: action)
