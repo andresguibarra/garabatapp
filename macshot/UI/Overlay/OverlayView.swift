@@ -4384,45 +4384,48 @@ class OverlayView: NSView {
         return r
     }
 
-    /// Dominant color of the capture's four borders (similar colors grouped),
-    /// or nil when its corner is transparent (window shadow): then the new
-    /// area stays transparent.
+    /// Dominant opaque color of the capture's four borders (similar colors
+    /// grouped), or nil when most of the border is transparent (a window
+    /// shadow): then the new area stays transparent. A few transparent pixels
+    /// (a rounded or anti-aliased corner) don't count.
     func canvasFillColor() -> NSColor? {
         guard let img = screenshotImage,
               let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
         let id = ObjectIdentifier(img)
         if cachedFillColorImage == id { return cachedFillColor }
-        let w = cg.width, h = cg.height
-        var result: NSColor? = nil
-        if w > 1, h > 1,
-           let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
-                               space: CGColorSpace(name: CGColorSpace.sRGB)!,
-                               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
-            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
-            if let raw = ctx.data {
-                let d = raw.bindMemory(to: UInt8.self, capacity: w * h * 4)
-                if d[3] >= 250 {
-                    var buckets: [Int: (n: Int, r: Int, g: Int, b: Int)] = [:]
-                    func add(_ x: Int, _ y: Int) {
-                        let i = (y * w + x) * 4
-                        let r = Int(d[i]), g = Int(d[i + 1]), b = Int(d[i + 2])
-                        let key = (r >> 4) << 8 | (g >> 4) << 4 | (b >> 4)
-                        let cur = buckets[key] ?? (0, 0, 0, 0)
-                        buckets[key] = (cur.n + 1, cur.r + r, cur.g + g, cur.b + b)
-                    }
-                    for x in 0..<w { add(x, 0); add(x, h - 1) }
-                    for y in 0..<h { add(0, y); add(w - 1, y) }
-                    if let best = buckets.values.max(by: { $0.n < $1.n }), best.n > 0 {
-                        result = NSColor(srgbRed: CGFloat(best.r) / CGFloat(best.n) / 255,
-                                         green: CGFloat(best.g) / CGFloat(best.n) / 255,
-                                         blue: CGFloat(best.b) / CGFloat(best.n) / 255, alpha: 1)
-                    }
-                }
-            }
-        }
         cachedFillColorImage = id
-        cachedFillColor = result
-        return result
+        cachedFillColor = Self.borderFillColor(of: cg)
+        return cachedFillColor
+    }
+
+    static func borderFillColor(of cg: CGImage) -> NSColor? {
+        let w = cg.width, h = cg.height
+        guard w > 1, h > 1,
+              let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        guard let raw = ctx.data else { return nil }
+        let d = raw.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        var buckets: [Int: (n: Int, r: Int, g: Int, b: Int)] = [:]
+        var total = 0, opaque = 0
+        func add(_ x: Int, _ y: Int) {
+            total += 1
+            let i = (y * w + x) * 4
+            guard d[i + 3] >= 250 else { return }
+            opaque += 1
+            let r = Int(d[i]), g = Int(d[i + 1]), b = Int(d[i + 2])
+            let key = (r >> 4) << 8 | (g >> 4) << 4 | (b >> 4)
+            let cur = buckets[key] ?? (0, 0, 0, 0)
+            buckets[key] = (cur.n + 1, cur.r + r, cur.g + g, cur.b + b)
+        }
+        for x in 0..<w { add(x, 0); add(x, h - 1) }
+        for y in 1..<(h - 1) { add(0, y); add(w - 1, y) }
+        guard opaque * 2 > total,
+              let best = buckets.values.max(by: { $0.n < $1.n }), best.n > 0 else { return nil }
+        return NSColor(srgbRed: CGFloat(best.r) / CGFloat(best.n) / 255,
+                       green: CGFloat(best.g) / CGFloat(best.n) / 255,
+                       blue: CGFloat(best.b) / CGFloat(best.n) / 255, alpha: 1)
     }
 
     /// Show the canvas growing while a gesture runs past the image.
