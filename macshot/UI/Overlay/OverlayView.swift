@@ -4458,6 +4458,13 @@ class OverlayView: NSView {
     /// On mouse-up: commit the growth, or put the document back if nothing grew.
     func finishLiveCanvasExtent() {
         guard liveCanvasExtent != nil else { return }
+        // A text box is still open (the click that placed it, or a drag that
+        // resized it, just ended): it is not an annotation yet, so keep the
+        // document around it until the text is committed or cancelled.
+        if textEditView != nil {
+            updateLiveCanvasExtent()
+            return
+        }
         expandCanvasToFitAnnotations()  // clears liveCanvasExtent when it grows
         if liveCanvasExtent != nil {
             liveCanvasExtent = nil
