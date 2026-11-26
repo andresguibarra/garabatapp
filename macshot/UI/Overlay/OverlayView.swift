@@ -3947,8 +3947,6 @@ class OverlayView: NSView {
         context.restoreGraphicsState()
     }
 
-    /// Sample the rendered canvas without transient UI chrome. Committed annotations
-    /// are included, while selection handles, toolbars, and this preview are not.
     /// Copies the hex of the pixel at `canvasPoint` and confirms it on screen.
     private func copySampledColor(atCanvas canvasPoint: NSPoint) {
         guard let result = sampleCanvasColor(at: canvasPoint) else { return }
@@ -3958,6 +3956,8 @@ class OverlayView: NSView {
         needsDisplay = true
     }
 
+    /// Sample the rendered canvas without transient UI chrome. Committed annotations
+    /// are included, while selection handles, toolbars, and this preview are not.
     private func sampleCanvasColor(at canvasPoint: NSPoint) -> (
         color: NSColor, hex: String
     )? {
